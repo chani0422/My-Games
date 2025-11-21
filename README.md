@@ -1,1 +1,6 @@
-### Games I created with AI.
+#### Games I created with AI.
+
+
+BlackJack（C++ & WebAssembly）の#デモはこちら👇  
+
+[Play BlackJack on GitHub Pages](https://chani0422.github.io/My-Games/)
