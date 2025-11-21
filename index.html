@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>BlackJack</title>
+<style>
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  background: #2E7D32;
+  color: #fff;
+}
+h1 { text-align: center; }
+
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#game {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.hand {
+  border: 2px solid #fff;
+  padding: 10px;
+  border-radius: 8px;
+  width: 220px;
+  margin: 5px;
+}
+
+.cards {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.card {
+  width: 30px;
+  height: 50px;
+  background: #fff;
+  color: #000;
+  text-align: center;
+  line-height: 50px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+button {
+  margin: 5px;
+  padding: 10px 18px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+}
+
+#output {
+  margin-top: 20px;
+  white-space: pre-wrap;
+  display: none; /* デバッグ用なので非表示 */
+}
+
+/* 結果表示 */
+.result {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  font-weight: bold;
+  padding: 12px 24px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+/* デッキ・戦績表示 */
+#info {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
+}
+#deckCount {
+  margin-right: 12px;
+}
+
+/* スマホ向け調整 */
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+  #game {
+    flex-direction: column;
+    align-items: center;
+  }
+  .hand {
+    width: 90%;
+  }
+  button {
+    flex: 1 1 45%;
+    font-size: 18px;
+    padding: 12px 0;
+  }
+  #controls {
+    gap: 4px;
+  }
+  .result {
+    font-size: 22px;
+    top: 15%;
+  }
+}
+</style>
+</head>
+<body>
+
+<h1>BlackJack</h1>
+
+<div id="result" class="result"></div>
+
+<div id="controls">
+  <button id="init">Start Game</button>
+  <button id="hit">Hit</button>
+  <button id="stand">Stand</button>
+  <button id="retry" style="display: none;">Retry</button>
+</div>
+
+<div id="game">
+  <div class="hand" id="dealer">
+    <h3>Dealer</h3>
+    <div class="cards" id="dealerCards"></div>
+    <div id="dealerScore"></div>
+  </div>
+  <div class="hand" id="player">
+    <h3>Player</h3>
+    <div class="cards" id="playerCards"></div>
+    <div id="playerScore"></div>
+  </div>
+</div>
+
+<div id="info">
+  <span id="deckCount"></span>
+  <span id="stats"></span>
+</div>
+
+<pre id="output"></pre>
+
+<script>
+var Module = {
+  onRuntimeInitialized: function() {
+    let gameOver = false;        // ゲーム終了フラグ
+    let dealerRevealed = false;  // ディーラー1枚目をめくったか
+    let wins = 0, losses = 0, draws = 0; // 戦績
+
+    const init_game = Module.cwrap('init_game', null, []);
+    const player_hit = Module.cwrap('player_hit', 'number', []);
+    const player_stand_and_dealer = Module.cwrap('player_stand_and_dealer', 'number', []);
+    const get_state_json = Module.cwrap('get_state_json', 'number', []);
+    const free_ptr = Module.cwrap('free_ptr', null, ['number']);
+
+    const dealerCards = document.getElementById('dealerCards');
+    const playerCards = document.getElementById('playerCards');
+    const dealerScore = document.getElementById('dealerScore');
+    const playerScore = document.getElementById('playerScore');
+    const result = document.getElementById('result');
+    const retryBtn = document.getElementById('retry');
+    const hitBtn = document.getElementById('hit');
+    const standBtn = document.getElementById('stand');
+    const initBtn = document.getElementById('init');
+    const deckCountEl = document.getElementById('deckCount');
+    const statsEl = document.getElementById('stats');
+
+    function renderState() {
+      let ptr = get_state_json();
+      let jsonStr = Module.UTF8ToString(ptr);
+      free_ptr(ptr);
+
+      let state = JSON.parse(jsonStr);
+
+      dealerCards.innerHTML = '';
+      playerCards.innerHTML = '';
+
+      // ディーラー：1枚目は stand するまで「?」
+      const dealerArr = state.dealer.trim().split(' ').filter(c => c);
+      dealerArr.forEach((c, idx) => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        if (!dealerRevealed && idx === 0) {
+          div.textContent = '?';
+        } else {
+          div.textContent = c;
+        }
+        dealerCards.appendChild(div);
+      });
+
+      const playerArr = state.player.trim().split(' ').filter(c => c);
+      playerArr.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.textContent = c;
+        playerCards.appendChild(div);
+      });
+
+      dealerScore.textContent = 'Score: ' + state.dealerScore;
+      playerScore.textContent = 'Score: ' + state.playerScore;
+
+      // デッキ残り枚数
+      if (typeof state.deckSize === 'number') {
+        deckCountEl.textContent = 'Deck: ' + state.deckSize + ' cards left';
+      }
+    }
+
+    // 結果表示
+    function showMessage(text, type) {
+      result.textContent = text;
+
+      if (type === 'win') {
+        result.style.color = '#ffeb3b';
+      } else if (type === 'lose') {
+        result.style.color = '#ffccbc';
+      } else if (type === 'draw') {
+        result.style.color = '#ffffff';
+      } else if (type === 'bust') {
+        result.style.color = '#ff8a80';
+      } else {
+        result.style.color = '#ffffff';
+      }
+    }
+
+    function clearMessage() {
+      result.textContent = '';
+    }
+
+    // 戦績更新
+    function updateStats() {
+      statsEl.textContent = `Win: ${wins} / Lose: ${losses} / Draw: ${draws}`;
+    }
+
+    // ゲーム終了状態にする
+    function setGameOver(resultType) {
+      gameOver = true;
+      hitBtn.disabled = true;
+      standBtn.disabled = true;
+      retryBtn.style.display = 'inline-block';
+
+      if (resultType === 'win') wins++;
+      else if (resultType === 'lose') losses++;
+      else if (resultType === 'draw') draws++;
+
+      updateStats();
+    }
+
+    // ゲーム開始時にボタンなどをリセット
+    function resetForNewGame() {
+      gameOver = false;
+      dealerRevealed = false;
+      hitBtn.disabled = false;
+      standBtn.disabled = false;
+      retryBtn.style.display = 'none';
+      clearMessage();
+    }
+
+    // Start Game & Retry 共通の処理
+    function startNewGame() {
+      init_game();
+      resetForNewGame();
+      renderState();
+    }
+
+    initBtn.onclick = startNewGame;
+    retryBtn.onclick = startNewGame;
+
+    // Hit：21超えたら Bust（この時点ではディーラーはまだ隠れたまま）
+    hitBtn.onclick = () => {
+      if (gameOver) return;
+
+      const sc = player_hit();
+      renderState();
+      if (sc > 21) {
+        showMessage("Bust! You lose...", "bust");
+        setGameOver('lose');  // 戦績上は「負け」
+      }
+    };
+
+    // Stand：ディーラーの1枚目をめくって結果表示
+    standBtn.onclick = () => {
+      if (gameOver) return;
+
+      dealerRevealed = true;  // ★ ここでめくる
+      const res = player_stand_and_dealer();
+      renderState();
+
+      let msg = "";
+      let type = "";
+
+      if (res >= 100 && res < 200) {
+        msg = "Dealer Bust! You Win!";
+        type = "win";
+      } else if (res >= 200 && res < 300) {
+        msg = "You Win!";
+        type = "win";
+      } else if (res >= 300 && res < 400) {
+        msg = "You Lose...";
+        type = "lose";
+      } else {
+        msg = "Draw.";
+        type = "draw";
+      }
+
+      showMessage(msg, type);
+      setGameOver(type);
+    };
+
+    // ページ開いた直後はまだゲームなしなので、Start Game を押してもらう
+  }
+};
+</script>
+<script src="blackjack.js"></script>
+
+</body>
+</html>
