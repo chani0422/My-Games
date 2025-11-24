@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BlackJack</title>
 <style>
 body {
@@ -93,30 +94,40 @@ button {
 }
 
 /* スマホ向け調整 */
+/* スマホ向けカードサイズ調整 */
 @media (max-width: 600px) {
-  body {
-    padding: 10px;
+  .card {
+    width: 40px;
+    height: 60px;
+    font-size: 16px;
+    line-height: 60px;
   }
-  #game {
-    flex-direction: column;
-    align-items: center;
-  }
-  .hand {
-    width: 90%;
-  }
-  button {
-    flex: 1 1 45%;
+
+  /* ボタンの押しやすさ強化 */
+  #controls button {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px 0;
     font-size: 18px;
-    padding: 12px 0;
   }
-  #controls {
-    gap: 4px;
+
+  /* 手札エリアの幅調整 */
+  .hand {
+    width: 95%;
   }
+
+  /* 見出しを少し小さく */
+  h1 {
+    font-size: 26px;
+  }
+
+  /* 結果表示位置調整 */
   .result {
     font-size: 22px;
-    top: 15%;
+    top: 12%;
   }
 }
+
 </style>
 </head>
 <body>
