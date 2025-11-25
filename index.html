@@ -5,128 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BlackJack</title>
 <style>
-body {
-  font-family: sans-serif;
-  padding: 20px;
-  background: #2E7D32;
-  color: #fff;
-}
-h1 { text-align: center; }
-
-#controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-#game {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 20px;
-  flex-wrap: wrap;
-}
-
-.hand {
-  border: 2px solid #fff;
-  padding: 10px;
-  border-radius: 8px;
-  width: 220px;
-  margin: 5px;
-}
-
-.cards {
-  display: flex;
-  gap: 5px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-
-.card {
-  width: 30px;
-  height: 50px;
-  background: #fff;
-  color: #000;
-  text-align: center;
-  line-height: 50px;
-  border-radius: 5px;
-  font-weight: bold;
-}
-
-button {
-  margin: 5px;
-  padding: 10px 18px;
-  font-size: 16px;
-  border-radius: 5px;
-  cursor: pointer;
-  border: none;
-}
-
-#output {
-  margin-top: 20px;
-  white-space: pre-wrap;
-  display: none; /* デバッグ用なので非表示 */
-}
-
-/* 結果表示 */
-.result {
-  position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 28px;
-  font-weight: bold;
-  padding: 12px 24px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.4);
-  color: #fff;
-}
-
-/* デッキ・戦績表示 */
-#info {
-  margin-top: 10px;
-  text-align: center;
-  font-size: 14px;
-}
-#deckCount {
-  margin-right: 12px;
-}
-
-/* スマホ向け調整 */
-/* スマホ向けカードサイズ調整 */
-@media (max-width: 600px) {
-  .card {
-    width: 40px;
-    height: 60px;
-    font-size: 16px;
-    line-height: 60px;
-  }
-
-  /* ボタンの押しやすさ強化 */
-  #controls button {
-    width: 100%;
-    max-width: 320px;
-    padding: 14px 0;
-    font-size: 18px;
-  }
-
-  /* 手札エリアの幅調整 */
-  .hand {
-    width: 95%;
-  }
-
-  /* 見出しを少し小さく */
-  h1 {
-    font-size: 26px;
-  }
-
-  /* 結果表示位置調整 */
-  .result {
-    font-size: 22px;
-    top: 12%;
-  }
-}
 /* 基本デザイン */
 body {
   font-family: sans-serif;
@@ -145,12 +23,30 @@ body {
   padding: 6px;
 }
 
-/* PC用 */
+button {
+  margin: 5px;
+  padding: 10px 18px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+}
+
+.hand {
+  border: 2px solid #fff;
+  padding: 10px;
+  border-radius: 8px;
+  width: 220px;
+  margin: 5px;
+}
+
+/* PC用 (601px以上) */
 @media (min-width: 601px) {
   .card {
     width: 60px;
     height: 90px;
     font-size: 24px;
+    line-height: 90px;
   }
 
   button {
@@ -159,26 +55,49 @@ body {
   }
 }
 
-/* スマホ用 */
+/* スマホ用 (600px以下) */
 @media (max-width: 600px) {
+
+  body {
+    padding: 10px;
+  }
+
+  #game {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hand {
+    width: 95%;
+  }
+
   .card {
     width: 40px;
     height: 60px;
     font-size: 16px;
+    line-height: 60px;
   }
 
   button {
     padding: 14px 20px;
-    font-size: 20px;
-    width: 100%;      /* 横いっぱいボタンにすると押しやすい */
-    max-width: 300px; /* 巨大になりすぎ防止 */
+    font-size: 25px;
+    width: 100%;
+    max-width: 300px;
   }
 
   #controls {
+    display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 10px;
   }
+
+  .result {
+    font-size: 22px;
+    top: 6%;/*12%から変更*/
+  }
 }
+
 
 </style>
 </head>
