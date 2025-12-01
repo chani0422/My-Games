@@ -321,26 +321,29 @@ var Module = {
       }
     }
 
-    // 結果表示
-    function showMessage(text, type) {
-      result.textContent = text;
+// 結果表示
+function showMessage(text, type) {
+  result.style.display = "block"; // ★ 勝負が決まったときだけ表示
+  result.textContent = text;
 
-      if (type === 'win') {
-        result.style.color = '#ffeb3b';
-      } else if (type === 'lose') {
-        result.style.color = '#ffccbc';
-      } else if (type === 'draw') {
-        result.style.color = '#ffffff';
-      } else if (type === 'bust') {
-        result.style.color = '#ff8a80';
-      } else {
-        result.style.color = '#ffffff';
-      }
-    }
+  if (type === 'win') {
+    result.style.color = '#ffeb3b';
+  } else if (type === 'lose') {
+    result.style.color = '#ffccbc';
+  } else if (type === 'draw') {
+    result.style.color = '#ffffff';
+  } else if (type === 'bust') {
+    result.style.color = '#ff8a80';
+  } else {
+    result.style.color = '#ffffff';
+  }
+}
 
-    function clearMessage() {
-      result.textContent = '';
-    }
+// 結果非表示（ゲーム開始時に実行）
+function clearMessage() {
+  result.style.display = "none";  // ★ 初期化時に必ず消す
+  result.textContent = "";
+}
 
     // 戦績更新
     function updateStats() {
