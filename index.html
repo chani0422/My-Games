@@ -220,6 +220,17 @@ button:active {
     top: 10%;
   }
 }
+/* ← 既存のCSSの最後 */
+
+/* ボタンのフォーカス黒影対策 */
+button:focus,
+button:focus-visible,
+button:active {
+  outline: none;
+  box-shadow: none;
+  background-image: none;
+}
+
 </style>
 
 </head>
