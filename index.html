@@ -323,7 +323,12 @@ var Module = {
         playerCards.appendChild(div);
       });
 
-      dealerScore.textContent = 'Score: ' + state.dealerScore;
+if (!dealerRevealed) {
+  dealerScore.textContent = 'Score: ?';
+} else {
+  dealerScore.textContent = 'Score: ' + state.dealerScore;
+}
+
       playerScore.textContent = 'Score: ' + state.playerScore;
 
       // デッキ残り枚数
