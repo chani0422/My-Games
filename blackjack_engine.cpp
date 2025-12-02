@@ -5,6 +5,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <sstream>
+#include <cctype>
+
 
 #include <emscripten/emscripten.h>
 
@@ -128,6 +131,49 @@ static string card_str(const Card& c) {
   string s = SUIT_UTF8[c.suit % 4];
   return r + s;
 }
+
+#ifdef BJ_TEST
+static inline void trim_inplace(std::string& s){
+  size_t a=0; while(a<s.size() && std::isspace((unsigned char)s[a])) a++;
+  size_t b=s.size(); while(b>a && std::isspace((unsigned char)s[b-1])) b--;
+  s = s.substr(a, b-a);
+}
+
+static bool parse_card_token(const std::string& tok, Card& out){
+  // 形式: "AS","10H","QD"  (S=♠, H=♥, D=♦, C=♣)
+  if (tok.size() < 2) return false;
+
+  char suitCh = tok.back();
+  int suit = -1;
+  if      (suitCh=='S' || suitCh=='s') suit = 0;
+  else if (suitCh=='H' || suitCh=='h') suit = 1;
+  else if (suitCh=='D' || suitCh=='d') suit = 2;
+  else if (suitCh=='C' || suitCh=='c') suit = 3;
+  else return false;
+
+  std::string r = tok.substr(0, tok.size()-1);
+  trim_inplace(r);
+  if (r.empty()) return false;
+
+  int rank = -1;
+  if (r=="A"||r=="a") rank = 1;
+  else if (r=="J"||r=="j") rank = 11;
+  else if (r=="Q"||r=="q") rank = 12;
+  else if (r=="K"||r=="k") rank = 13;
+  else if (r=="T"||r=="t") rank = 10;
+  else {
+    // "2".."10"
+    for(char ch: r) if(!std::isdigit((unsigned char)ch)) return false;
+    rank = std::atoi(r.c_str());
+    if (rank < 2 || rank > 10) return false;
+  }
+
+  out.rank = (uint8_t)rank;
+  out.suit = (uint8_t)suit;
+  return true;
+}
+#endif
+
 
 static string json_escape(const string& in) {
   string o;
@@ -496,22 +542,22 @@ struct Engine {
     return (x / 2) * 2;
   }
 
-  int set_bet(int amount) {
-    if (phase == Phase::PAUSED) return set_error(INVALID_STATE, "Paused");
-    if (!(phase == Phase::BETTING || phase == Phase::ROUND_OVER)) {
-      return set_error(INVALID_STATE, "Not in betting");
-    }
-    clear_error();
-
-    int a = floor_to_even(amount);
-    if (a < minBet) return set_error(INVALID_BET, "Bet < minBet (and must be even)");
-    if (a > bank) return set_error(INVALID_BET, "Bet > bank");
-    if (a % 2 != 0) return set_error(INVALID_BET, "Bet must be even");
-
-    baseBet = a;
-    set_phase(Phase::BETTING);
-    return OK;
+int set_bet(int amount) {
+  if (phase == Phase::PAUSED) return set_error(INVALID_STATE, "Paused");
+  if (!(phase == Phase::BETTING || phase == Phase::ROUND_OVER)) {
+    return set_error(INVALID_STATE, "Not in betting");
   }
+  clear_error();
+
+  if (amount < minBet) return set_error(INVALID_BET, "Bet < minBet (and must be even)");
+  if (amount > bank)   return set_error(INVALID_BET, "Bet > bank");
+  if (amount % 2 != 0) return set_error(INVALID_BET, "Bet must be even");
+
+  baseBet = amount;
+  set_phase(Phase::BETTING);
+  return OK;
+}
+
 
   static int split_value(const Card& c) { return point_value(c); }
 
@@ -1078,6 +1124,33 @@ struct Engine {
 
     return s;
   }
+  #ifdef BJ_TEST
+int debug_set_shoe_draw_order(const char* csv){
+  if(!csv) return set_error(INVALID_STATE, "csv null");
+  clear_error();
+
+  // deal() 内の cut 判定で勝手にシャッフルされるのを防ぐ（テスト時だけ）
+  shoe.cutSize = -1;
+
+  std::vector<Card> order;
+  std::stringstream ss(csv);
+  std::string item;
+  while(std::getline(ss, item, ',')){
+    trim_inplace(item);
+    if(item.empty()) continue;
+    Card c{};
+    if(!parse_card_token(item, c)){
+      return set_error(INVALID_STATE, std::string("Bad card token: ")+item);
+    }
+    order.push_back(c);
+  }
+
+  // Shoe.draw() は back() を引くので「指定した順に引かれる」よう逆順で格納
+  shoe.cards.assign(order.rbegin(), order.rend());
+  return OK;
+}
+#endif
+
 };
 
 static Engine g;
@@ -1143,5 +1216,12 @@ char* get_state_json() {
 
 EMSCRIPTEN_KEEPALIVE
 void free_ptr(char* p) { std::free(p); }
+
+#ifdef BJ_TEST
+EMSCRIPTEN_KEEPALIVE
+int debug_set_shoe(const char* csv){
+  return bj::g.debug_set_shoe_draw_order(csv);
+}
+#endif
 
 } // extern "C"

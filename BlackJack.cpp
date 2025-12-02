@@ -490,28 +490,37 @@ struct Engine {
       return OK;
     }
   }
-
+//変更するかもーーーー
   static int floor_to_even(int x) {
     if (x < 0) x = 0;
     return (x / 2) * 2;
   }
 
-  int set_bet(int amount) {
-    if (phase == Phase::PAUSED) return set_error(INVALID_STATE, "Paused");
-    if (!(phase == Phase::BETTING || phase == Phase::ROUND_OVER)) {
-      return set_error(INVALID_STATE, "Not in betting");
-    }
-    clear_error();
-
-    int a = floor_to_even(amount);
-    if (a < minBet) return set_error(INVALID_BET, "Bet < minBet (and must be even)");
-    if (a > bank) return set_error(INVALID_BET, "Bet > bank");
-    if (a % 2 != 0) return set_error(INVALID_BET, "Bet must be even");
-
-    baseBet = a;
-    set_phase(Phase::BETTING);
-    return OK;
+int set_bet(int amount) {
+  if (phase == Phase::PAUSED) return set_error(INVALID_STATE, "Paused");
+  if (!(phase == Phase::BETTING || phase == Phase::ROUND_OVER)) {
+    return set_error(INVALID_STATE, "Not in betting");
   }
+  clear_error();
+
+  // ★ 奇数は絶対に禁止（丸めない）
+  if (amount % 2 != 0) {
+    return set_error(INVALID_BET, "Bet must be even");
+  }
+
+  if (amount < minBet) {
+    return set_error(INVALID_BET, "Bet < minBet");
+  }
+
+  if (amount > bank) {
+    return set_error(INVALID_BET, "Bet > bank");
+  }
+
+  baseBet = amount;
+  set_phase(Phase::BETTING);
+  return OK;
+}
+
 
   static int split_value(const Card& c) { return point_value(c); }
 

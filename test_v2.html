@@ -2,501 +2,799 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BlackJack</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BlackJack v2</title>
   <style>
     :root{
-      --bg0:#06180e;
-      --bg1:#0b3d1a;
-      --bg2:#0f5a25;
-      --panel:#0e3b1c;
-      --panel2:#114a22;
-      --text:#ffffff;
-      --muted:rgba(255,255,255,.75);
-      --muted2:rgba(255,255,255,.55);
-      --border:rgba(255,255,255,.16);
-      --shadow:rgba(0,0,0,.35);
-      --good:#37d67a;
-      --bad:#ff4d4d;
-      --warn:#ffcc66;
-      --chip:#ffd166;
+      --bg:#061b12;
+      --felt1:#0b3d1a;
+      --felt2:#0f5a25;
+      --panel: rgba(9, 18, 14, .72);
+      --panel2: rgba(14, 32, 22, .72);
+      --line: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --danger: #ff5c73;
+      --ok: #53ffa8;
+      --warn: #ffd36a;
+
+      --card: #fbfbfd;
+      --shadow: rgba(0,0,0,.35);
+      --shadow2: rgba(0,0,0,.5);
+
+      --btn: rgba(255,255,255,.10);
+      --btn2: rgba(255,255,255,.16);
+      --btnGlow: rgba(83,255,168,.16);
+
+      --chip10:#7bd0ff;
+      --chip25:#9b8cff;
+      --chip50:#ff8cc8;
+      --chip100:#ffd36a;
+      --chip500:#53ffa8;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-      color:var(--text);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
       background:
-        radial-gradient(1200px 700px at 30% -10%, rgba(255,255,255,.10), transparent 60%),
-        radial-gradient(900px 600px at 90% 0%, rgba(255,255,255,.08), transparent 55%),
-        linear-gradient(180deg, var(--bg0), var(--bg1) 30%, var(--bg2));
-      overflow-x:hidden;
+        radial-gradient(1200px 700px at 18% 0%, rgba(83,255,168,.12), transparent 55%),
+        radial-gradient(1300px 800px at 90% 10%, rgba(155,140,255,.10), transparent 55%),
+        radial-gradient(900px 700px at 60% 110%, rgba(255,140,200,.08), transparent 55%),
+        linear-gradient(180deg, #04140e 0%, #03120c 60%, #020e09 100%);
     }
-    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+
+    .wrap{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px 14px 28px;
+    }
+
     .topbar{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-      border-radius:16px;
-      box-shadow:0 12px 30px var(--shadow);
-      position:sticky; top:0; z-index:5;
-      backdrop-filter: blur(8px);
-    }
-    .brand{display:flex; align-items:center; gap:10px}
-    .logo{
-      width:34px; height:34px; border-radius:12px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.32), rgba(255,255,255,.06)),
-                  linear-gradient(135deg, rgba(255,209,102,.9), rgba(55,214,122,.7));
-      box-shadow:0 10px 20px rgba(0,0,0,.25);
-    }
-    .brand h1{margin:0;font-size:14px;letter-spacing:.06em}
-    .sub{font-size:12px;color:var(--muted2)}
-    .stats{display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end}
-    .pill{
-      display:flex; gap:8px; align-items:baseline;
-      padding:8px 10px;
-      border:1px solid var(--border);
-      border-radius:999px;
-      background:rgba(0,0,0,.18);
-      min-width: 130px;
+      display:flex;
+      align-items:center;
       justify-content:space-between;
+      gap:10px;
+      margin-bottom: 12px;
     }
-    .pill b{font-size:13px}
-    .pill span{font-size:12px;color:var(--muted)}
-    .btn{
-      border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:14px;
-      cursor:pointer;
-      transition: transform .08s ease, box-shadow .15s ease, opacity .15s ease;
-      user-select:none;
+
+    .brand{
+      display:flex;
+      align-items:end;
+      gap:10px;
+      min-width: 0;
     }
-    .btn:hover{box-shadow:0 10px 22px rgba(0,0,0,.22)}
-    .btn:active{transform: translateY(1px) scale(.99)}
-    .btn[disabled]{opacity:.38; cursor:not-allowed; box-shadow:none}
-    .btn.primary{
-      border-color: rgba(255,255,255,.22);
-      background:linear-gradient(135deg, rgba(55,214,122,.55), rgba(255,209,102,.35));
+    .brand h1{
+      margin:0;
+      font-size: 20px;
+      letter-spacing: .2px;
+      line-height:1.1;
+      white-space:nowrap;
     }
-    .btn.danger{
-      background:linear-gradient(180deg, rgba(255,77,77,.28), rgba(255,255,255,.03));
-      border-color: rgba(255,77,77,.35);
+    .tag{
+      font-size: 12px;
+      color: var(--muted);
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      white-space:nowrap;
     }
-    .btn.ghost{background:rgba(0,0,0,.14)}
+
+    .pillrow{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      justify-content:flex-end;
+    }
+
+    .pill{
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      border-radius: 14px;
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      min-width: 0;
+      box-shadow: 0 10px 35px rgba(0,0,0,.18);
+    }
+    .pill b{ font-weight: 700; }
+    .pill span{
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
     .grid{
       display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap:16px;
-      margin-top:16px;
+      gap: 12px;
+      grid-template-columns: 1fr 340px;
+      align-items:start;
     }
-    @media (max-width: 900px){
-      .grid{grid-template-columns: 1fr}
-      .pill{min-width:auto}
+
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
     }
-    .card{
-      border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.18));
-      border-radius:18px;
-      box-shadow:0 18px 40px rgba(0,0,0,.25);
-      overflow:hidden;
-    }
-    .card .hd{
-      padding:12px 14px;
-      display:flex; align-items:center; justify-content:space-between;
-      border-bottom:1px solid var(--border);
-      background:rgba(0,0,0,.10);
-    }
-    .card .hd h2{margin:0;font-size:13px;letter-spacing:.06em}
-    .card .bd{padding:14px}
+
     .table{
-      display:flex; flex-direction:column; gap:12px;
-    }
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    .muted{color:var(--muted); font-size:12px}
-    .small{font-size:12px}
-    .divider{height:1px;background:var(--border);margin:10px 0}
-    .chips{display:flex; gap:8px; flex-wrap:wrap}
-    .chipbtn{
-      border:1px solid rgba(255,209,102,.35);
-      background:linear-gradient(180deg, rgba(255,209,102,.18), rgba(0,0,0,.10));
-      padding:10px 12px;
-      border-radius:999px;
-      cursor:pointer;
-      color:var(--text);
-      font-weight:700;
-      letter-spacing:.02em;
-    }
-    .chipbtn:active{transform:translateY(1px)}
-    input[type="number"]{
-      width: 140px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.20);
-      color:var(--text);
-      outline:none;
-    }
-    .handArea{display:flex; flex-direction:column; gap:12px}
-    .handBox{
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:12px;
-      background:rgba(0,0,0,.16);
-      transition: transform .12s ease, border-color .12s ease;
-    }
-    .handBox.active{
-      border-color: rgba(55,214,122,.55);
-      box-shadow: 0 0 0 2px rgba(55,214,122,.12) inset, 0 10px 22px rgba(0,0,0,.22);
-      transform: translateY(-1px);
-    }
-    .cards{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-    .cardFace{
-      width:44px;height:62px;border-radius:12px;
-      background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.70));
-      color:#111;
-      display:flex; align-items:center; justify-content:center;
-      font-weight:800;
-      box-shadow: 0 10px 18px rgba(0,0,0,.25);
-      border:1px solid rgba(0,0,0,.10);
-    }
-    .cardBack{
-      width:44px;height:62px;border-radius:12px;
+      border-radius: 22px;
+      overflow: hidden;
       background:
-        radial-gradient(circle at 30% 30%, rgba(255,255,255,.45), transparent 50%),
-        linear-gradient(135deg, rgba(255,209,102,.75), rgba(55,214,122,.65));
-      border:1px solid rgba(255,255,255,.20);
-      box-shadow: 0 10px 18px rgba(0,0,0,.25);
+        radial-gradient(1000px 500px at 50% 0%, rgba(255,255,255,.10), transparent 56%),
+        linear-gradient(160deg, var(--felt1), var(--felt2));
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 24px 80px rgba(0,0,0,.32);
+      position: relative;
+      padding: 14px;
+      min-height: 520px;
+    }
+
+    .table::before{
+      content:"";
+      position:absolute;
+      inset: 10px;
+      border-radius: 18px;
+      border: 1px dashed rgba(255,255,255,.14);
+      pointer-events:none;
+      opacity:.6;
+    }
+
+    .zone{
+      position:relative;
+      z-index:1;
+      background: rgba(7,16,12,.18);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      padding: 12px;
+      backdrop-filter: blur(6px);
+    }
+
+    .zone + .zone{ margin-top: 12px; }
+
+    .zoneHead{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .zoneTitle{
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .3px;
+    }
+    .zoneMeta{
+      font-size: 12px;
+      color: var(--muted);
+      display:flex;
+      align-items:center;
+      gap: 10px;
     }
     .badge{
-      font-size:12px;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.16);
-      color:var(--muted);
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      white-space:nowrap;
     }
-    .badge.good{border-color: rgba(55,214,122,.40); color:#d8ffe7}
-    .badge.bad{border-color: rgba(255,77,77,.40); color:#ffd1d1}
-    .actions{
+
+    .hands{
       display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:10px;
+      gap: 10px;
     }
-    .actions .btn{width:100%}
-    .banner{
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:16px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.18);
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+
+    .hand{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
     }
-    .banner .msg{font-weight:800}
-    .banner .msg.win{color:#d8ffe7}
-    .banner .msg.lose{color:#ffd1d1}
-    .banner .msg.neutral{color:#fff1cc}
-    .screen{
+    .hand.active{
+      border-color: rgba(83,255,168,.40);
+      box-shadow: 0 0 0 4px rgba(83,255,168,.10);
+    }
+
+    .cards{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      margin-right:auto;
+      min-width: 220px;
+    }
+
+    .card{
+      width: 52px;
+      height: 72px;
+      border-radius: 12px;
+      background: var(--card);
+      color: #121416;
+      border: 1px solid rgba(0,0,0,.12);
+      box-shadow: 0 10px 20px var(--shadow);
+      position:relative;
+      overflow:hidden;
+      transform: translateY(0);
+      transition: transform .12s ease;
+      user-select:none;
+    }
+    .card:hover{ transform: translateY(-2px); }
+
+    .card .r{
+      position:absolute;
+      top: 6px; left: 8px;
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing:.1px;
+    }
+    .card .s{
+      position:absolute;
+      top: 26px; left: 8px;
+      font-size: 16px;
+      opacity: .92;
+    }
+    .card .big{
+      position:absolute;
+      right: 6px; bottom: 6px;
+      font-size: 22px;
+      opacity:.18;
+      transform: rotate(12deg);
+    }
+    .card.red{ color:#b51616; }
+
+    .card.back{
+      background:
+        radial-gradient(50px 50px at 30% 30%, rgba(255,255,255,.18), transparent 55%),
+        linear-gradient(135deg, rgba(155,140,255,.55), rgba(83,255,168,.45));
+      border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.92);
+      box-shadow: 0 12px 26px var(--shadow2);
+    }
+    .card.back::before{
+      content:"";
+      position:absolute;
+      inset: 7px;
+      border-radius: 10px;
+      border: 1px dashed rgba(255,255,255,.55);
+      opacity:.6;
+    }
+    .card.back .r, .card.back .s{ display:none; }
+    .card.back .big{ opacity:.65; }
+
+    .handInfo{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .kv{
+      font-size: 12px;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      white-space: nowrap;
+    }
+    .kv b{ color: var(--text); }
+
+    .resultBanner{
+      margin-top: 12px;
+      border-radius: 16px;
+      padding: 12px 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
       display:none;
-      animation: fadeIn .18s ease;
     }
-    .screen.active{display:block}
-    @keyframes fadeIn{from{opacity:.5; transform: translateY(6px)}to{opacity:1; transform:none}}
-    .titleHero{
-      padding:18px 16px;
-      text-align:center;
+    .resultBanner.show{ display:block; }
+    .resultBanner .line1{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 6px;
     }
-    .titleHero h2{margin:10px 0 2px; font-size:26px; letter-spacing:.02em}
-    .titleHero p{margin:0; color:var(--muted)}
-    .optGrid{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:10px;
-      margin-top:12px;
+    .resultBanner .title{
+      font-weight: 900;
+      letter-spacing: .4px;
     }
-    @media (max-width: 560px){ .optGrid{grid-template-columns:1fr} }
-    .opt{
-      padding:12px;
-      border:1px solid var(--border);
-      border-radius:16px;
-      background:rgba(0,0,0,.14);
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px;
+    .resultBanner .profit{
+      font-weight: 900;
     }
-    .opt label{display:flex; gap:10px; align-items:center; cursor:pointer; width:100%}
-    .opt input{transform: scale(1.1)}
-    .overlay{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.52);
-      display:none;
-      align-items:center; justify-content:center;
-      padding:18px;
-      z-index:50;
-      backdrop-filter: blur(8px);
+    .profit.pos{ color: var(--ok); }
+    .profit.neg{ color: var(--danger); }
+    .profit.zero{ color: var(--warn); }
+
+    /* Right panel */
+    .side{
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
     }
-    .overlay.show{display:flex}
-    .modal{
-      width:min(560px, 100%);
-      border-radius:18px;
-      border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.30));
-      box-shadow:0 22px 52px rgba(0,0,0,.40);
+
+    .panel{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: var(--panel);
+      box-shadow: 0 20px 70px rgba(0,0,0,.25);
       overflow:hidden;
     }
-    .modal .hd{padding:12px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center}
-    .modal .bd{padding:14px}
-    .toastWrap{
-      position:fixed;
-      left:50%; transform:translateX(-50%);
-      bottom:16px;
-      display:flex; flex-direction:column; gap:8px;
-      z-index:99;
-      pointer-events:none;
+    .panelHead{
+      padding: 12px 12px 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
     }
+    .panelHead .h{
+      font-size: 13px;
+      letter-spacing:.3px;
+      font-weight: 900;
+    }
+    .panelBody{ padding: 12px; }
+
+    .controls{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: var(--btn);
+      color: var(--text);
+      padding: 12px 12px;
+      border-radius: 14px;
+      font-weight: 800;
+      letter-spacing:.2px;
+      cursor:pointer;
+      transition: transform .10s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+      user-select:none;
+    }
+    .btn:hover{
+      background: var(--btn2);
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,.22);
+    }
+    .btn:active{ transform: translateY(0); }
+    .btn[disabled]{
+      opacity: .45;
+      cursor:not-allowed;
+      transform:none;
+    }
+    .btn.primary{
+      background: rgba(83,255,168,.14);
+      border-color: rgba(83,255,168,.28);
+      box-shadow: 0 0 0 4px rgba(83,255,168,.07);
+    }
+    .btn.primary:hover{ background: rgba(83,255,168,.20); }
+    .btn.danger{
+      background: rgba(255,92,115,.12);
+      border-color: rgba(255,92,115,.30);
+    }
+    .btn.danger:hover{ background: rgba(255,92,115,.18); }
+
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap: 10px;
+    }
+
+    .field{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+    }
+    input[type="number"]{
+      width: 120px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      outline: none;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.20);
+      color: var(--text);
+      font-weight: 800;
+    }
+    label{
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space:nowrap;
+    }
+
+    .chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .chip{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.92);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-weight: 900;
+      cursor:pointer;
+      transition: transform .10s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+      display:flex; align-items:center; gap: 8px;
+    }
+    .chip:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.22);
+    }
+    .dot{
+      width: 10px; height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.7);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.08);
+    }
+    .dot.c10{ background: var(--chip10); }
+    .dot.c25{ background: var(--chip25); }
+    .dot.c50{ background: var(--chip50); }
+    .dot.c100{ background: var(--chip100); }
+    .dot.c500{ background: var(--chip500); }
+
+    .mini{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin-top: 10px;
+    }
+
+    details{
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      overflow:hidden;
+    }
+    details summary{
+      list-style:none;
+      cursor:pointer;
+      padding: 12px;
+      font-weight: 900;
+      letter-spacing:.2px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    details summary::-webkit-details-marker{ display:none; }
+    .ruleGrid{
+      padding: 0 12px 12px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .ck{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+    }
+    .ck input{ transform: scale(1.15); }
+    .ck span{ color: var(--text); font-weight: 800; font-size: 12px; }
+
     .toast{
-      pointer-events:none;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.55);
-      color:#fff;
-      box-shadow:0 10px 22px rgba(0,0,0,.25);
-      font-size:13px;
-      max-width:min(560px, calc(100vw - 24px));
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
     }
-    .prog{
-      height:8px; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden;
-      border:1px solid rgba(255,255,255,.10);
+    .toast strong{ color: var(--text); }
+
+    pre{
+      margin:0;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.28);
+      color: rgba(255,255,255,.86);
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 11px;
+      max-height: 230px;
+      overflow:auto;
     }
-    .prog > div{height:100%; width:0% ; background: linear-gradient(90deg, rgba(255,209,102,.9), rgba(55,214,122,.9));}
+
+    .kbd{
+      font-size: 11px;
+      color: rgba(255,255,255,.72);
+      border: 1px solid rgba(255,255,255,.18);
+      padding: 2px 6px;
+      border-radius: 7px;
+      background: rgba(0,0,0,.25);
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
-        <div>
-          <h1>BlackJack</h1>
-          <div class="sub" id="subLine">loading engine...</div>
-        </div>
+        <h1>BlackJack v2</h1>
+        <div class="tag">💚 cozy / addicting UI</div>
       </div>
-
-      <div class="stats">
-        <div class="pill"><span>Bank</span><b id="bank">-</b></div>
-        <div class="pill"><span>Round</span><b id="round">-</b></div>
-        <div class="pill"><span>Time</span><b id="time">-</b></div>
-
-        <button class="btn ghost" id="btnPause" title="Pause">MENU</button>
-        <button class="btn danger" id="btnReset">Reset</button>
+      <div class="pillrow">
+        <div class="pill"><span>Bank</span><b id="uiBank">-</b></div>
+        <div class="pill"><span>Bet</span><b id="uiBet">-</b></div>
+        <div class="pill"><span>Round</span><b id="uiRound">-</b></div>
+        <div class="pill"><span>Time</span><b id="uiTime">-</b></div>
+        <div class="pill"><span>Streak</span><b id="uiStreak">-</b></div>
       </div>
     </div>
 
-    <!-- TITLE -->
-    <div class="screen active" id="screenTitle">
-      <div class="card">
-        <div class="titleHero">
-          <div class="badge good">3:2 payout • 6 decks • H17</div>
-          <h2>3分でサクッと、気づいたらもう1回。</h2>
-          <p>ルールを選んでスタート。プレイ中の操作可否はすべて “state.can” に従います。</p>
-        </div>
-        <div class="bd">
-          <div class="row" style="justify-content:center; gap:12px;">
-            <button class="btn primary" id="btnStart" style="min-width:220px;">Start Session</button>
+    <div class="grid">
+      <!-- TABLE -->
+      <div class="table">
+        <div class="zone" id="dealerZone">
+          <div class="zoneHead">
+            <div class="zoneTitle">DEALER</div>
+            <div class="zoneMeta">
+              <span class="badge">Up: <b id="uiUpcard">-</b></span>
+              <span class="badge">Shown: <b id="uiDealerShown">-</b></span>
+              <span class="badge">Total: <b id="uiDealerTotal">-</b></span>
+            </div>
           </div>
+          <div class="hand">
+            <div class="cards" id="dealerCards"></div>
+          </div>
+        </div>
 
-          <div class="divider"></div>
-
-          <div class="row">
-            <div>
-              <div class="muted">Bet（偶数のみ推奨：3:2 や insurance bet/2 で端数を出さない）</div>
-              <div class="row" style="margin-top:8px;">
-                <input id="betInput" type="number" value="100" step="10" min="10">
-                <div class="chips">
-                  <button class="chipbtn" data-add="10">+10</button>
-                  <button class="chipbtn" data-add="50">+50</button>
-                  <button class="chipbtn" data-add="100">+100</button>
-                  <button class="chipbtn" data-add="200">+200</button>
-                </div>
-              </div>
-              <div class="muted" id="betHint" style="margin-top:6px;"></div>
+        <div class="zone" id="playerZone">
+          <div class="zoneHead">
+            <div class="zoneTitle">YOU</div>
+            <div class="zoneMeta">
+              <span class="badge">Phase: <b id="uiPhase">-</b></span>
+              <span class="badge">Active Hand: <b id="uiActiveHand">-</b></span>
             </div>
           </div>
 
-          <div class="divider"></div>
+          <div class="hands" id="playerHands"></div>
 
-          <div class="muted">Options（タイトルでON/OFF）</div>
-          <div class="optGrid" style="margin-top:10px;">
-            <div class="opt"><label><input type="checkbox" id="optDouble" checked> Double Down</label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplit" checked> Split</label></div>
-            <div class="opt"><label><input type="checkbox" id="optSurrender" checked> Surrender (Late)</label></div>
-            <div class="opt"><label><input type="checkbox" id="optInsurance" checked> Insurance</label></div>
-            <div class="opt"><label><input type="checkbox" id="optEvenMoney" checked> Even Money</label></div>
-            <div class="opt"><label><input type="checkbox" id="optDAS" checked> DAS (Double after split)</label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> Split BJ as BJ</label></div>
-            <div class="opt"><label><input type="checkbox" id="optH17" checked> Dealer hits Soft 17</label></div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="row" style="justify-content:space-between">
-            <div class="muted">Tips：Reset は “1回タップ → Hold to reset → 2秒長押し”</div>
-            <button class="btn" id="btnHowTitle">遊び方</button>
+          <div class="resultBanner" id="resultBanner">
+            <div class="line1">
+              <div class="title" id="resultTitle">ROUND OVER</div>
+              <div class="profit" id="resultProfit">0</div>
+            </div>
+            <div style="color:var(--muted); font-size:12px;">
+              Bonus: <b id="resultBonus">0</b>%（+<b id="resultBonusApplied">0</b>）
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- GAME -->
-    <div class="screen" id="screenGame">
-      <div class="grid">
-        <div class="card">
-          <div class="hd">
-            <h2>TABLE</h2>
-            <div class="badge" id="phaseBadge">-</div>
+      <!-- SIDE -->
+      <div class="side">
+        <div class="panel">
+          <div class="panelHead">
+            <div class="h">🎛️ Quick Actions</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="kbd">H</span><span class="kbd">S</span><span class="kbd">D</span>
+            </div>
           </div>
-          <div class="bd">
-            <div class="table">
-              <div class="handBox" id="dealerBox">
-                <div class="row" style="justify-content:space-between;">
-                  <div>
-                    <b>Dealer</b>
-                    <span class="muted" id="dealerScoreLine"></span>
-                  </div>
-                  <div class="badge" id="dealerHole">-</div>
-                </div>
-                <div class="cards" id="dealerCards"></div>
-              </div>
+          <div class="panelBody">
+            <div class="controls">
+              <button class="btn primary" id="btnStart">start_session</button>
+              <button class="btn" id="btnDeal">deal</button>
 
-              <div class="handArea" id="playerHands"></div>
+              <button class="btn" id="btnHit">hit</button>
+              <button class="btn" id="btnStand">stand</button>
 
-              <div class="banner" id="roundBanner" style="display:none;">
-                <div class="msg neutral" id="roundMsg">-</div>
-                <div class="muted" id="roundMeta">-</div>
-              </div>
+              <button class="btn" id="btnDouble">double_down</button>
+              <button class="btn" id="btnSplit">split</button>
+
+              <button class="btn danger" id="btnSurrender">surrender</button>
+              <button class="btn" id="btnReset">reset_session</button>
+            </div>
+
+            <div class="toast" id="toast">
+              <strong>loading...</strong>
             </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="hd">
-            <h2>CONTROLS</h2>
-            <div class="badge" id="rulesMini">-</div>
+        <div class="panel">
+          <div class="panelHead">
+            <div class="h">🪙 Bet & Chips</div>
+            <div class="tag" style="padding:6px 10px;">偶数のみ</div>
           </div>
-          <div class="bd">
+          <div class="panelBody">
             <div class="row">
-              <div class="muted">Bet</div>
-              <input id="betInGame" type="number" value="100" step="10">
+              <div class="field">
+                <label>BET
+                  <input id="betInput" type="number" value="100" step="10" min="0" />
+                </label>
+              </div>
               <button class="btn" id="btnSetBet">set_bet</button>
             </div>
 
-            <div class="row chips" style="margin-top:10px;">
-              <button class="chipbtn" data-add2="10">+10</button>
-              <button class="chipbtn" data-add2="50">+50</button>
-              <button class="chipbtn" data-add2="100">+100</button>
-              <button class="chipbtn" data-add2="200">+200</button>
+            <div class="chips">
+              <div class="chip" data-add="10"><span class="dot c10"></span>+10</div>
+              <div class="chip" data-add="25"><span class="dot c25"></span>+25</div>
+              <div class="chip" data-add="50"><span class="dot c50"></span>+50</div>
+              <div class="chip" data-add="100"><span class="dot c100"></span>+100</div>
+              <div class="chip" data-add="500"><span class="dot c500"></span>+500</div>
+              <div class="chip" data-add="-999999"><span class="dot"></span>clear</div>
             </div>
 
-            <div class="divider"></div>
+            <div class="mini">
+              ※ bet はエンジン側で <b>偶数に丸め</b>（floor）されます。<br>
+              “Deal” すると <b>その bet が bank から差し引かれて</b> ラウンド開始。
+            </div>
+          </div>
+        </div>
 
-            <div class="actions">
-              <button class="btn primary" id="btnDeal">Deal / Next Round</button>
-              <button class="btn" id="btnHit">Hit</button>
-              <button class="btn" id="btnStand">Stand</button>
-              <button class="btn" id="btnDouble">Double</button>
-              <button class="btn" id="btnSplit">Split</button>
-              <button class="btn" id="btnSurrender">Surrender</button>
+        <div class="panel" id="insurancePanel" style="display:none;">
+          <div class="panelHead">
+            <div class="h">🛡️ Insurance</div>
+            <div class="tag">A upcard</div>
+          </div>
+          <div class="panelBody">
+            <div class="row" style="justify-content:space-between;">
+              <div class="badge">max: <b id="insMax">0</b></div>
+              <div class="badge">bet: <b id="insBet">0</b></div>
             </div>
 
-            <div class="divider"></div>
-
-            <div class="handBox" id="insuranceBox" style="display:none;">
-              <div class="row" style="justify-content:space-between;">
-                <b>Insurance</b>
-                <span class="muted" id="insHint">-</span>
-              </div>
-              <div class="row" style="margin-top:10px;">
-                <input id="insAmount" type="number" value="0" step="2" min="0">
-                <button class="btn" id="btnInsBuy">buy_insurance</button>
-                <button class="btn" id="btnInsNo">No thanks</button>
-              </div>
-              <div class="row" style="margin-top:8px;">
-                <button class="btn" id="btnEvenMoney">Even Money</button>
-              </div>
+            <div class="row" style="margin-top:10px;">
+              <label>amount
+                <input id="insInput" type="number" value="0" min="0" step="1" />
+              </label>
+              <button class="btn" id="btnBuyIns">buy_insurance(x)</button>
             </div>
 
-            <div class="divider"></div>
+            <div class="row" style="margin-top:10px;">
+              <button class="btn" id="btnBuyIns0">buy_insurance(0)</button>
+              <button class="btn primary" id="btnEven">take_even_money</button>
+            </div>
 
-            <div class="muted small" id="debugLine">-</div>
+            <div class="mini">
+              Even Money は <b>プレイヤーBJ</b> のときだけ表示されます。
+            </div>
+          </div>
+        </div>
+
+        <details class="panel" open>
+          <summary>
+            ⚙️ Session Options
+            <span style="color:var(--muted); font-size:12px;">(rules mask)</span>
+          </summary>
+          <div class="ruleGrid">
+            <label class="ck"><input type="checkbox" id="rDouble" checked><span>Double</span></label>
+            <label class="ck"><input type="checkbox" id="rSplit" checked><span>Split</span></label>
+            <label class="ck"><input type="checkbox" id="rSurrender" checked><span>Surrender (Late)</span></label>
+            <label class="ck"><input type="checkbox" id="rIns" checked><span>Insurance</span></label>
+            <label class="ck"><input type="checkbox" id="rEven" checked><span>Even Money</span></label>
+            <label class="ck"><input type="checkbox" id="rDAS" checked><span>DAS</span></label>
+            <label class="ck"><input type="checkbox" id="rSplitBJ" checked><span>Split BJ as BJ</span></label>
+            <label class="ck"><input type="checkbox" id="rH17" checked><span>Dealer hit soft 17</span></label>
+
+            <div class="field" style="grid-column:1/-1; justify-content:space-between;">
+              <label>sessionSeconds <input id="sessSec" type="number" value="300" step="30" min="30"></label>
+              <label>roundLimit <input id="roundLimit" type="number" value="12" step="1" min="1"></label>
+            </div>
+          </div>
+        </details>
+
+        <div class="panel">
+          <div class="panelHead">
+            <div class="h">📦 Debug JSON</div>
+            <div class="tag">engine state</div>
+          </div>
+          <div class="panelBody">
+            <pre id="debugOut">loading...</pre>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- OVERLAYS -->
-  <div class="overlay" id="overlayPause">
-    <div class="modal">
-      <div class="hd">
-        <b>PAUSED</b>
-        <button class="btn ghost" id="btnClosePause">Close</button>
-      </div>
-      <div class="bd">
-        <p class="muted" style="margin-top:0;">
-          セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。
-        </p>
-        <div class="row" style="justify-content:flex-end; gap:10px;">
-          <button class="btn" id="btnHowPause">遊び方</button>
-          <button class="btn primary" id="btnContinue">Continue</button>
-          <button class="btn danger" id="btnQuit">Quit to Title</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="overlay" id="overlayHow">
-    <div class="modal">
-      <div class="hd">
-        <b>HOW TO PLAY</b>
-        <button class="btn ghost" id="btnCloseHow">Close</button>
-      </div>
-      <div class="bd">
-        <div class="muted">
-          <ul>
-            <li>目標：<b>21に近づける</b>（21超えはBust）</li>
-            <li>10/J/Q/Kは<b>全部10扱い</b>、Aは<b>1 or 11</b></li>
-            <li><b>Deal</b>で開始（RoundOver中は次ラウンドに進む）</li>
-            <li><b>Double</b>：同額追加→1回Hitで強制終了</li>
-            <li><b>Split</b>：同“点数”ならOK。Aスプリットは1枚で終了</li>
-            <li><b>Surrender</b>：最初の2枚のみ。掛け金の半分が返る（Late／peek後）</li>
-            <li><b>Insurance</b>：ディーラー表がAの時のみ。最大 bet/2</li>
-            <li><b>Even Money</b>：プレイヤーBJ時に提示</li>
-          </ul>
-          <p>※操作可否はC++が返す <b>state.can</b> が真実。ボタンは自動で無効化されます。</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="toastWrap" id="toastWrap"></div>
-
   <script>
-    // ========= Utilities =========
-    const $ = (id)=>document.getElementById(id);
+    // ===== UI helpers =====
+    const $ = (id) => document.getElementById(id);
 
-    function toast(msg){
-      const w = $("toastWrap");
-      const el = document.createElement("div");
-      el.className = "toast";
-      el.textContent = msg;
-      w.appendChild(el);
-      setTimeout(()=>{ el.style.opacity="0"; el.style.transform="translateY(6px)"; }, 1400);
-      setTimeout(()=>{ el.remove(); }, 1900);
+    const ui = {
+      bank: $("uiBank"),
+      bet: $("uiBet"),
+      round: $("uiRound"),
+      time: $("uiTime"),
+      streak: $("uiStreak"),
+      phase: $("uiPhase"),
+      activeHand: $("uiActiveHand"),
+
+      upcard: $("uiUpcard"),
+      dealerShown: $("uiDealerShown"),
+      dealerTotal: $("uiDealerTotal"),
+
+      dealerCards: $("dealerCards"),
+      playerHands: $("playerHands"),
+
+      banner: $("resultBanner"),
+      bannerTitle: $("resultTitle"),
+      bannerProfit: $("resultProfit"),
+      bannerBonus: $("resultBonus"),
+      bannerBonusApplied: $("resultBonusApplied"),
+
+      toast: $("toast"),
+      debug: $("debugOut"),
+
+      insurancePanel: $("insurancePanel"),
+      insMax: $("insMax"),
+      insBet: $("insBet"),
+      insInput: $("insInput"),
+    };
+
+    function yen(n){ return String(n); } // 今は単位なし表示（好きなら "¥" 足してOK）
+
+    function msToMMSS(ms){
+      const t = Math.max(0, Math.floor(ms/1000));
+      const m = String(Math.floor(t/60)).padStart(2,'0');
+      const s = String(t%60).padStart(2,'0');
+      return `${m}:${s}`;
     }
+
+    function isRedSuit(cardStr){
+      // "Q♦" "A♥" を赤に
+      return cardStr.includes("♦") || cardStr.includes("♥");
+    }
+
+    function makeCardEl(cardStr){
+      const el = document.createElement("div");
+      if (cardStr === "?"){
+        el.className = "card back";
+        el.innerHTML = `<div class="big">🂠</div>`;
+        return el;
+      }
+      const rank = cardStr.slice(0, -1);
+      const suit = cardStr.slice(-1);
+      el.className = "card" + (isRedSuit(cardStr) ? " red" : "");
+      el.innerHTML = `
+        <div class="r">${rank}</div>
+        <div class="s">${suit}</div>
+        <div class="big">${suit}</div>
+      `;
+      return el;
+    }
+
+    function setToast(kind, msg){
+      // kind: "ok" "warn" "danger" "info"
+      const color =
+        kind === "ok" ? "var(--ok)" :
+        kind === "danger" ? "var(--danger)" :
+        kind === "warn" ? "var(--warn)" :
+        "var(--text)";
+      ui.toast.innerHTML = `<strong style="color:${color}">${msg}</strong>`;
+    }
+
+    // ===== Engine bridge =====
+    let api = null;
+    let lastState = null;
 
     function seed64(){
       const a = new Uint32Array(2);
@@ -504,226 +802,136 @@
       return {lo: a[0] >>> 0, hi: a[1] >>> 0};
     }
 
-    function floorEven(x){
-      x = Number(x||0);
-      if (!Number.isFinite(x)) x = 0;
-      if (x < 0) x = 0;
-      return Math.floor(x/2)*2;
-    }
-
-    function fmtTime(ms){
-      ms = Math.max(0, ms|0);
-      const s = Math.ceil(ms/1000);
-      const m = Math.floor(s/60);
-      const r = s%60;
-      return `${m}:${String(r).padStart(2,"0")}`;
-    }
-
-    // ========= Engine API =========
-    let api = null;
-    let state = null;
-
-    // timer (JS drives timeLeftMs)
-    let sessionMs = 300000;
-    let startTickAt = 0;        // performance.now
-    let pausedAt = 0;
-    let pausedTotal = 0;
-    let tickHandle = null;
-    let lastTimePush = 0;
-
-    function rulesMaskFromUI(){
-      // C++側 RuleBits と一致
-      const RB_ALLOW_DOUBLE      = 1 << 0;
-      const RB_ALLOW_SPLIT       = 1 << 1;
-      const RB_ALLOW_SURRENDER   = 1 << 2;
-      const RB_ALLOW_INSURANCE   = 1 << 3;
-      const RB_ALLOW_EVEN_MONEY  = 1 << 4;
-      const RB_ALLOW_DAS         = 1 << 5;
-      const RB_SPLIT_BJ_AS_BJ    = 1 << 6;
-      const RB_DEALER_HIT_S17    = 1 << 7;
-
-      let m = 0;
-      if ($("optDouble").checked)   m |= RB_ALLOW_DOUBLE;
-      if ($("optSplit").checked)    m |= RB_ALLOW_SPLIT;
-      if ($("optSurrender").checked)m |= RB_ALLOW_SURRENDER;
-      if ($("optInsurance").checked)m |= RB_ALLOW_INSURANCE;
-      if ($("optEvenMoney").checked)m |= RB_ALLOW_EVEN_MONEY;
-      if ($("optDAS").checked)      m |= RB_ALLOW_DAS;
-      if ($("optSplitBJ").checked)  m |= RB_SPLIT_BJ_AS_BJ;
-      if ($("optH17").checked)      m |= RB_DEALER_HIT_S17;
-      return m >>> 0;
+    function readRulesMask(){
+      const bits = {
+        rDouble:  1 << 0,
+        rSplit:   1 << 1,
+        rSurrender: 1 << 2,
+        rIns:     1 << 3,
+        rEven:    1 << 4,
+        rDAS:     1 << 5,
+        rSplitBJ: 1 << 6,
+        rH17:     1 << 7,
+      };
+      let mask = 0;
+      for (const [id,bit] of Object.entries(bits)){
+        if ($(id).checked) mask |= bit;
+      }
+      return mask >>> 0;
     }
 
     function refresh(){
       const p = api.get_state_json();
       const s = Module.UTF8ToString(p);
       api.free_ptr(p);
-      state = JSON.parse(s);
-      render();
-      return state;
+
+      lastState = JSON.parse(s);
+      render(lastState);
     }
 
     function callAction(fnName, ...args){
       const rc = api[fnName](...args);
-      const st = refresh();
-      if (rc !== 0 || st.lastErrorCode !== 0){
-        if (st.lastError) toast(st.lastError);
-        console.warn("action", fnName, "rc=", rc, "err=", st.lastErrorCode, st.lastError);
+      refresh();
+      // エラー表示
+      if (rc !== 0 || lastState.lastErrorCode !== 0){
+        setToast("danger", `Error: ${lastState.lastError || "Unknown"} (code ${lastState.lastErrorCode})`);
+        console.warn("rc=", rc, "state=", lastState);
+      } else {
+        // 状況に応じてメッセージ
+        if (fnName === "deal") setToast("ok", "Dealt! さあ勝負。");
+        else if (fnName === "hit") setToast("info", "Hit!");
+        else if (fnName === "stand") setToast("info", "Stand.");
+        else if (fnName === "double_down") setToast("warn", "Double down!");
+        else if (fnName === "split") setToast("warn", "Split!");
+        else if (fnName === "surrender") setToast("warn", "Surrender… （半額戻る）");
+        else if (fnName === "set_bet") setToast("ok", `Bet set: ${lastState.baseBet}`);
+        else if (fnName === "start_session") setToast("ok", "Session started. Set bet → Deal!");
+        else if (fnName === "reset_session") setToast("info", "Reset.");
+        else if (fnName === "buy_insurance") setToast("info", "Insurance decided.");
+        else if (fnName === "take_even_money") setToast("ok", "Even money taken.");
+        else setToast("info", "OK");
       }
-      return rc;
     }
 
-    function goScreen(name){
-      $("screenTitle").classList.toggle("active", name==="title");
-      $("screenGame").classList.toggle("active", name==="game");
-    }
+    // ===== Render =====
+    function render(st){
+      ui.debug.textContent = JSON.stringify(st, null, 2);
 
-    function startTick(){
-      stopTick();
-      startTickAt = performance.now();
-      pausedTotal = 0;
-      pausedAt = 0;
-      lastTimePush = 0;
-      tickHandle = setInterval(()=>{
-        if (!state) return;
-        // paused phaseなら進めない
-        if (state.phase === "paused") return;
+      ui.bank.textContent = yen(st.bank);
+      ui.bet.textContent  = yen(st.baseBet);
+      ui.round.textContent = `${st.session.round}/${st.session.roundLimit}`;
+      ui.time.textContent = msToMMSS(st.session.timeLeftMs);
+      ui.streak.textContent = String(st.roundResult.streak);
 
-        const now = performance.now();
-        const elapsed = now - startTickAt - pausedTotal;
-        const left = Math.max(0, sessionMs - elapsed);
-        // C++へは1秒に1回くらいで十分
-        if (now - lastTimePush > 1000){
-          api.set_time_left_ms(left|0);
-          lastTimePush = now;
-          refresh();
-        } else {
-          // UIの表示用だけ更新（stateは次refreshで追従）
-          $("time").textContent = fmtTime(left|0);
-        }
-      }, 120);
-    }
+      ui.phase.textContent = st.phase;
+      ui.activeHand.textContent = String(st.player.activeHandIndex);
 
-    function stopTick(){
-      if (tickHandle){ clearInterval(tickHandle); tickHandle = null; }
-    }
+      ui.upcard.textContent = st.dealer.upcard || "-";
+      ui.dealerShown.textContent = String(st.dealer.scoreShown ?? 0);
+      ui.dealerTotal.textContent = st.dealer.holeKnown ? String(st.dealer.score ?? 0) : "??";
 
-    function pauseOn(){
-      if (!state) return;
-      callAction("set_paused", 1);
-      pausedAt = performance.now();
-      $("overlayPause").classList.add("show");
-    }
-    function pauseOff(){
-      if (!state) return;
-      if (pausedAt){
-        pausedTotal += performance.now() - pausedAt;
-        pausedAt = 0;
+      // Dealer cards
+      ui.dealerCards.innerHTML = "";
+      for (const c of st.dealer.cards){
+        ui.dealerCards.appendChild(makeCardEl(c));
       }
-      callAction("set_paused", 0);
-      $("overlayPause").classList.remove("show");
-    }
-
-    // ========= Hold to reset =========
-    let resetArmed = false;
-    let holdTimer = null;
-    let holdStart = 0;
-
-    function disarmReset(){
-      resetArmed = false;
-      $("btnReset").textContent = "Reset";
-      $("btnReset").classList.remove("danger");
-      if (holdTimer){ clearInterval(holdTimer); holdTimer = null; }
-    }
-
-    function armResetOnce(){
-      resetArmed = true;
-      $("btnReset").textContent = "Hold to reset";
-      $("btnReset").classList.add("danger");
-      toast("2秒長押しでリセット");
-      // 5秒で自動解除
-      setTimeout(()=>{ if (resetArmed) disarmReset(); }, 5000);
-    }
-
-    function doResetToTitle(){
-      stopTick();
-      disarmReset();
-      callAction("reset_session");
-      $("overlayPause").classList.remove("show");
-      $("overlayHow").classList.remove("show");
-      goScreen("title");
-      $("subLine").textContent = "ready.";
-      toast("Reset!");
-    }
-
-    // ========= Render =========
-    function render(){
-      if (!state) return;
-
-      $("subLine").textContent = `phase: ${state.phase}`;
-      $("bank").textContent = state.bank;
-      $("round").textContent = `${state.session.round}/${state.session.roundLimit}`;
-      $("time").textContent = fmtTime(state.session.timeLeftMs);
-
-      $("phaseBadge").textContent = state.phase;
-      $("rulesMini").textContent = [
-        state.rules.allowDouble ? "Dbl" : "",
-        state.rules.allowSplit ? "Spl" : "",
-        state.rules.allowSurrender ? "Sur" : "",
-        state.rules.allowInsurance ? "Ins" : "",
-        state.rules.allowEvenMoney ? "EM" : "",
-        state.rules.allowDAS ? "DAS" : "",
-        state.rules.splitBJAsBJ ? "SplitBJ" : "",
-        state.rules.dealerHitSoft17 ? "H17" : "S17"
-      ].filter(Boolean).join(" • ") || "-";
-
-      // Dealer
-      $("dealerScoreLine").textContent = ` (shown ${state.dealer.scoreShown} / total ${state.dealer.score})`;
-      $("dealerHole").textContent = state.dealer.holeKnown ? "hole open" : "hole hidden";
-
-      const dWrap = $("dealerCards");
-      dWrap.innerHTML = "";
-      (state.dealer.cards||[]).forEach((c, idx)=>{
-        const el = document.createElement("div");
-        if (c === "?") { el.className="cardBack"; }
-        else { el.className="cardFace"; el.textContent=c; }
-        dWrap.appendChild(el);
-      });
 
       // Player hands
-      const ph = $("playerHands");
-      ph.innerHTML = "";
-      const hands = (state.player && state.player.hands) ? state.player.hands : [];
-      hands.forEach((h, i)=>{
-        const box = document.createElement("div");
-        box.className = "handBox" + (i === state.player.activeHandIndex ? " active" : "");
-        const flags = [];
-        if (h.flags.blackjack) flags.push("BJ");
-        if (h.flags.bust) flags.push("BUST");
-        if (h.flags.doubled) flags.push("DBL");
-        if (h.flags.surrendered) flags.push("SUR");
-        if (h.flags.fromSplit) flags.push("SPLIT");
-        if (h.flags.splitAces) flags.push("A-SPLIT");
-        const badgeClass =
-          h.flags.blackjack ? "good" :
-          h.flags.bust ? "bad" :
-          h.flags.surrendered ? "bad" : "";
+      ui.playerHands.innerHTML = "";
+      const hands = st.player.hands || [];
+      hands.forEach((h, idx) => {
+        const wrap = document.createElement("div");
+        wrap.className = "hand" + (idx === st.player.activeHandIndex ? " active" : "");
+        const cards = document.createElement("div");
+        cards.className = "cards";
+        for (const c of h.cards){
+          cards.appendChild(makeCardEl(c));
+        }
 
-        box.innerHTML = `
-          <div class="row" style="justify-content:space-between;">
-            <div>
-              <b>Player ${hands.length>1 ? `Hand ${i+1}` : ""}</b>
-              <span class="muted"> score ${h.score} / bet ${h.bet}</span>
-            </div>
-            <div class="badge ${badgeClass}">${flags.length?flags.join(" • "):"playing"}</div>
-          </div>
-          <div class="cards">${(h.cards||[]).map(cc=>`<div class="cardFace">${cc}</div>`).join("")}</div>
+        const info = document.createElement("div");
+        info.className = "handInfo";
+
+        const flags = h.flags || {};
+        const status = [];
+        if (flags.blackjack) status.push("BJ");
+        if (flags.bust) status.push("BUST");
+        if (flags.doubled) status.push("DBL");
+        if (flags.surrendered) status.push("SRR");
+        if (flags.fromSplit) status.push("SPLIT");
+
+        info.innerHTML = `
+          <div class="kv">score <b>${h.score}</b></div>
+          <div class="kv">bet <b>${h.bet}</b></div>
+          <div class="kv">status <b>${status.length ? status.join(" / ") : "—"}</b></div>
         `;
-        ph.appendChild(box);
+
+        wrap.appendChild(cards);
+        wrap.appendChild(info);
+        ui.playerHands.appendChild(wrap);
       });
 
-      // Controls enable/disable from state.can
-      const can = state.can || {};
+      // Result banner
+      const isRoundOver = (st.phase === "roundOver" || st.phase === "sessionOver");
+      if (isRoundOver){
+        const p = st.roundResult.netProfit || 0;
+        ui.banner.classList.add("show");
+        ui.bannerProfit.textContent = `${p >= 0 ? "+" : ""}${p}`;
+        ui.bannerProfit.className = "profit " + (p > 0 ? "pos" : p < 0 ? "neg" : "zero");
+
+        let title = "ROUND OVER";
+        if (p > 0) title = "YOU WIN ✨";
+        else if (p < 0) title = "YOU LOSE…";
+        else title = "PUSH 🤝";
+        ui.bannerTitle.textContent = title;
+
+        ui.bannerBonus.textContent = String(st.roundResult.bonusPercent || 0);
+        ui.bannerBonusApplied.textContent = String(st.roundResult.bonusApplied || 0);
+      } else {
+        ui.banner.classList.remove("show");
+      }
+
+      // Buttons enable/disable from `can`
+      const can = st.can || {};
       $("btnDeal").disabled = !can.deal;
       $("btnHit").disabled = !can.hit;
       $("btnStand").disabled = !can.stand;
@@ -731,60 +939,95 @@
       $("btnSplit").disabled = !can.split;
       $("btnSurrender").disabled = !can.surrender;
 
-      // Insurance UI
-      const showIns = (state.phase === "offerInsurance");
-      $("insuranceBox").style.display = showIns ? "block" : "none";
-      $("btnInsBuy").disabled = !can.insurance;
-      $("btnInsNo").disabled = !can.insurance;
-      $("btnEvenMoney").disabled = !can.evenMoney;
-
+      // Insurance panel
+      const showIns = (st.phase === "offerInsurance");
+      ui.insurancePanel.style.display = showIns ? "" : "none";
       if (showIns){
-        $("insHint").textContent = `max ${state.insurance.max}`;
-        const a = $("insAmount");
-        a.max = state.insurance.max;
-        a.step = 2;
-        a.value = Math.min(Number(a.value||0), state.insurance.max);
+        ui.insMax.textContent = String(st.insurance.max || 0);
+        ui.insBet.textContent = String(st.insurance.bet || 0);
+        ui.insInput.max = String(st.insurance.max || 0);
+        $("btnEven").disabled = !can.evenMoney;
       }
 
-      // Round banner
-      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
-      $("roundBanner").style.display = isRoundOver ? "flex" : "none";
-      const net = state.roundResult.netProfit|0;
-      const msgEl = $("roundMsg");
-      const metaEl = $("roundMeta");
-      if (isRoundOver){
-        if (state.phase === "sessionOver"){
-          msgEl.textContent = "SESSION OVER";
-          msgEl.className = "msg neutral";
-        } else if (net > 0){
-          msgEl.textContent = `WIN +${net}`;
-          msgEl.className = "msg win";
-        } else if (net < 0){
-          msgEl.textContent = `LOSE ${net}`;
-          msgEl.className = "msg lose";
-        } else {
-          msgEl.textContent = "PUSH ±0";
-          msgEl.className = "msg neutral";
-        }
-        metaEl.textContent = `streak ${state.roundResult.streak} / bonus ${state.roundResult.bonusPercent}% (+${state.roundResult.bonusApplied})`;
+      // Toast auto message
+      if (st.lastErrorCode && st.lastError){
+        setToast("danger", `Error: ${st.lastError} (code ${st.lastErrorCode})`);
+      } else {
+        // phase guide
+        if (st.phase === "betting") setToast("info", "Bet を決めて → Deal!");
+        else if (st.phase === "inHand") setToast("ok", "Your move: Hit / Stand / Double / Surrender");
+        else if (st.phase === "offerInsurance") setToast("warn", "Insurance?（ディーラーA）");
+        else if (st.phase === "roundOver") setToast("info", "次のラウンドは Deal でOK（bet変えるなら set_bet）");
+        else if (st.phase === "sessionOver") setToast("danger", "Session Over. start_session で再開。");
+        else if (st.phase === "menu") setToast("info", "start_session から始めよう。");
       }
-
-      $("debugLine").textContent = `lastErrorCode=${state.lastErrorCode} lastError="${state.lastError || ""}"`;
-
-      // bet hint
-      const hint = $("betHint");
-      const v = floorEven($("betInput").value);
-      hint.textContent = `入力=${$("betInput").value} → 偶数化=${v}（min ${state.minBet} / max bank）`;
     }
 
-    // ========= Module (emscripten) =========
+    // ===== Wire UI =====
+    function evenize(n){ n = Number(n||0); if (!Number.isFinite(n)) n = 0; return Math.floor(n/2)*2; }
+
+    function addToBet(delta){
+      const inp = $("betInput");
+      if (delta <= -999999){
+        inp.value = 0;
+        return;
+      }
+      inp.value = Math.max(0, Number(inp.value||0) + delta);
+    }
+
+    document.querySelectorAll(".chip").forEach(el=>{
+      el.addEventListener("click", () => addToBet(Number(el.dataset.add)));
+    });
+
+    $("btnStart").addEventListener("click", () => {
+      const {lo,hi} = seed64();
+      const rulesMask = readRulesMask();
+      const sessionSeconds = Number($("sessSec").value || 300);
+      const roundLimit = Number($("roundLimit").value || 12);
+
+      callAction("start_session", lo, hi, rulesMask, sessionSeconds, roundLimit);
+
+      // start 直後に bet も反映（気持ちよさ重視）
+      const v = Number($("betInput").value || 0);
+      callAction("set_bet", v);
+    });
+
+    $("btnSetBet").addEventListener("click", () => {
+      const v = Number($("betInput").value || 0);
+      callAction("set_bet", v);
+      // UI側でも偶数に寄せて見せる（気持ちいい）
+      $("betInput").value = evenize(v);
+    });
+
+    $("btnDeal").addEventListener("click", ()=> callAction("deal"));
+    $("btnHit").addEventListener("click", ()=> callAction("hit"));
+    $("btnStand").addEventListener("click", ()=> callAction("stand"));
+    $("btnDouble").addEventListener("click", ()=> callAction("double_down"));
+    $("btnSplit").addEventListener("click", ()=> callAction("split"));
+    $("btnSurrender").addEventListener("click", ()=> callAction("surrender"));
+    $("btnReset").addEventListener("click", ()=> callAction("reset_session"));
+
+    $("btnBuyIns").addEventListener("click", ()=> {
+      const v = Number(ui.insInput.value || 0);
+      callAction("buy_insurance", v);
+    });
+    $("btnBuyIns0").addEventListener("click", ()=> callAction("buy_insurance", 0));
+    $("btnEven").addEventListener("click", ()=> callAction("take_even_money"));
+
+    // キーボード（中毒性アップ）
+    window.addEventListener("keydown", (e)=>{
+      if (!api || !lastState) return;
+      if (e.key === "h" || e.key === "H"){ if (!$("btnHit").disabled) callAction("hit"); }
+      if (e.key === "s" || e.key === "S"){ if (!$("btnStand").disabled) callAction("stand"); }
+      if (e.key === "d" || e.key === "D"){ if (!$("btnDouble").disabled) callAction("double_down"); }
+    });
+
+    // ===== Emscripten Module =====
     var Module = {
       onRuntimeInitialized: () => {
         api = {
           start_session: Module.cwrap('start_session', 'number', ['number','number','number','number','number']),
           reset_session: Module.cwrap('reset_session', 'number', []),
-          set_time_left_ms: Module.cwrap('set_time_left_ms', 'number', ['number']),
-          set_paused: Module.cwrap('set_paused', 'number', ['number']),
           set_bet: Module.cwrap('set_bet', 'number', ['number']),
           deal: Module.cwrap('deal', 'number', []),
           hit: Module.cwrap('hit', 'number', []),
@@ -798,127 +1041,13 @@
           free_ptr: Module.cwrap('free_ptr', null, ['number']),
         };
 
-        try { refresh(); } catch(e){ console.warn(e); }
-        $("subLine").textContent = "ready.";
-        toast("Engine ready");
+        setToast("ok", "Ready! start_session で開始。");
+        try { refresh(); } catch(e){ /* 初期はmenu想定 */ }
       }
     };
-
-    // ========= UI events =========
-    // Title chips
-    document.querySelectorAll('[data-add]').forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const cur = Number($("betInput").value||0);
-        $("betInput").value = cur + Number(btn.dataset.add);
-      });
-    });
-
-    document.querySelectorAll('[data-add2]').forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const cur = Number($("betInGame").value||0);
-        $("betInGame").value = cur + Number(btn.dataset.add2);
-      });
-    });
-
-    $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
-    $("btnHowPause").onclick = ()=> $("overlayHow").classList.add("show");
-    $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
-
-    $("btnPause").onclick = ()=>{
-      if (!state) return;
-      // ゲーム画面だけで有効
-      if ($("screenGame").classList.contains("active")){
-        pauseOn();
-      } else {
-        toast("ゲーム中に使えます");
-      }
-    };
-    $("btnClosePause").onclick = pauseOff;
-    $("btnContinue").onclick = pauseOff;
-    $("btnQuit").onclick = ()=> doResetToTitle();
-
-    // Reset: 1回タップでHoldモードへ、2秒長押しで実行
-    $("btnReset").addEventListener("click", ()=>{
-      if (!resetArmed) armResetOnce();
-    });
-
-    $("btnReset").addEventListener("pointerdown", ()=>{
-      if (!resetArmed) return;
-      holdStart = performance.now();
-      const btn = $("btnReset");
-      btn.textContent = "Holding...";
-      const wrap = document.createElement("div");
-      wrap.className = "prog";
-      const bar = document.createElement("div");
-      wrap.appendChild(bar);
-      btn.appendChild(wrap);
-
-      holdTimer = setInterval(()=>{
-        const t = performance.now() - holdStart;
-        const pct = Math.min(100, (t / 2000) * 100);
-        bar.style.width = pct + "%";
-        if (t >= 2000){
-          clearInterval(holdTimer); holdTimer=null;
-          doResetToTitle();
-        }
-      }, 30);
-    });
-
-    function cancelHold(){
-      if (holdTimer){ clearInterval(holdTimer); holdTimer = null; }
-      if (resetArmed){
-        $("btnReset").textContent = "Hold to reset";
-        $("btnReset").classList.add("danger");
-      }
-    }
-    $("btnReset").addEventListener("pointerup", cancelHold);
-    $("btnReset").addEventListener("pointerleave", cancelHold);
-    $("btnReset").addEventListener("pointercancel", cancelHold);
-
-    $("btnStart").onclick = ()=>{
-      if (!api){ toast("engine not ready"); return; }
-      const {lo,hi} = seed64();
-      const mask = rulesMaskFromUI();
-      sessionMs = 300000; // 5分（必要ならUI化）
-      const sessionSeconds = (sessionMs/1000)|0;
-      const roundLimit = 12;
-
-      callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
-
-      // set_bet（偶数化）
-      const bet = floorEven($("betInput").value);
-      $("betInGame").value = bet;
-      callAction("set_bet", bet);
-
-      goScreen("game");
-      startTick();
-      toast("Good luck!");
-    };
-
-    $("btnSetBet").onclick = ()=>{
-      const v = floorEven($("betInGame").value);
-      $("betInGame").value = v;
-      callAction("set_bet", v);
-    };
-
-    $("btnDeal").onclick = ()=> callAction("deal");
-    $("btnHit").onclick = ()=> callAction("hit");
-    $("btnStand").onclick = ()=> callAction("stand");
-    $("btnDouble").onclick = ()=> callAction("double_down");
-    $("btnSplit").onclick = ()=> callAction("split");
-    $("btnSurrender").onclick = ()=> callAction("surrender");
-
-    $("btnInsNo").onclick = ()=> callAction("buy_insurance", 0);
-    $("btnInsBuy").onclick = ()=>{
-      const v = floorEven($("insAmount").value);
-      $("insAmount").value = v;
-      callAction("buy_insurance", v);
-    };
-    $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
-
   </script>
 
-  <!-- build -->
+  <!-- v2 build (must be in same folder) -->
   <script src="blackjack_v2.js"></script>
 </body>
 </html>
