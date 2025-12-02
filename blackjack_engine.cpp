@@ -67,7 +67,7 @@ struct Rules {
   bool allowEvenMoney = true;
   bool allowDAS = true;
   bool splitBJAsBJ = true;
-  bool dealerHitSoft17 = true; // H17 固定
+  bool dealerHitSoft17 = true;
 };
 
 struct Card {
@@ -75,7 +75,6 @@ struct Card {
   uint8_t suit; // 0..3
 };
 
-// 10/J/Q/K は 10扱い、Aは 1（スコア計算で 11化する）
 static int point_value(const Card& c) {
   if (c.rank == 1) return 1;
   if (c.rank >= 10) return 10;
@@ -95,7 +94,7 @@ static bool is_blackjack_2cards(const vector<Card>& cards) {
 
 struct ScoreInfo {
   int total = 0;
-  bool soft = false; // Aを11として扱えている状態か
+  bool soft = false;
 };
 
 static ScoreInfo score_hand(const vector<Card>& cards) {
@@ -107,7 +106,6 @@ static ScoreInfo score_hand(const vector<Card>& cards) {
     if (c.rank == 1) aces++;
   }
   bool soft = false;
-  // Aを 11 化（+10）できる限り 1つだけ適用して soft
   if (aces > 0 && sum + 10 <= 21) {
     sum += 10;
     soft = true;
@@ -115,7 +113,7 @@ static ScoreInfo score_hand(const vector<Card>& cards) {
   return {sum, soft};
 }
 
-static const char* SUIT_UTF8[4] = { u8"♠", u8"♥", u8"♦", u8"♣" };
+static constexpr const char* SUIT_UTF8[4] = { "♠", "♥", "♦", "♣" };
 
 static string rank_str(uint8_t rank) {
   if (rank == 1) return "A";
@@ -125,14 +123,12 @@ static string rank_str(uint8_t rank) {
   return std::to_string((int)rank);
 }
 
-// "A♠" 形式
 static string card_str(const Card& c) {
   string r = rank_str(c.rank);
   string s = SUIT_UTF8[c.suit % 4];
   return r + s;
 }
 
-// JSON escape（最低限）
 static string json_escape(const string& in) {
   string o;
   o.reserve(in.size() + 8);
@@ -157,7 +153,7 @@ struct HandFlags {
   bool finished = false;
 
   bool fromSplit = false;
-  bool splitAces = false; // Aスプリット由来（特殊制約）
+  bool splitAces = false;
 };
 
 struct Hand {
@@ -195,7 +191,6 @@ struct Shoe {
     decks = decks_;
     cutSize = cutSize_;
     rng.seed((uint32_t)(seed ^ (seed >> 32)));
-
     rebuild_and_shuffle();
   }
 
@@ -212,8 +207,6 @@ struct Shoe {
     std::shuffle(cards.begin(), cards.end(), rng);
   }
 
-  // 仕様：リシャッフルは「次のdeal開始前」が基本
-  // 安全策：空なら再構築して引く（異常回避）
   Card draw() {
     if (cards.empty()) {
       rebuild_and_shuffle();
@@ -227,13 +220,10 @@ struct Shoe {
 };
 
 struct Engine {
-  // 固定
   int schemaVersion = 1;
 
-  // ルール
   Rules rules{};
 
-  // セッション
   int bank = 1000;
   int minBet = 10;
   int baseBet = 10;
@@ -244,16 +234,14 @@ struct Engine {
   int sessionMs = 300000;
   int timeLeftMs = 300000;
 
-  // 6デッキ, cut 25%
   Shoe shoe{};
 
-  // ラウンド
   Phase phase = Phase::MENU;
   Phase phaseBeforePause = Phase::MENU;
 
   vector<Card> dealer;
   bool dealerHoleKnown = false;
-  bool dealerPeekNoBJ = false; // Late Surrender許可の要件に使用（peek後にtrue）
+  bool dealerPeekNoBJ = false;
 
   vector<Hand> hands;
   int activeHandIndex = 0;
@@ -261,10 +249,8 @@ struct Engine {
   InsuranceState ins{};
   RoundResult rr{};
 
-  // 差分計算用
   int bankAtRoundStart = 1000;
 
-  // エラー
   int lastErrorCode = 0;
   string lastError;
 
@@ -282,19 +268,17 @@ struct Engine {
     return (timeLeftMs <= 0) || (round >= roundLimit);
   }
 
-  void set_phase(Phase p) {
-    phase = p;
-  }
+  void set_phase(Phase p) { phase = p; }
 
   void apply_rules_mask(uint32_t mask) {
-    rules.allowDouble    = (mask & RB_ALLOW_DOUBLE) != 0;
-    rules.allowSplit     = (mask & RB_ALLOW_SPLIT) != 0;
-    rules.allowSurrender = (mask & RB_ALLOW_SURRENDER) != 0;
-    rules.allowInsurance = (mask & RB_ALLOW_INSURANCE) != 0;
-    rules.allowEvenMoney = (mask & RB_ALLOW_EVEN_MONEY) != 0;
-    rules.allowDAS       = (mask & RB_ALLOW_DAS) != 0;
-    rules.splitBJAsBJ    = (mask & RB_SPLIT_BJ_AS_BJ) != 0;
-    rules.dealerHitSoft17= (mask & RB_DEALER_HIT_S17) != 0;
+    rules.allowDouble     = (mask & RB_ALLOW_DOUBLE) != 0;
+    rules.allowSplit      = (mask & RB_ALLOW_SPLIT) != 0;
+    rules.allowSurrender  = (mask & RB_ALLOW_SURRENDER) != 0;
+    rules.allowInsurance  = (mask & RB_ALLOW_INSURANCE) != 0;
+    rules.allowEvenMoney  = (mask & RB_ALLOW_EVEN_MONEY) != 0;
+    rules.allowDAS        = (mask & RB_ALLOW_DAS) != 0;
+    rules.splitBJAsBJ     = (mask & RB_SPLIT_BJ_AS_BJ) != 0;
+    rules.dealerHitSoft17 = (mask & RB_DEALER_HIT_S17) != 0;
   }
 
   void reset_round_state() {
@@ -320,7 +304,6 @@ struct Engine {
     h.flags.bust = (h.score > 21);
     h.flags.blackjack = is_blackjack_2cards(h.cards);
     if (h.flags.bust) h.flags.finished = true;
-    // 21に到達したら自動でその手は終了扱い（テンポ重視）
     if (!h.flags.bust && h.score == 21) {
       h.flags.finished = true;
     }
@@ -334,7 +317,6 @@ struct Engine {
     return is_blackjack_2cards(dealer);
   }
 
-  // upcardがA or 10値のときだけ peek が意味を持つ
   bool should_peek() const {
     if (dealer.empty()) return false;
     const Card& up = dealer[0];
@@ -355,19 +337,17 @@ struct Engine {
     }
   }
 
-  // ボーナス：勝ちラウンド（netProfit>0）の「利益」に +5%×k（上限25%）
-  // ここでは勝利確定後、profitBeforeBonus を基準に floor で加算
   int apply_streak_bonus_if_needed(int profitBeforeBonus) {
     rr.bonusPercent = 0;
     rr.bonusApplied = 0;
 
     if (profitBeforeBonus <= 0) return profitBeforeBonus;
 
-    int nextK = rr.streak + 1;             // “この勝利で何連勝目か”
-    if (nextK > 5) nextK = 5;              // 5で25%上限
-    int percent = 5 * nextK;               // 5%,10%,...,25%
+    int nextK = rr.streak + 1;
+    if (nextK > 5) nextK = 5;
+    int percent = 5 * nextK;
 
-    int bonus = (profitBeforeBonus * percent) / 100; // floor
+    int bonus = (profitBeforeBonus * percent) / 100;
     if (bonus > 0) bank += bonus;
 
     rr.bonusPercent = percent;
@@ -384,33 +364,33 @@ struct Engine {
       if (rr.streak > 9999) rr.streak = 9999;
     } else if (netProfitAfterBonus < 0) {
       rr.streak = 0;
-    } // ==0 は維持
+    }
   }
 
-  void settle_all_hands_and_finish_round() {
-    dealer_play();
-    update_all_caches(); // player
+  // ★ここが今回の肝：skipDealerDraw つき（デフォルト false）
+  void settle_all_hands_and_finish_round(bool skipDealerDraw = false) {
+    if (skipDealerDraw) {
+      dealerHoleKnown = true; // 追加ドロー無しでもホールカードは公開してOK
+    } else {
+      dealer_play();
+    }
+
+    update_all_caches();
 
     ScoreInfo dsc = score_hand(dealer);
     bool dealerBust = (dsc.total > 21);
     bool dealerBJ = is_blackjack_2cards(dealer);
 
-    // handごと精算（betはdeal時に bank から引いてある前提）
     for (auto &h : hands) {
       if (h.flags.surrendered) {
-        // surrender時に返金済みの設計にする（ここで二重処理しない）
-        continue;
+        continue; // surrender時に返金済み（ここで二重処理しない）
       }
-      if (h.flags.bust) {
-        continue; // 失うだけ
-      }
+      if (h.flags.bust) continue;
 
-      // BJ優先（split手でもBJ扱い）
       if (h.flags.blackjack) {
         if (dealerBJ) {
-          bank += h.bet; // push（掛け金返却）
+          bank += h.bet;
         } else {
-          // 3:2 → 合計 2.5x を返す（betは偶数）
           bank += (h.bet * 5) / 2;
         }
         continue;
@@ -426,7 +406,6 @@ struct Engine {
 
       if (p > d) bank += h.bet * 2;
       else if (p == d) bank += h.bet;
-      else continue;
     }
 
     int profitBeforeBonus = bank - bankAtRoundStart;
@@ -435,9 +414,25 @@ struct Engine {
 
     set_phase(Phase::ROUND_OVER);
 
-    // ラウンド加算：deal() = 1ラウンド
     round += 1;
     if (session_over()) set_phase(Phase::SESSION_OVER);
+  }
+
+  // ★ここも skipDealerDraw をデフォルト false で受けて、最後に伝搬
+  void advance_to_next_hand_or_settle(bool skipDealerDraw = false) {
+    for (int i = activeHandIndex + 1; i < (int)hands.size(); i++) {
+      if (!hands[(size_t)i].flags.finished) {
+        activeHandIndex = i;
+        return;
+      }
+    }
+    for (int i = 0; i < (int)hands.size(); i++) {
+      if (!hands[(size_t)i].flags.finished) {
+        activeHandIndex = i;
+        return;
+      }
+    }
+    settle_all_hands_and_finish_round(skipDealerDraw);
   }
 
   // ===== Actions =====
@@ -455,7 +450,6 @@ struct Engine {
     bank = 1000;
     baseBet = minBet;
 
-    // 6 decks / 25% cut
     shoe.init(seed, 6, 78);
 
     rr.streak = 0;
@@ -492,14 +486,11 @@ struct Engine {
       }
       return OK;
     } else {
-      if (phase == Phase::PAUSED) {
-        set_phase(phaseBeforePause);
-      }
+      if (phase == Phase::PAUSED) set_phase(phaseBeforePause);
       return OK;
     }
   }
 
-  // 偶数制限：floor to even
   static int floor_to_even(int x) {
     if (x < 0) x = 0;
     return (x / 2) * 2;
@@ -522,10 +513,7 @@ struct Engine {
     return OK;
   }
 
-  // split比較用：同“点数”でOK（10/J/Q/Kは全部10）
-  static int split_value(const Card& c) {
-    return point_value(c);
-  }
+  static int split_value(const Card& c) { return point_value(c); }
 
   void init_single_hand_bet(int bet, bool fromSplit=false, bool splitAces=false) {
     Hand h;
@@ -550,7 +538,6 @@ struct Engine {
     if (baseBet % 2 != 0) return set_error(INVALID_BET, "baseBet must be even");
     if (bank < baseBet) return set_error(INSUFFICIENT_FUNDS, "Not enough bank for bet");
 
-    // cut card：次のdeal前にだけ交換（仕様）
     if (shoe.size() <= shoe.cutSize) {
       shoe.rebuild_and_shuffle();
     }
@@ -558,11 +545,9 @@ struct Engine {
     reset_round_state();
     bankAtRoundStart = bank;
 
-    // 1ハンド作成＆ベット差し引き
     bank -= baseBet;
     init_single_hand_bet(baseBet, false, false);
 
-    // 初期配り
     hands[0].cards.push_back(shoe.draw());
     dealer.push_back(shoe.draw());
     hands[0].cards.push_back(shoe.draw());
@@ -570,30 +555,26 @@ struct Engine {
 
     update_all_caches();
 
-    // peek条件
     bool peek = should_peek();
     bool upIsAce = (!dealer.empty() && dealer[0].rank == 1);
     bool upIsTen = (!dealer.empty() && point_value(dealer[0]) == 10);
 
-    // upcardがAなら insurance提示（ONなら）
     if (upIsAce && rules.allowInsurance) {
       ins.offered = true;
-      ins.max = baseBet / 2; // baseBetは偶数
+      ins.max = baseBet / 2;
       ins.bet = 0;
       ins.evenMoneyOffered = (rules.allowEvenMoney && hands[0].flags.blackjack);
       ins.evenMoneyTaken = false;
 
       dealerHoleKnown = false;
-      dealerPeekNoBJ = false; // peekはこの後（選択後）
+      dealerPeekNoBJ = false;
 
       set_phase(Phase::OFFER_INSURANCE);
       return OK;
     }
 
-    // A以外：10値なら即peekしてBJなら即終了（保険は出さない）
     if (upIsTen && peek && dealer_has_blackjack_now()) {
       dealerHoleKnown = true;
-      // プレイヤーBJならpush、それ以外は負け
       if (hands[0].flags.blackjack) {
         bank += hands[0].bet;
       }
@@ -606,12 +587,11 @@ struct Engine {
       return OK;
     }
 
-    dealerPeekNoBJ = true; // upcardがA/10でないならBJは成立しないので “peek済み扱い”
+    dealerPeekNoBJ = true;
 
-    // プレイヤーBJなら即精算（ディーラーBJは上のpeekで否定済み）
     if (hands[0].flags.blackjack) {
       dealerHoleKnown = false;
-      bank += (hands[0].bet * 5) / 2; // 3:2
+      bank += (hands[0].bet * 5) / 2;
       int profitBeforeBonus = bank - bankAtRoundStart;
       int profitAfterBonus = apply_streak_bonus_if_needed(profitBeforeBonus);
       finalize_round_and_update_streak(profitAfterBonus);
@@ -625,20 +605,42 @@ struct Engine {
     return OK;
   }
 
-  // OFFER_INSURANCE を確定し、peek→必要なら即終了
+  int next_round() {
+  if (phase == Phase::PAUSED) return set_error(INVALID_STATE, "Paused");
+  if (phase != Phase::ROUND_OVER) return set_error(INVALID_STATE, "Not in roundOver");
+  clear_error();
+
+  if (session_over()) {
+    set_phase(Phase::SESSION_OVER);
+    return set_error(INVALID_STATE, "Session over");
+  }
+
+  // 次ラウンド開始準備（bank/ルール/連勝は維持）
+  dealer.clear();
+  dealerHoleKnown = false;
+  dealerPeekNoBJ = false;
+
+  hands.clear();
+  activeHandIndex = 0;
+
+  ins = InsuranceState{};
+  // roundResult は表示に残したいならここでは消さない（おすすめ）
+  // rr.netProfit = rr.bonusPercent = rr.bonusApplied = 0; ←消したいならこれ
+
+  set_phase(Phase::BETTING);
+  return OK;
+}
+
   int resolve_insurance_and_continue(bool evenMoneyTaken) {
-    // dealer peek
     bool dealerBJ = dealer_has_blackjack_now();
-    dealerHoleKnown = dealerBJ; // BJなら公開
+    dealerHoleKnown = dealerBJ;
     dealerPeekNoBJ = !dealerBJ;
 
-    // Insurance精算（betは買った時点でbankから引いてある）
     if (dealerBJ && ins.bet > 0) {
-      bank += ins.bet * 3; // 2:1 + bet返却 => 合計3倍
+      bank += ins.bet * 3;
     }
-    // dealerBJならメイン精算して終了
+
     if (dealerBJ) {
-      // player BJならpush、それ以外は負け（betは既に引いてあるので戻すだけ）
       if (!hands.empty() && hands[0].flags.blackjack) {
         bank += hands[0].bet;
       }
@@ -651,10 +653,7 @@ struct Engine {
       return OK;
     }
 
-    // dealerがBJでないなら、player BJはここで即精算して終了
     if (!hands.empty() && hands[0].flags.blackjack) {
-      // Even Money を取っても、内部は insurance(bet/2) 購入扱いなので
-      // (BJ 3:2) - (insurance) = net +bet になり自然に一致
       bank += (hands[0].bet * 5) / 2;
       int profitBeforeBonus = bank - bankAtRoundStart;
       int profitAfterBonus = apply_streak_bonus_if_needed(profitBeforeBonus);
@@ -682,7 +681,6 @@ struct Engine {
     ins.bet = amount;
     if (amount > 0) bank -= amount;
 
-    // amount=0 は「保険を買わない」
     ins.evenMoneyTaken = false;
     return resolve_insurance_and_continue(false);
   }
@@ -693,7 +691,7 @@ struct Engine {
     clear_error();
 
     if (!ins.evenMoneyOffered) return set_error(NOT_SUPPORTED, "Even Money not offered");
-    int amount = ins.max; // bet/2
+    int amount = ins.max;
     if (bank < amount) return set_error(INSUFFICIENT_FUNDS, "Not enough bank for even money");
     ins.bet = amount;
     bank -= amount;
@@ -705,30 +703,6 @@ struct Engine {
     if (hands.empty()) return nullptr;
     if (activeHandIndex < 0 || activeHandIndex >= (int)hands.size()) return nullptr;
     return &hands[(size_t)activeHandIndex];
-  }
-
-  bool all_hands_finished() const {
-    for (auto &h : hands) if (!h.flags.finished) return false;
-    return true;
-  }
-
-  void advance_to_next_hand_or_settle() {
-    // 次の未finishedへ
-    for (int i = activeHandIndex + 1; i < (int)hands.size(); i++) {
-      if (!hands[(size_t)i].flags.finished) {
-        activeHandIndex = i;
-        return;
-      }
-    }
-    // 前方にも未finishedがあるかもしれない（安全）
-    for (int i = 0; i < (int)hands.size(); i++) {
-      if (!hands[(size_t)i].flags.finished) {
-        activeHandIndex = i;
-        return;
-      }
-    }
-    // 全部終わってたら精算
-    settle_all_hands_and_finish_round();
   }
 
   int hit() {
@@ -748,7 +722,7 @@ struct Engine {
     update_hand_cache(*h);
 
     if (h->flags.finished) {
-      advance_to_next_hand_or_settle();
+      advance_to_next_hand_or_settle(); // ★引数なしでOK
     }
     return OK;
   }
@@ -764,7 +738,7 @@ struct Engine {
     update_hand_cache(*h);
     h->flags.finished = true;
 
-    advance_to_next_hand_or_settle();
+    advance_to_next_hand_or_settle(); // ★引数なしでOK
     return OK;
   }
 
@@ -779,19 +753,19 @@ struct Engine {
     Hand* h = active_hand();
     if (!h) return set_error(INTERNAL_ERROR, "No active hand");
 
-    // split後は不可
     if (h->flags.fromSplit) return set_error(INVALID_STATE, "No surrender after split");
-    // 最初の2枚のみ
     if (h->cards.size() != 2) return set_error(INVALID_STATE, "Surrender only on first 2 cards");
     if (h->flags.blackjack) return set_error(INVALID_STATE, "Already blackjack");
 
     h->flags.surrendered = true;
     h->flags.finished = true;
 
-    // bet は既に引いてあるので、半分返す
-    bank += h->bet / 2;
+    bank += h->bet / 2; // 半額返金
 
-    advance_to_next_hand_or_settle();
+    // 追加ドロー無し（ホール公開OK）
+    dealerHoleKnown = true;
+    advance_to_next_hand_or_settle(true); // ★ここだけ true
+
     return OK;
   }
 
@@ -814,10 +788,9 @@ struct Engine {
 
     if (bank < h->bet) return set_error(INSUFFICIENT_FUNDS, "Not enough bank for double");
     bank -= h->bet;
-    h->bet += h->bet; // 同額追加
+    h->bet += h->bet;
     h->flags.doubled = true;
 
-    // 1枚だけ引いて強制終了
     h->cards.push_back(shoe.draw());
     update_hand_cache(*h);
     h->flags.finished = true;
@@ -841,52 +814,42 @@ struct Engine {
     if (h->flags.finished || h->flags.blackjack || h->flags.surrendered) return set_error(INVALID_STATE, "Cannot split now");
     if (h->cards.size() != 2) return set_error(INVALID_STATE, "Split only on first 2 cards");
 
-    // Aの再スプリット不可：splitAces由来の手ならさらにsplit不可
     if (h->flags.splitAces) return set_error(INVALID_STATE, "No resplit aces");
 
     int v0 = split_value(h->cards[0]);
     int v1 = split_value(h->cards[1]);
     if (v0 != v1) return set_error(INVALID_STATE, "Cards not same value");
 
-    // 追加ベットが必要
     if (bank < h->bet) return set_error(INSUFFICIENT_FUNDS, "Not enough bank for split");
     bank -= h->bet;
 
-    // 2枚目を新ハンドへ移動
     Card second = h->cards[1];
     h->cards.pop_back();
 
     bool splittingAces = (h->cards[0].rank == 1 && second.rank == 1);
 
-    // 新ハンド作成
     Hand h2;
     h2.bet = h->bet;
     h2.flags.fromSplit = true;
     h2.flags.splitAces = splittingAces;
 
-    // もともとの手も split扱い
     h->flags.fromSplit = true;
     h->flags.splitAces = splittingAces;
 
     h2.cards.push_back(second);
 
-    // split後は各手に1枚ずつ配る（テンポ良＆UI簡単）
     h->cards.push_back(shoe.draw());
     h2.cards.push_back(shoe.draw());
 
-    // Aスプリットは「1枚で終了」
     if (splittingAces) {
       h->flags.finished = true;
       h2.flags.finished = true;
     }
 
-    // handsに挿入（activeの次に置く）
     hands.insert(hands.begin() + (activeHandIndex + 1), h2);
 
-    // 캐ッシュ更新
     update_all_caches();
 
-    // ブラックジャック扱い：2枚で21ならBJとして終了（splitBJAsBJ=true想定）
     for (auto &hh : hands) {
       update_hand_cache(hh);
       if (rules.splitBJAsBJ && hh.flags.fromSplit && hh.flags.blackjack) {
@@ -894,7 +857,6 @@ struct Engine {
       }
     }
 
-    // もしアクティブがすでにfinishedなら次へ
     if (active_hand() && active_hand()->flags.finished) {
       advance_to_next_hand_or_settle();
     }
@@ -921,7 +883,6 @@ struct Engine {
     return s;
   }
 
-  // canXXX は毎回ここで計算する（C++が真実）
   bool can_deal() const {
     if (phase == Phase::PAUSED) return false;
     if (!(phase == Phase::BETTING || phase == Phase::ROUND_OVER)) return false;
@@ -971,7 +932,7 @@ struct Engine {
     const Hand& h = hands[(size_t)activeHandIndex];
     if (h.flags.finished || h.flags.surrendered || h.flags.blackjack) return false;
     if (h.cards.size() != 2) return false;
-    if (h.flags.splitAces) return false; // resplit acesなし
+    if (h.flags.splitAces) return false;
     if (bank < h.bet) return false;
     int v0 = split_value(h.cards[0]);
     int v1 = split_value(h.cards[1]);
@@ -981,7 +942,7 @@ struct Engine {
   bool can_surrender() const {
     if (phase != Phase::IN_HAND) return false;
     if (!rules.allowSurrender) return false;
-    if (!dealerPeekNoBJ) return false; // Late
+    if (!dealerPeekNoBJ) return false;
     if (hands.empty()) return false;
     const Hand& h = hands[(size_t)activeHandIndex];
     if (h.flags.fromSplit) return false;
@@ -993,18 +954,18 @@ struct Engine {
   string get_state_json() {
     update_all_caches();
 
-    // dealer score
     ScoreInfo dsc = score_hand(dealer);
 
-    // 表示用：hole隠しなら2枚目は "?"
-    bool hideHole = (!dealerHoleKnown && dealer.size() >= 2 && (phase == Phase::IN_HAND || phase == Phase::OFFER_INSURANCE));
+    bool hideHole =
+      (!dealerHoleKnown && dealer.size() >= 2 &&
+       (phase == Phase::IN_HAND || phase == Phase::OFFER_INSURANCE));
+
     int shownScore = 0;
     if (!dealer.empty()) {
       vector<Card> upOnly{dealer[0]};
       shownScore = score_hand(upOnly).total;
     }
 
-    // player hands JSON
     string handsJson = "[";
     for (size_t i = 0; i < hands.size(); i++) {
       if (i) handsJson += ",";
@@ -1033,7 +994,6 @@ struct Engine {
     }
     handsJson += "]";
 
-    // rules JSON（UIがトグル状態を復元できるように）
     string rulesJson = "{";
     rulesJson += "\"allowDouble\":" + json_bool(rules.allowDouble) + ",";
     rulesJson += "\"allowSplit\":" + json_bool(rules.allowSplit) + ",";
@@ -1057,7 +1017,6 @@ struct Engine {
     canJson += "\"nextRound\":" + json_bool(phase == Phase::ROUND_OVER && !session_over());
     canJson += "}";
 
-    // roundResult
     string rrJson = "{";
     rrJson += "\"netProfit\":" + std::to_string(rr.netProfit) + ",";
     rrJson += "\"streak\":" + std::to_string(rr.streak) + ",";
@@ -1072,7 +1031,6 @@ struct Engine {
     insJson += "\"evenMoneyOffered\":" + json_bool(phase == Phase::OFFER_INSURANCE && ins.evenMoneyOffered);
     insJson += "}";
 
-    // shoe
     string shoeJson = "{";
     shoeJson += "\"decks\":" + std::to_string(shoe.decks) + ",";
     shoeJson += "\"deckSize\":" + std::to_string(shoe.size()) + ",";
@@ -1080,7 +1038,6 @@ struct Engine {
     shoeJson += "\"reshuffleSoon\":" + json_bool(shoe.size() <= shoe.cutSize);
     shoeJson += "}";
 
-    // session
     string sessJson = "{";
     sessJson += "\"round\":" + std::to_string(round) + ",";
     sessJson += "\"roundLimit\":" + std::to_string(roundLimit) + ",";
@@ -1107,7 +1064,7 @@ struct Engine {
     s += "\"bank\":" + std::to_string(bank) + ",";
     s += "\"baseBet\":" + std::to_string(baseBet) + ",";
     s += "\"minBet\":" + std::to_string(minBet) + ",";
-    s += "\"maxBet\":" + std::to_string(bank) + ","; // maxはbankまで
+    s += "\"maxBet\":" + std::to_string(bank) + ",";
     s += "\"session\":" + sessJson + ",";
     s += "\"shoe\":" + shoeJson + ",";
     s += "\"dealer\":" + dealerJson + ",";
@@ -1127,7 +1084,6 @@ static Engine g;
 
 } // namespace bj
 
-// ===== Export C API =====
 extern "C" {
 
 EMSCRIPTEN_KEEPALIVE
@@ -1137,63 +1093,44 @@ int start_session(uint32_t seedLo, uint32_t seedHi, uint32_t rulesMask, int sess
 }
 
 EMSCRIPTEN_KEEPALIVE
-int reset_session() {
-  return bj::g.reset_session();
-}
+int reset_session() { return bj::g.reset_session(); }
 
 EMSCRIPTEN_KEEPALIVE
-int set_time_left_ms(int ms) {
-  return bj::g.set_time_left_ms(ms);
-}
+int set_time_left_ms(int ms) { return bj::g.set_time_left_ms(ms); }
 
 EMSCRIPTEN_KEEPALIVE
-int set_paused(int paused01) {
-  return bj::g.set_paused(paused01);
-}
+int set_paused(int paused01) { return bj::g.set_paused(paused01); }
 
 EMSCRIPTEN_KEEPALIVE
-int set_bet(int amount) {
-  return bj::g.set_bet(amount);
-}
+int set_bet(int amount) { return bj::g.set_bet(amount); }
 
 EMSCRIPTEN_KEEPALIVE
-int deal() {
-  return bj::g.deal();
-}
+int deal() { return bj::g.deal(); }
 
 EMSCRIPTEN_KEEPALIVE
-int hit() {
-  return bj::g.hit();
-}
+int hit() { return bj::g.hit(); }
 
 EMSCRIPTEN_KEEPALIVE
-int stand() {
-  return bj::g.stand();
-}
+int stand() { return bj::g.stand(); }
 
 EMSCRIPTEN_KEEPALIVE
-int double_down() {
-  return bj::g.double_down();
-}
+int double_down() { return bj::g.double_down(); }
 
 EMSCRIPTEN_KEEPALIVE
-int split() {
-  return bj::g.split();
-}
+int split() { return bj::g.split(); }
 
 EMSCRIPTEN_KEEPALIVE
-int surrender() {
-  return bj::g.surrender();
-}
+int surrender() { return bj::g.surrender(); }
 
 EMSCRIPTEN_KEEPALIVE
-int buy_insurance(int amount) {
-  return bj::g.buy_insurance(amount);
-}
+int buy_insurance(int amount) { return bj::g.buy_insurance(amount); }
 
 EMSCRIPTEN_KEEPALIVE
-int take_even_money() {
-  return bj::g.take_even_money();
+int take_even_money() { return bj::g.take_even_money(); }
+
+EMSCRIPTEN_KEEPALIVE
+int next_round() {
+  return bj::g.next_round();
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -1205,8 +1142,6 @@ char* get_state_json() {
 }
 
 EMSCRIPTEN_KEEPALIVE
-void free_ptr(char* p) {
-  std::free(p);
-}
+void free_ptr(char* p) { std::free(p); }
 
 } // extern "C"
