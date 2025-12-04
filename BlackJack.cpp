@@ -337,7 +337,25 @@ struct Engine {
     }
   }
 
-  int apply_streak_bonus_if_needed(int profitBeforeBonus) {
+  // int apply_streak_bonus_if_needed(int profitBeforeBonus) {
+  //   rr.bonusPercent = 0;
+  //   rr.bonusApplied = 0;
+
+  //   if (profitBeforeBonus <= 0) return profitBeforeBonus;
+
+  //   int nextK = rr.streak + 1;
+  //   if (nextK > 5) nextK = 5;
+  //   int percent = 5 * nextK;
+
+  //   int bonus = (profitBeforeBonus * percent) / 100;
+  //   if (bonus > 0) bank += bonus;
+
+  //   rr.bonusPercent = percent;
+  //   rr.bonusApplied = bonus;
+
+  //   return profitBeforeBonus + bonus;
+  // }
+    int apply_streak_bonus_if_needed(int profitBeforeBonus) {
     // v2 では連勝ボーナス機能はいったん無効化する
     // （今は素の勝ち負けだけをテストで固める）
     rr.bonusPercent = 0;
