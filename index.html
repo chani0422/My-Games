@@ -339,7 +339,8 @@
             <div class="opt"><label><input type="checkbox" id="optInsurance" checked> Insurance</label></div>
             <div class="opt"><label><input type="checkbox" id="optEvenMoney" checked> Even Money</label></div>
             <div class="opt"><label><input type="checkbox" id="optDAS" checked> DAS (Double after split)</label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> Split BJ as BJ</label></div>
+            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> Split BJ as 
+            </label></div>
             <div class="opt"><label><input type="checkbox" id="optH17" checked> Dealer hits Soft 17</label></div>
           </div>
 
@@ -521,9 +522,9 @@
       return `${m}:${String(r).padStart(2,"0")}`;
     }
 
-    // ========= Engine API =========
-    let api = null;
-    let state = null;
+    // ========= Engine bjApi =========
+    //let bjApi = null;
+    //let state = null;
 
     // timer (JS drives timeLeftMs)
     let sessionMs = 300000;
@@ -556,17 +557,19 @@
       return m >>> 0;
     }
 
-    function refresh(){
-      const p = api.get_state_json();
-      const s = Module.UTF8ToString(p);
-      api.free_ptr(p);
-      state = JSON.parse(s);
-      render();
-      return state;
-    }
+function refresh(){
+  if (!bjApi) return;
+  const p = bjApi.get_state_json();
+  const s = Engine.UTF8ToString(p);
+  bjApi.free_ptr(p);
+  state = JSON.parse(s);
+  render();
+  return state;
+}
+
 
     function callAction(fnName, ...args){
-      const rc = api[fnName](...args);
+      const rc = bjApi[fnName](...args);
       const st = refresh();
       if (rc !== 0 || st.lastErrorCode !== 0){
         if (st.lastError) toast(st.lastError);
@@ -596,7 +599,7 @@
         const left = Math.max(0, sessionMs - elapsed);
         // C++へは1秒に1回くらいで十分
         if (now - lastTimePush > 1000){
-          api.set_time_left_ms(left|0);
+          bjApi.set_time_left_ms(left|0);
           lastTimePush = now;
           refresh();
         } else {
@@ -780,32 +783,6 @@
     }
 
     // ========= Module (emscripten) =========
-    //engine not readyが出続ける問題を解決するためコメントアウトしました。
-    // var Module = {
-    //   onRuntimeInitialized: () => {
-    //     api = {
-    //       start_session: Module.cwrap('start_session', 'number', ['number','number','number','number','number']),
-    //       reset_session: Module.cwrap('reset_session', 'number', []),
-    //       set_time_left_ms: Module.cwrap('set_time_left_ms', 'number', ['number']),
-    //       set_paused: Module.cwrap('set_paused', 'number', ['number']),
-    //       set_bet: Module.cwrap('set_bet', 'number', ['number']),
-    //       deal: Module.cwrap('deal', 'number', []),
-    //       hit: Module.cwrap('hit', 'number', []),
-    //       stand: Module.cwrap('stand', 'number', []),
-    //       double_down: Module.cwrap('double_down', 'number', []),
-    //       split: Module.cwrap('split', 'number', []),
-    //       surrender: Module.cwrap('surrender', 'number', []),
-    //       buy_insurance: Module.cwrap('buy_insurance', 'number', ['number']),
-    //       take_even_money: Module.cwrap('take_even_money', 'number', []),
-    //       get_state_json: Module.cwrap('get_state_json', 'number', []),
-    //       free_ptr: Module.cwrap('free_ptr', null, ['number']),
-    //     };
-
-    //     try { refresh(); } catch(e){ console.warn(e); }
-    //     $("subLine").textContent = "ready.";
-    //     toast("Engine ready");
-    //   }
-    // };
 
     // ========= UI events =========
     // Title chips
@@ -878,25 +855,29 @@
     $("btnReset").addEventListener("pointerleave", cancelHold);
     $("btnReset").addEventListener("pointercancel", cancelHold);
 
-    $("btnStart").onclick = ()=>{
-      if (!api){ toast("engine not ready"); return; }
-      const {lo,hi} = seed64();
-      const mask = rulesMaskFromUI();
-      sessionMs = 300000; // 5分（必要ならUI化）
-      const sessionSeconds = (sessionMs/1000)|0;
-      const roundLimit = 12;
+$("btnStart").onclick = () => {
+  if (!engineReady || !bjApi){
+    toast("engine not ready");
+    return;
+  }
 
-      callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
+  const {lo,hi} = seed64();
+  const mask = rulesMaskFromUI();
+  const sessionSeconds = 300;   // 5分
+  const roundLimit = 12;
 
-      // set_bet（偶数化）
-      const bet = floorEven($("betInput").value);
-      $("betInGame").value = bet;
-      callAction("set_bet", bet);
+  callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
 
-      goScreen("game");
-      startTick();
-      toast("Good luck!");
-    };
+  // set_bet
+  const bet = floorEven($("betInput").value);
+  $("betInGame").value = bet;
+  callAction("set_bet", bet);
+
+  goScreen("game");
+  startTick();
+  toast("Good luck!");
+};
+
 
     $("btnSetBet").onclick = ()=>{
       const v = floorEven($("betInGame").value);

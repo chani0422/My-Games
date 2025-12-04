@@ -1,12 +1,18 @@
+// ========= Global =========
 let Engine = null;
-let api = null;
+let bjApi = null;
+let state = null;
 let engineReady = false;
 
-Module().then((mod) => {
+//const $ = (id)=>document.getElementById(id);
+
+// ========= Load WASM =========
+// blackjack_v2.js exports Module() (async)
+Module().then(mod => {
   Engine = mod;
   engineReady = true;
 
-  api = {
+  bjApi = {
     start_session: Engine.cwrap('start_session', 'number', ['number','number','number','number','number']),
     reset_session: Engine.cwrap('reset_session', 'number', []),
     set_time_left_ms: Engine.cwrap('set_time_left_ms', 'number', ['number']),
@@ -24,8 +30,7 @@ Module().then((mod) => {
     free_ptr: Engine.cwrap('free_ptr', null, ['number']),
   };
 
-  console.log("Engine ready");
   $("subLine").textContent = "ready.";
   toast("Engine ready");
-  refresh(); // 初回表示
+  refresh(); // 初回反映
 });
