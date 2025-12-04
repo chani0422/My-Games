@@ -780,31 +780,32 @@
     }
 
     // ========= Module (emscripten) =========
-    var Module = {
-      onRuntimeInitialized: () => {
-        api = {
-          start_session: Module.cwrap('start_session', 'number', ['number','number','number','number','number']),
-          reset_session: Module.cwrap('reset_session', 'number', []),
-          set_time_left_ms: Module.cwrap('set_time_left_ms', 'number', ['number']),
-          set_paused: Module.cwrap('set_paused', 'number', ['number']),
-          set_bet: Module.cwrap('set_bet', 'number', ['number']),
-          deal: Module.cwrap('deal', 'number', []),
-          hit: Module.cwrap('hit', 'number', []),
-          stand: Module.cwrap('stand', 'number', []),
-          double_down: Module.cwrap('double_down', 'number', []),
-          split: Module.cwrap('split', 'number', []),
-          surrender: Module.cwrap('surrender', 'number', []),
-          buy_insurance: Module.cwrap('buy_insurance', 'number', ['number']),
-          take_even_money: Module.cwrap('take_even_money', 'number', []),
-          get_state_json: Module.cwrap('get_state_json', 'number', []),
-          free_ptr: Module.cwrap('free_ptr', null, ['number']),
-        };
+    //engine not readyが出続ける問題を解決するためコメントアウトしました。
+    // var Module = {
+    //   onRuntimeInitialized: () => {
+    //     api = {
+    //       start_session: Module.cwrap('start_session', 'number', ['number','number','number','number','number']),
+    //       reset_session: Module.cwrap('reset_session', 'number', []),
+    //       set_time_left_ms: Module.cwrap('set_time_left_ms', 'number', ['number']),
+    //       set_paused: Module.cwrap('set_paused', 'number', ['number']),
+    //       set_bet: Module.cwrap('set_bet', 'number', ['number']),
+    //       deal: Module.cwrap('deal', 'number', []),
+    //       hit: Module.cwrap('hit', 'number', []),
+    //       stand: Module.cwrap('stand', 'number', []),
+    //       double_down: Module.cwrap('double_down', 'number', []),
+    //       split: Module.cwrap('split', 'number', []),
+    //       surrender: Module.cwrap('surrender', 'number', []),
+    //       buy_insurance: Module.cwrap('buy_insurance', 'number', ['number']),
+    //       take_even_money: Module.cwrap('take_even_money', 'number', []),
+    //       get_state_json: Module.cwrap('get_state_json', 'number', []),
+    //       free_ptr: Module.cwrap('free_ptr', null, ['number']),
+    //     };
 
-        try { refresh(); } catch(e){ console.warn(e); }
-        $("subLine").textContent = "ready.";
-        toast("Engine ready");
-      }
-    };
+    //     try { refresh(); } catch(e){ console.warn(e); }
+    //     $("subLine").textContent = "ready.";
+    //     toast("Engine ready");
+    //   }
+    // };
 
     // ========= UI events =========
     // Title chips
