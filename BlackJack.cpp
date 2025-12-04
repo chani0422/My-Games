@@ -338,23 +338,13 @@ struct Engine {
   }
 
   int apply_streak_bonus_if_needed(int profitBeforeBonus) {
+    // v2 では連勝ボーナス機能はいったん無効化する
+    // （今は素の勝ち負けだけをテストで固める）
     rr.bonusPercent = 0;
     rr.bonusApplied = 0;
-
-    if (profitBeforeBonus <= 0) return profitBeforeBonus;
-
-    int nextK = rr.streak + 1;
-    if (nextK > 5) nextK = 5;
-    int percent = 5 * nextK;
-
-    int bonus = (profitBeforeBonus * percent) / 100;
-    if (bonus > 0) bank += bonus;
-
-    rr.bonusPercent = percent;
-    rr.bonusApplied = bonus;
-
-    return profitBeforeBonus + bonus;
+    return profitBeforeBonus;
   }
+
 
   void finalize_round_and_update_streak(int netProfitAfterBonus) {
     rr.netProfit = netProfitAfterBonus;
@@ -490,11 +480,11 @@ struct Engine {
       return OK;
     }
   }
-//変更するかもーーーー
-  static int floor_to_even(int x) {
-    if (x < 0) x = 0;
-    return (x / 2) * 2;
-  }
+// 変更するかもーーーー
+static int floor_to_even(int x) {
+  if (x < 0) x = 0;
+  return (x / 2) * 2;
+}
 
 int set_bet(int amount) {
   if (phase == Phase::PAUSED) return set_error(INVALID_STATE, "Paused");
@@ -520,6 +510,7 @@ int set_bet(int amount) {
   set_phase(Phase::BETTING);
   return OK;
 }
+
 
 
   static int split_value(const Card& c) { return point_value(c); }
@@ -960,6 +951,81 @@ int set_bet(int amount) {
     return true;
   }
 
+    // ==== テスト用: デッキを文字列でセットする ====
+  int debug_set_shoe(const char* seq) {
+    // null 安全のため
+    std::string s = seq ? std::string(seq) : std::string();
+    std::vector<Card> temp;
+    std::string token;
+
+    auto flushToken = [&]() {
+      if (token.empty()) return;
+      // token 例: "8C", "AH", "10C"
+      // 最後の1文字がスート、それ以外がランク
+      char suitChar = token.back();
+      std::string rankStr = token.substr(0, token.size() - 1);
+
+      // ランクを 1..13 に変換
+      int rank = 0;
+      if (rankStr == "A")      rank = 1;
+      else if (rankStr == "J") rank = 11;
+      else if (rankStr == "Q") rank = 12;
+      else if (rankStr == "K") rank = 13;
+      else if (rankStr == "T" || rankStr == "10") rank = 10;
+      else {
+        rank = std::atoi(rankStr.c_str());
+      }
+
+      // スートを 0..3 に変換（S,H,D,C の順で 0..3 とする）
+      int suit = 0;
+      switch (suitChar) {
+        case 'S': suit = 0; break; // ♠
+        case 'H': suit = 1; break; // ♥
+        case 'D': suit = 2; break; // ♦
+        case 'C': suit = 3; break; // ♣
+        default:  suit = 0; break;
+      }
+
+      if (rank < 1 || rank > 13) {
+        // テスト用なのでざっくりエラー扱い
+        set_error(INTERNAL_ERROR, "debug_set_shoe: bad rank");
+        return;
+      }
+
+      temp.push_back(Card{(uint8_t)rank, (uint8_t)suit});
+      token.clear();
+    };
+
+    // カンマ & 空白区切りでトークン分解
+    for (size_t i = 0; i <= s.size(); i++) {
+      char ch = (i < s.size() ? s[i] : ','); // 最後に強制 flush
+      if (ch == ',' || ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+        flushToken();
+      } else {
+        token.push_back(ch);
+      }
+    }
+
+    if (temp.empty()) {
+      return set_error(INVALID_STATE, "debug_set_shoe: empty");
+    }
+
+    // draw() は cards.back() から引くので
+    // 「文字列で指定した順番」に引かせるには逆順で詰める
+    shoe.cards.clear();
+    for (int i = (int)temp.size() - 1; i >= 0; --i) {
+      shoe.cards.push_back(temp[(size_t)i]);
+    }
+
+    // テスト中は自動リシャッフルが走らないように cutSize を 0 に
+    shoe.decks = 1;
+    shoe.cutSize = 0;
+
+    clear_error();
+    return OK;
+  }
+
+
   string get_state_json() {
     update_all_caches();
 
@@ -1152,5 +1218,10 @@ char* get_state_json() {
 
 EMSCRIPTEN_KEEPALIVE
 void free_ptr(char* p) { std::free(p); }
+
+EMSCRIPTEN_KEEPALIVE
+int debug_set_shoe(const char* seq) {
+  return bj::g.debug_set_shoe(seq);
+}
 
 } // extern "C"

@@ -1,4 +1,4 @@
-const createModule = require("../blackjack_test.js");
+const createModule = require("../blackjack.js");
 
 function assert(cond, msg){
   if(!cond) throw new Error("ASSERT: " + msg);
@@ -46,8 +46,12 @@ function assert(cond, msg){
   assert(st.phase === "betting", "phase should be betting");
 
   // --- TEST 1: odd bet should fail (must be even)
+    // --- TEST 1: odd bet should fail (must be even)
   let rc = api.set_bet(101);
   st = state();
+  console.log("TEST1 rc =", rc,
+              "lastErrorCode =", st.lastErrorCode,
+              "lastError =", st.lastError);
   assert(rc !== 0 && st.lastErrorCode !== 0, "odd bet must error");
 
   // --- TEST 2: surrender (late) w/ dealer up Ace -> insurance -> surrender => -bet/2
