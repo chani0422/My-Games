@@ -8,6 +8,13 @@
 
 // ========= Load WASM =========
 // blackjack_v2.js exports Module() (async)
+
+// engineReady が別ファイル定義でも落ちないように保険
+if (typeof engineReady === "undefined") {
+  globalThis.engineReady = false;
+}
+
+
 Module().then(mod => {
   Engine = mod;
   engineReady = true;
@@ -30,10 +37,12 @@ Module().then(mod => {
     free_ptr: Engine.cwrap('free_ptr', null, ['number']),
   };
 
+globalThis.Engine = Engine;
+globalThis.bjApi = bjApi;
+globalThis.engineReady = engineReady;
+
   $("subLine").textContent = "ready.";
   toast("Engine ready");
   refresh(); // 初回反映
 });
-globalThis.Engine = Engine;
-globalThis.bjApi = bjApi;
-globalThis.engineReady = engineReady;
+

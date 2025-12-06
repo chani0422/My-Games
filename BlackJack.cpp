@@ -67,7 +67,7 @@ struct Rules {
   bool allowEvenMoney = true;
   bool allowDAS = true;
   bool splitBJAsBJ = true;
-  bool dealerHitSoft17 = true;
+  bool dealerHitSoft17 = false;
 };
 
 struct Card {
@@ -224,7 +224,7 @@ struct Engine {
 
   Rules rules{};
 
-  int bank = 1000;
+  int bank = 5000;
   int minBet = 10;
   int baseBet = 10;
 
@@ -249,7 +249,7 @@ struct Engine {
   InsuranceState ins{};
   RoundResult rr{};
 
-  int bankAtRoundStart = 1000;
+  int bankAtRoundStart = 5000;
 
   int lastErrorCode = 0;
   string lastError;
@@ -455,10 +455,11 @@ struct Engine {
     sessionMs = (sessionSeconds > 0 ? sessionSeconds * 1000 : 300000);
     timeLeftMs = sessionMs;
 
-    bank = 1000;
+    bank = 5000;
     baseBet = minBet;
 
-    shoe.init(seed, 6, 78);
+    //shoe.init(seed, 6, 78); // ←元の初期値
+    shoe.init(seed, 2, 26); // ★変更しない
 
     rr.streak = 0;
     bankAtRoundStart = bank;
@@ -469,7 +470,7 @@ struct Engine {
 
   int reset_session() {
     reset_round_state();
-    bank = 1000;
+    bank = 5000;
     baseBet = minBet;
     round = 0;
     rr.streak = 0;

@@ -796,6 +796,51 @@ body{
 /* カード領域が下で切れないように微調整 */
 .playerZone .cards{ padding-bottom: 6px !important; }
 
+.morePanel{
+  display:block;
+  margin-top:10px;
+  padding:12px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.18));
+}
+.moreHd{ opacity:.9; }
+.moreGrid .btn{ font-weight:800; letter-spacing:.02em; }
+
+
+.moreHd{
+  font-weight:900;
+  letter-spacing:.06em;
+  font-size:12px;
+  opacity:.92;
+  margin-bottom:10px;
+}
+.moreGrid{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap:10px;
+}
+.moreGrid .btn{ width:100%; }
+
+.metaLine{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.kv{
+  display:inline-flex;
+  align-items:baseline;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.18);
+}
+.kv .k{ font-size:11px; color:rgba(255,255,255,.78); letter-spacing:.04em; }
+.kv .v{ font-size:14px; font-weight:900; color:#fff; }
+#btnMore{ display:none; }
+
   </style>
 </head>
 
@@ -972,6 +1017,19 @@ body{
             <div class="row" style="justify-content:space-between;">
               <div class="muted">Main actions are in DOCK</div>
               <button class="btn ghost" id="btnMore" disabled>MORE</button>
+              <div id="morePanel" class="morePanel">
+  <div class="moreHd">More actions</div>
+  <div class="moreGrid">
+    <button class="btn" id="btnDoubleSide">Double</button>
+    <button class="btn" id="btnSplitSide">Split</button>
+    <button class="btn danger" id="btnSurrenderSide">Surrender</button>
+    <button class="btn" id="btnEvenMoneySide">Even Money</button>
+  </div>
+  <div class="muted small" style="margin-top:8px;">
+    ※押せる場合に限り機能します。
+  </div>
+</div>
+
             </div>
 
             <div class="divider"></div>
@@ -1140,11 +1198,12 @@ body{
     let bjApi = null;
     let state = null;
 
- function apiReady(){
-   return (typeof engineReady !== "undefined" && engineReady) &&
-          (typeof Engine !== "undefined" && Engine) &&
-          (typeof bjApi !== "undefined" && bjApi);
- }
+function apiReady(){
+  if (globalThis.bjApi) bjApi = globalThis.bjApi;
+  if (globalThis.Engine) Engine = globalThis.Engine;
+  return !!(globalThis.engineReady && Engine && bjApi);
+}
+
 
     function syncEngine(){
       if (apiReady()){
@@ -1291,6 +1350,11 @@ body{
 
     // ========= Render =========
     function render(){
+function setDis(id, disabled){
+  const el = document.getElementById(id);
+  if (el) el.disabled = !!disabled;
+}
+
       if (!state) return;
 
       $("subLine").textContent = `phase: ${state.phase}`;
@@ -1323,7 +1387,15 @@ body{
       ].filter(Boolean).join(" • ") || "-";
 
       // Dealer
-      $("dealerScoreLine").textContent = ` (shown ${state.dealer.scoreShown} / total ${state.dealer.score})`;
+const totalText = state.dealer.holeKnown ? String(state.dealer.score) : "?";
+
+$("dealerScoreLine").innerHTML = `
+  <span class="metaLine">
+    <span class="kv"><span class="k">Shown</span><b class="v">${state.dealer.scoreShown}</b></span>
+    <span class="kv"><span class="k">Total</span><b class="v">${totalText}</b></span>
+  </span>
+`;
+
       $("dealerHole").textContent = state.dealer.holeKnown ? "hole open" : "hole hidden";
 
       const dWrap = $("dealerCards");
@@ -1373,13 +1445,17 @@ body{
         const header = document.createElement("div");
         header.className = "row";
         header.style.justifyContent = "space-between";
-        header.innerHTML = `
-          <div>
-            <b>Player ${hands.length>1 ? `Hand ${i+1}` : ""}</b>
-            <span class="muted"> score ${h.score} / bet ${h.bet}</span>
-          </div>
-          <div class="badge ${badgeClass}">${flags.length?flags.join(" • "):"playing"}</div>
-        `;
+header.innerHTML = `
+  <div>
+    <b>Player ${hands.length > 1 ? `Hand ${i + 1}` : ""}</b>
+    <div class="metaLine" style="margin-top:6px;">
+      <span class="kv"><span class="k">Score</span><b class="v">${h.score}</b></span>
+      <span class="kv"><span class="k">Bet</span><b class="v">${h.bet}</b></span>
+    </div>
+  </div>
+  <div class="badge ${badgeClass}">${flags.length ? flags.join(" • ") : "playing"}</div>
+`;
+
         box.appendChild(header);
 
         const cards = document.createElement("div");
@@ -1401,14 +1477,21 @@ body{
       });
 
       // Controls enable/disable from state.can
-      const can = state.can || {};
-      $("btnDeal").disabled = !can.deal;
-      $("btnHit").disabled = !can.hit;
-      $("btnStand").disabled = !can.stand;
+const can = state.can || {};
 
-      $("btnDouble").disabled = !can.double;
-      $("btnSplit").disabled = !can.split;
-      $("btnSurrender").disabled = !can.surrender;
+setDis("btnDeal", !can.deal);
+setDis("btnHit", !can.hit);
+setDis("btnStand", !can.stand);
+setDis("btnDouble", !can.double);
+setDis("btnSplit", !can.split);
+setDis("btnSurrender", !can.surrender);
+
+// 右パネル側（追加）
+
+setDis("btnDoubleSide", !can.double);
+setDis("btnSplitSide", !can.split);
+setDis("btnSurrenderSide", !can.surrender);
+setDis("btnEvenMoneySide", !can.evenMoney);
 
       // Insurance UI (in MORE overlay)
       const showIns = (state.phase === "offerInsurance");
@@ -1452,6 +1535,23 @@ body{
 
       const v = floorEven($("betInput").value);
       $("betHint").textContent = `入力=${$("betInput").value} → 偶数化=${v}`;
+
+
+      // ===== Bet lock/unlock =====
+// BETを編集できるのは「配る前」or「勝敗確定後」だけ
+const betEditable = (state.phase === "betting" || state.phase === "roundOver");
+
+// 入力欄とSETボタン
+setDis("betInGame", !betEditable);
+setDis("btnSetBet", !betEditable);
+
+// +10 +50 ... のチップボタンも全部
+document.querySelectorAll("[data-add2]").forEach((b) => {
+  b.disabled = !betEditable;
+});
+
+      console.log("render ok", state.phase);
+
     }
 
     // ========= UI events =========
@@ -1475,7 +1575,7 @@ body{
     $("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
 
-    $("btnMore").onclick = ()=> $("overlayMore").classList.add("show");
+    //$("btnMore").onclick = ()=> $("overlayMore").classList.add("show");
     $("btnDockMore").onclick = ()=> $("overlayMore").classList.add("show");
     $("btnCloseMore").onclick = ()=> $("overlayMore").classList.remove("show");
 
@@ -1565,11 +1665,13 @@ body{
       toast("Good luck!");
     };
 
-    $("btnSetBet").onclick = ()=>{
-      const v = floorEven($("betInGame").value);
-      $("betInGame").value = v;
-      callAction("set_bet", v);
-    };
+$("btnSetBet").onclick = ()=>{
+  if (!state || !(state.phase === "betting" || state.phase === "roundOver")) return;
+  const v = floorEven($("betInGame").value);
+  $("betInGame").value = v;
+  callAction("set_bet", v);
+};
+
 
     // Main actions (Dock)
     $("btnDeal").onclick = ()=> callAction("deal");
@@ -1588,6 +1690,19 @@ body{
       callAction("buy_insurance", v);
     };
     $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
+
+    //追加したものです。
+    // MORE: 右パネルの開閉
+$("btnMore").onclick = ()=> {
+  $("morePanel").classList.toggle("open");
+};
+
+// 右パネルの各アクション
+$("btnDoubleSide").onclick = ()=> callAction("double_down");
+$("btnSplitSide").onclick  = ()=> callAction("split");
+$("btnSurrenderSide").onclick = ()=> callAction("surrender");
+$("btnEvenMoneySide").onclick = ()=> callAction("take_even_money");
+
 
     // keyboard shortcuts
     window.addEventListener("keydown", (e)=>{
