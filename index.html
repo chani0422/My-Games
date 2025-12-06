@@ -2,216 +2,347 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>BlackJack</title>
+
   <style>
     :root{
-      --bg0:#06180e;
-      --bg1:#0b3d1a;
-      --bg2:#0f5a25;
-      --panel:#0e3b1c;
-      --panel2:#114a22;
+      --felt0:#071a10;
+      --felt1:#0b3d1a;
+      --felt2:#0f5a25;
+
+      --rail0:#0b0b0c;
+      --rail1:#17171a;
+
+      --gold:#d8b15a;
+      --gold2:#ffdf8a;
+
       --text:#ffffff;
-      --muted:rgba(255,255,255,.75);
-      --muted2:rgba(255,255,255,.55);
-      --border:rgba(255,255,255,.16);
-      --shadow:rgba(0,0,0,.35);
+      --muted:rgba(255,255,255,.78);
+      --muted2:rgba(255,255,255,.56);
+
+      --border:rgba(255,255,255,.14);
+      --shadow:rgba(0,0,0,.45);
+
       --good:#37d67a;
       --bad:#ff4d4d;
       --warn:#ffcc66;
-      --chip:#ffd166;
+
+      --radius:18px;
+      --dockH: 78px;
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
+
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
       color:var(--text);
-      background:
-        radial-gradient(1200px 700px at 30% -10%, rgba(255,255,255,.10), transparent 60%),
-        radial-gradient(900px 600px at 90% 0%, rgba(255,255,255,.08), transparent 55%),
-        linear-gradient(180deg, var(--bg0), var(--bg1) 30%, var(--bg2));
       overflow-x:hidden;
+
+      /* casino ambience */
+      background:
+        radial-gradient(1400px 920px at 50% -25%, rgba(255,223,138,.22), transparent 62%),
+        radial-gradient(980px 760px at 15% 10%, rgba(55,214,122,.12), transparent 62%),
+        radial-gradient(980px 760px at 85% 12%, rgba(216,177,90,.12), transparent 64%),
+        radial-gradient(1200px 900px at 50% 120%, rgba(0,0,0,.62), transparent 62%),
+        linear-gradient(180deg, #03120a, #052414 40%, #07351a);
     }
-    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+
+    body::before, body::after{
+      content:"";
+      position:fixed; inset:-20%;
+      pointer-events:none;
+      z-index:-1;
+    }
+    body::before{
+      background:
+        radial-gradient(620px 420px at 12% 28%, rgba(255,223,138,.10), transparent 60%),
+        radial-gradient(620px 420px at 88% 32%, rgba(255,255,255,.06), transparent 62%),
+        radial-gradient(520px 420px at 48% 5%, rgba(216,177,90,.08), transparent 62%);
+      filter: blur(1px);
+      animation: sweep 10s ease-in-out infinite alternate;
+      opacity:.9;
+    }
+    body::after{
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.02), rgba(255,255,255,.02) 1px, transparent 1px, transparent 2px);
+      mix-blend-mode: overlay;
+      opacity:.10;
+    }
+    @keyframes sweep{
+      from{ transform: translate3d(-2%, -1%, 0) scale(1.02) }
+      to  { transform: translate3d( 2%,  1%, 0) scale(1.04) }
+    }
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:16px;
+      padding-bottom: calc(var(--dockH) + 34px);
+    }
+
+    /* ===== HUD ===== */
     .topbar{
-      display:flex; align-items:center; justify-content:space-between;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
       gap:12px;
-      padding:10px 12px;
+      padding:12px 12px;
       border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-      border-radius:16px;
-      box-shadow:0 12px 30px var(--shadow);
-      position:sticky; top:0; z-index:5;
-      backdrop-filter: blur(8px);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.22));
+      border-radius: calc(var(--radius) + 4px);
+      box-shadow: 0 22px 70px rgba(0,0,0,.28);
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
     }
-    .brand{display:flex; align-items:center; gap:10px}
+    .brand{display:flex; align-items:center; gap:12px; min-width:0}
     .logo{
-      width:34px; height:34px; border-radius:12px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.32), rgba(255,255,255,.06)),
-                  linear-gradient(135deg, rgba(255,209,102,.9), rgba(55,214,122,.7));
-      box-shadow:0 10px 20px rgba(0,0,0,.25);
+      width:38px; height:38px; border-radius:14px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), rgba(255,255,255,.06)),
+        linear-gradient(135deg, rgba(255,223,138,.95), rgba(216,177,90,.55)),
+        linear-gradient(225deg, rgba(55,214,122,.55), rgba(0,0,0,0));
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      position:relative;
+      overflow:hidden;
     }
-    .brand h1{margin:0;font-size:14px;letter-spacing:.06em}
-    .sub{font-size:12px;color:var(--muted2)}
-    .stats{display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end}
+    .logo::after{
+      content:"";
+      position:absolute; inset:-60% -40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+      transform: rotate(20deg);
+      animation: shine 2.8s ease-in-out infinite;
+      opacity:.9;
+    }
+    @keyframes shine{
+      0%{ transform: translateX(-40%) rotate(20deg) }
+      45%{ transform: translateX(60%) rotate(20deg) }
+      100%{ transform: translateX(60%) rotate(20deg) }
+    }
+
+    .brandTxt{min-width:0}
+    .brandTxt h1{
+      margin:0;
+      font-size:14px;
+      letter-spacing:.14em;
+      font-weight: 950;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      text-shadow: 0 18px 40px rgba(0,0,0,.45);
+    }
+    .sub{
+      font-size:12px;
+      color:var(--muted2);
+      margin-top:2px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .statusBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(216,177,90,.35);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.18));
+      box-shadow: 0 16px 50px rgba(0,0,0,.25);
+      color: var(--muted);
+      font-weight: 900;
+      letter-spacing:.08em;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(255,255,255,.25);
+      box-shadow: 0 0 0 0 rgba(255,223,138,.0);
+    }
+    .statusBadge.good{ border-color: rgba(55,214,122,.40); color:#d8ffe7; }
+    .statusBadge.good .dot{ background: rgba(55,214,122,.85); box-shadow: 0 0 0 10px rgba(55,214,122,.12); }
+    .statusBadge.bad{ border-color: rgba(255,77,77,.40); color:#ffd1d1; }
+    .statusBadge.bad .dot{ background: rgba(255,77,77,.85); box-shadow: 0 0 0 10px rgba(255,77,77,.12); }
+
+    .stats{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end}
     .pill{
-      display:flex; gap:8px; align-items:baseline;
+      display:flex; align-items:baseline; justify-content:space-between; gap:10px;
       padding:8px 10px;
       border:1px solid var(--border);
       border-radius:999px;
-      background:rgba(0,0,0,.18);
-      min-width: 130px;
-      justify-content:space-between;
+      background: rgba(0,0,0,.20);
+      min-width: 140px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.22);
     }
-    .pill b{font-size:13px}
     .pill span{font-size:12px;color:var(--muted)}
+    .pill b{font-size:13px; letter-spacing:.02em}
+    .pill.bank{
+      border-color: rgba(216,177,90,.35);
+      background:
+        radial-gradient(120px 70px at 10% 0%, rgba(255,223,138,.18), transparent 60%),
+        rgba(0,0,0,.20);
+    }
+    .bankFlash{ animation: bankFlash .35s ease; }
+    @keyframes bankFlash{
+      from{ transform: translateY(-1px) scale(1.01); filter: brightness(1.25) }
+      to{ transform:none; filter:none }
+    }
+
     .btn{
       border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.18));
       color:var(--text);
       padding:10px 12px;
       border-radius:14px;
       cursor:pointer;
-      transition: transform .08s ease, box-shadow .15s ease, opacity .15s ease;
+      transition: transform .08s ease, box-shadow .2s ease, filter .15s ease, opacity .15s ease;
       user-select:none;
+      box-shadow: 0 14px 35px rgba(0,0,0,.25);
+      font-weight: 900;
+      letter-spacing:.06em;
     }
-    .btn:hover{box-shadow:0 10px 22px rgba(0,0,0,.22)}
-    .btn:active{transform: translateY(1px) scale(.99)}
-    .btn[disabled]{opacity:.38; cursor:not-allowed; box-shadow:none}
+    .btn:hover{ box-shadow: 0 22px 60px rgba(0,0,0,.32); filter: brightness(1.06); }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn[disabled]{ opacity:.40; cursor:not-allowed; box-shadow:none; filter:saturate(.2); }
     .btn.primary{
-      border-color: rgba(255,255,255,.22);
-      background:linear-gradient(135deg, rgba(55,214,122,.55), rgba(255,209,102,.35));
+      border-color: rgba(216,177,90,.45);
+      background:
+        radial-gradient(160px 70px at 50% 0%, rgba(255,223,138,.40), transparent 65%),
+        linear-gradient(180deg, rgba(216,177,90,.18), rgba(0,0,0,.18));
+      box-shadow: 0 26px 85px rgba(216,177,90,.20), 0 24px 55px rgba(0,0,0,.35);
     }
     .btn.danger{
-      background:linear-gradient(180deg, rgba(255,77,77,.28), rgba(255,255,255,.03));
       border-color: rgba(255,77,77,.35);
+      background: linear-gradient(180deg, rgba(255,77,77,.18), rgba(0,0,0,.18));
     }
-    .btn.ghost{background:rgba(0,0,0,.14)}
+    .btn.ghost{ background: rgba(0,0,0,.16); }
+
+    /* ===== Layout ===== */
     .grid{
       display:grid;
-      grid-template-columns: 1.15fr .85fr;
+      grid-template-columns: 1.25fr .75fr;
       gap:16px;
       margin-top:16px;
     }
     @media (max-width: 900px){
-      .grid{grid-template-columns: 1fr}
-      .pill{min-width:auto}
+      .grid{ grid-template-columns: 1fr; }
+      .pill{ min-width:auto; }
     }
+
     .card{
       border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.18));
-      border-radius:18px;
-      box-shadow:0 18px 40px rgba(0,0,0,.25);
+      background:
+        radial-gradient(1200px 500px at 30% -10%, rgba(255,223,138,.08), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.22));
+      border-radius: var(--radius);
+      box-shadow: 0 28px 90px rgba(0,0,0,.25);
       overflow:hidden;
+      position:relative;
     }
     .card .hd{
       padding:12px 14px;
       display:flex; align-items:center; justify-content:space-between;
-      border-bottom:1px solid var(--border);
-      background:rgba(0,0,0,.10);
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
     }
-    .card .hd h2{margin:0;font-size:13px;letter-spacing:.06em}
-    .card .bd{padding:14px}
-    .table{
-      display:flex; flex-direction:column; gap:12px;
+    .card .hd h2{
+      margin:0;
+      font-size:13px;
+      letter-spacing:.16em;
+      font-weight: 950;
     }
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    .muted{color:var(--muted); font-size:12px}
-    .small{font-size:12px}
-    .divider{height:1px;background:var(--border);margin:10px 0}
-    .chips{display:flex; gap:8px; flex-wrap:wrap}
+    .card .bd{ padding:14px; }
+
+    .muted{ color: var(--muted); font-size:12px; }
+    .small{ font-size:12px; color: var(--muted2); }
+    .divider{ height:1px; background: rgba(255,255,255,.12); margin:12px 0; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    input[type="number"]{
+      width: 160px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+      box-shadow: 0 18px 45px rgba(0,0,0,.20);
+      font-weight: 800;
+      letter-spacing:.02em;
+    }
+
+    /* chips = aligned (③A) */
+    .chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-start }
     .chipbtn{
-      border:1px solid rgba(255,209,102,.35);
-      background:linear-gradient(180deg, rgba(255,209,102,.18), rgba(0,0,0,.10));
+      border:1px solid rgba(216,177,90,.35);
+      background:
+        radial-gradient(70px 40px at 30% 25%, rgba(255,223,138,.26), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.18));
       padding:10px 12px;
       border-radius:999px;
       cursor:pointer;
       color:var(--text);
-      font-weight:700;
-      letter-spacing:.02em;
+      font-weight: 950;
+      letter-spacing:.06em;
+      box-shadow: 0 20px 55px rgba(0,0,0,.20);
+      transition: transform .08s ease, filter .15s ease;
     }
-    .chipbtn:active{transform:translateY(1px)}
-    input[type="number"]{
-      width: 140px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.20);
-      color:var(--text);
-      outline:none;
+    .chipbtn:hover{ filter: brightness(1.06) }
+    .chipbtn:active{ transform: translateY(1px) scale(.99) }
+
+    /* ===== Screens ===== */
+    .screen{ display:none; animation: fadeIn .20s ease; }
+    .screen.active{ display:block; }
+    @keyframes fadeIn{
+      from{ opacity:.5; transform: translateY(8px) }
+      to{ opacity:1; transform:none }
     }
-    .handArea{display:flex; flex-direction:column; gap:12px}
-    .handBox{
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:12px;
-      background:rgba(0,0,0,.16);
-      transition: transform .12s ease, border-color .12s ease;
-    }
-    .handBox.active{
-      border-color: rgba(55,214,122,.55);
-      box-shadow: 0 0 0 2px rgba(55,214,122,.12) inset, 0 10px 22px rgba(0,0,0,.22);
-      transform: translateY(-1px);
-    }
-    .cards{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-    .cardFace{
-      width:44px;height:62px;border-radius:12px;
-      background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.70));
-      color:#111;
-      display:flex; align-items:center; justify-content:center;
-      font-weight:800;
-      box-shadow: 0 10px 18px rgba(0,0,0,.25);
-      border:1px solid rgba(0,0,0,.10);
-    }
-    .cardBack{
-      width:44px;height:62px;border-radius:12px;
-      background:
-        radial-gradient(circle at 30% 30%, rgba(255,255,255,.45), transparent 50%),
-        linear-gradient(135deg, rgba(255,209,102,.75), rgba(55,214,122,.65));
-      border:1px solid rgba(255,255,255,.20);
-      box-shadow: 0 10px 18px rgba(0,0,0,.25);
-    }
-    .badge{
-      font-size:12px;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.16);
-      color:var(--muted);
-    }
-    .badge.good{border-color: rgba(55,214,122,.40); color:#d8ffe7}
-    .badge.bad{border-color: rgba(255,77,77,.40); color:#ffd1d1}
-    .actions{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:10px;
-    }
-    .actions .btn{width:100%}
-    .banner{
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:16px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.18);
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
-    }
-    .banner .msg{font-weight:800}
-    .banner .msg.win{color:#d8ffe7}
-    .banner .msg.lose{color:#ffd1d1}
-    .banner .msg.neutral{color:#fff1cc}
-    .screen{
-      display:none;
-      animation: fadeIn .18s ease;
-    }
-    .screen.active{display:block}
-    @keyframes fadeIn{from{opacity:.5; transform: translateY(6px)}to{opacity:1; transform:none}}
+
+    /* ===== Title hero ===== */
     .titleHero{
-      padding:18px 16px;
+      padding:22px 16px;
       text-align:center;
+      position:relative;
     }
-    .titleHero h2{margin:10px 0 2px; font-size:26px; letter-spacing:.02em}
-    .titleHero p{margin:0; color:var(--muted)}
+    .titleHero .chipline{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid rgba(216,177,90,.35);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-weight:900;
+      letter-spacing:.06em;
+    }
+    .titleHero h2{
+      margin:12px 0 6px;
+      font-size:28px;
+      letter-spacing:.02em;
+      font-weight: 950;
+      text-shadow: 0 22px 60px rgba(0,0,0,.35);
+    }
+    .titleHero p{ margin:0; color: var(--muted); }
+
+    .ctaRow{
+      display:flex;
+      justify-content:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top: 14px;
+    }
+    .ctaBig{
+      min-width: 260px;
+      height: 54px;
+      border-radius: 18px;
+      font-size: 14px;
+      letter-spacing:.14em;
+    }
+
+    /* ===== Options ===== */
     .optGrid{
       display:grid;
       grid-template-columns: repeat(2, 1fr);
@@ -221,38 +352,339 @@
     @media (max-width: 560px){ .optGrid{grid-template-columns:1fr} }
     .opt{
       padding:12px;
-      border:1px solid var(--border);
+      border:1px solid rgba(255,255,255,.12);
       border-radius:16px;
-      background:rgba(0,0,0,.14);
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px;
+      background: rgba(0,0,0,.16);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
     }
     .opt label{display:flex; gap:10px; align-items:center; cursor:pointer; width:100%}
-    .opt input{transform: scale(1.1)}
+    .opt input{ transform: scale(1.1) }
+
+    /* ===== Casino Table (★ここが見た目の本体) ===== */
+    .tableStage{
+      perspective: 900px; /* ①B: moderate */
+    }
+    .tableTilt{
+      transform: rotateX(12deg); /* ①B */
+      transform-origin: 50% 20%;
+    }
+
+    .tableFrame{
+      padding:14px;
+      border-radius: 28px 28px 380px 380px; /* ②A: half-ish */
+      background:
+        radial-gradient(1200px 500px at 50% 0%, rgba(255,223,138,.08), transparent 70%),
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.20));
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 40px 90px rgba(0,0,0,.32);
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* matte black rail */
+    .tableFrame::before{
+      content:"";
+      position:absolute; inset:0;
+      border-radius: inherit;
+      padding: 14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.65));
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      opacity:.95;
+      pointer-events:none;
+    }
+    .tableFrame::after{
+      /* subtle stitched highlight */
+      content:"";
+      position:absolute;
+      inset:10px 10px 18px 10px;
+      border-radius: 22px 22px 360px 360px;
+      border: 1px dashed rgba(255,255,255,.10);
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    .tableSurface{
+      position:relative;
+      border-radius: 18px 18px 340px 340px;
+      overflow:hidden;
+      min-height: 520px;
+      background:
+        radial-gradient(900px 520px at 50% -20%, rgba(255,255,255,.10), transparent 62%),
+        radial-gradient(900px 520px at 10% 10%, rgba(255,223,138,.06), transparent 62%),
+        radial-gradient(900px 520px at 90% 12%, rgba(55,214,122,.06), transparent 64%),
+        linear-gradient(180deg, var(--felt0), var(--felt1) 45%, var(--felt2));
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.30) inset;
+    }
+
+    /* felt grain */
+    .tableSurface::before{
+      content:"";
+      position:absolute; inset:0;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.015), rgba(255,255,255,.015) 1px, transparent 1px, transparent 3px),
+        radial-gradient(1200px 700px at 50% 120%, rgba(0,0,0,.25), transparent 62%);
+      mix-blend-mode: overlay;
+      opacity:.25;
+      pointer-events:none;
+    }
+
+    /* Markings: ②C (B + small rule text) but keep moderate overall (⑤B) */
+    .markings{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:.82;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.20));
+    }
+    .markText{
+      fill: rgba(255,255,255,.78);
+      font-weight: 900;
+      letter-spacing: .18em;
+    }
+    .markSmall{
+      fill: rgba(255,255,255,.48);
+      font-weight: 800;
+      letter-spacing: .14em;
+    }
+    .markLine{
+      stroke: rgba(255,255,255,.32);
+      stroke-width: 2.2;
+      fill:none;
+    }
+    .markDots{
+      stroke: rgba(255,223,138,.18);
+      stroke-width: 2;
+      stroke-dasharray: 3 10;
+      fill:none;
+    }
+
+    /* Zones on table */
+    .dealerZone{
+      position:absolute;
+      top: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(720px, 92%);
+    }
+    .playerZone{
+      position:absolute;
+      left: 50%;
+      bottom: 46px;
+      transform: translateX(-50%);
+      width: min(860px, 94%);
+    }
+
+    /* boxes */
+    .handBox{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:12px;
+      background: rgba(0,0,0,.18);
+      transition: transform .12s ease, border-color .12s ease, filter .12s ease;
+      box-shadow: 0 18px 55px rgba(0,0,0,.16);
+      backdrop-filter: blur(2px);
+    }
+    .handBox.active{
+      border-color: rgba(55,214,122,.55);
+      box-shadow:
+        0 0 0 2px rgba(55,214,122,.12) inset,
+        0 26px 70px rgba(0,0,0,.25);
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+
+    .handArea{ display:flex; flex-direction:column; gap:12px }
+
+    .cards{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    /* card look: ⑧A (photo-ish) */
+    .cardFace, .cardBack{
+      width: 48px;
+      height: 68px;
+      border-radius: 13px;
+      box-shadow: 0 16px 30px rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.14);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 950;
+      letter-spacing:.02em;
+      user-select:none;
+      position:relative;
+      overflow:hidden;
+      transform: translate3d(0,0,0);
+    }
+    .cardFace{
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,.90), rgba(255,255,255,.62)),
+        linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.70));
+      color:#0e0e10;
+      border-color: rgba(0,0,0,.10);
+    }
+    .cardFace::after{
+      content:"";
+      position:absolute;
+      inset:-30% -40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+      transform: rotate(22deg);
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    .cardBack{
+      background:
+        radial-gradient(circle at 25% 25%, rgba(255,255,255,.32), transparent 60%),
+        linear-gradient(135deg, rgba(255,223,138,.60), rgba(216,177,90,.22)),
+        linear-gradient(225deg, rgba(55,214,122,.38), rgba(0,0,0,0));
+      border-color: rgba(216,177,90,.28);
+    }
+    .cardBack::before{
+      /* back pattern */
+      content:"";
+      position:absolute; inset:10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.22);
+      background:
+        repeating-linear-gradient(45deg, rgba(255,255,255,.10) 0 6px, transparent 6px 12px),
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,.10), transparent 62%);
+      opacity:.85;
+    }
+
+    /* ④A: slide deal + flip (no extra spin/glow) */
+    .dealIn{
+      animation: dealIn .42s cubic-bezier(.2,.8,.2,1) both;
+    }
+    @keyframes dealIn{
+      from{ opacity:0; transform: translate(120px,-60px) rotate(-8deg) scale(.95); filter: blur(.35px) }
+      to{ opacity:1; transform:none; filter:none }
+    }
+    .flipIn{
+      animation: flipIn .46s cubic-bezier(.2,.8,.2,1) both;
+      transform-origin: center;
+    }
+    @keyframes flipIn{
+      0%{ transform: rotateY(0deg) }
+      50%{ transform: rotateY(90deg); filter: brightness(1.10) }
+      100%{ transform: rotateY(0deg); filter:none }
+    }
+
+    .badge{
+      font-size:12px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.16);
+      color: var(--muted);
+      font-weight: 900;
+      letter-spacing:.06em;
+    }
+    .badge.good{ border-color: rgba(55,214,122,.35); color:#d8ffe7 }
+    .badge.bad{ border-color: rgba(255,77,77,.35); color:#ffd1d1 }
+
+    .banner{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      box-shadow: 0 20px 60px rgba(0,0,0,.20);
+    }
+    .banner .msg{ font-weight: 950; letter-spacing:.10em; }
+    .banner .msg.win{ color:#d8ffe7 }
+    .banner .msg.lose{ color:#ffd1d1 }
+    .banner .msg.neutral{ color:#fff1cc }
+
+    /* ===== Dock (⑩A) ===== */
+    .dock{
+      position:fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      height: var(--dockH);
+      display:grid;
+      grid-template-columns: 1.25fr 1fr 1fr .95fr;
+      gap:10px;
+      padding:10px;
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.25));
+      backdrop-filter: blur(14px);
+      box-shadow: 0 40px 90px rgba(0,0,0,.45);
+      z-index: 30;
+    }
+    .dock .btn{
+      height:100%;
+      border-radius: 18px;
+      font-size: 13px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:0 12px;
+    }
+    .dock .btn .k{
+      font-size: 12px;
+      color: rgba(255,255,255,.75);
+      letter-spacing:.12em;
+      padding: 3px 8px;
+      border-radius:999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.14);
+    }
+
+    /* ===== Overlays ===== */
     .overlay{
       position:fixed; inset:0;
-      background: rgba(0,0,0,.52);
+      background: rgba(0,0,0,.58);
       display:none;
       align-items:center; justify-content:center;
       padding:18px;
-      z-index:50;
-      backdrop-filter: blur(8px);
+      z-index:60;
+      backdrop-filter: blur(10px);
     }
-    .overlay.show{display:flex}
+    .overlay.show{ display:flex }
     .modal{
-      width:min(560px, 100%);
-      border-radius:18px;
-      border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.30));
-      box-shadow:0 22px 52px rgba(0,0,0,.40);
+      width:min(620px, 100%);
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background:
+        radial-gradient(900px 400px at 20% -20%, rgba(255,223,138,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.34));
+      box-shadow: 0 30px 90px rgba(0,0,0,.45);
       overflow:hidden;
     }
-    .modal .hd{padding:12px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center}
-    .modal .bd{padding:14px}
+    .modal .hd{
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.12);
+      display:flex; justify-content:space-between; align-items:center;
+      background: rgba(0,0,0,.16);
+    }
+    .modal .bd{ padding:14px; }
+    .actionsGrid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:10px;
+      margin-top: 10px;
+    }
+    .actionsGrid .btn{ width:100% }
+
+    /* Toast */
     .toastWrap{
       position:fixed;
       left:50%; transform:translateX(-50%);
-      bottom:16px;
+      bottom: calc(var(--dockH) + 18px + env(safe-area-inset-bottom, 0px));
       display:flex; flex-direction:column; gap:8px;
       z-index:99;
       pointer-events:none;
@@ -261,40 +693,128 @@
       pointer-events:none;
       padding:10px 12px;
       border-radius:14px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.62);
       color:#fff;
-      box-shadow:0 10px 22px rgba(0,0,0,.25);
+      box-shadow:0 18px 50px rgba(0,0,0,.28);
       font-size:13px;
-      max-width:min(560px, calc(100vw - 24px));
+      max-width:min(640px, calc(100vw - 24px));
     }
+
+    /* Hold progress */
     .prog{
-      height:8px; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden;
-      border:1px solid rgba(255,255,255,.10);
+      height:8px; border-radius:999px; background: rgba(255,255,255,.12);
+      overflow:hidden; border:1px solid rgba(255,255,255,.10);
+      margin-top:8px;
     }
-    .prog > div{height:100%; width:0% ; background: linear-gradient(90deg, rgba(255,209,102,.9), rgba(55,214,122,.9));}
+    .prog > div{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(255,223,138,.95), rgba(55,214,122,.90));
+    }
+    /* =========================
+   VISIBILITY FIX PACK
+   - sharper text
+   - markings behind content
+   - content stays inside frame
+   ========================= */
+
+/* 文字の滲みを減らす（全体） */
+body{
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+/* 3D変形がテキストを滲ませるので一旦OFF（最優先で見やすくする） */
+.tableStage{ perspective: none !important; }
+.tableTilt{ transform: none !important; }
+
+/* マーキングが“上に被ってる”のが最大の見づらさ：背面へ */
+.tableSurface{ position: relative; }
+.markings{
+  z-index: 0 !important;
+  filter: none !important;      /* drop-shadow が滲みやすい */
+  opacity: .60 !important;      /* 控えめに */
+  pointer-events: none;
+}
+
+/* 実コンテンツ（Dealer/Player）は前面へ */
+.dealerZone, .playerZone{
+  z-index: 2 !important;
+}
+
+/* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める */
+.tableSurface{
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+
+  /* 枠内に収めるための“安全地帯” */
+  padding: 64px 44px 120px !important;
+
+  /* 丸枠に合わせて中身が切れないように */
+  overflow: hidden;
+}
+
+/* absolute を解除してセンターに収める */
+.dealerZone, .playerZone{
+  position: relative !important;
+  top: auto !important; bottom: auto !important; left: auto !important;
+  transform: none !important;              /* translateX(-50%)を解除 */
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+.dealerZone{ max-width: 760px !important; }
+.playerZone{ max-width: 920px !important; }
+
+/* テーブルの曲率が強すぎると見切れやすい → 少し緩める */
+.tableFrame{
+  border-radius: 28px 28px 280px 280px !important;
+}
+.tableSurface{
+  border-radius: 18px 18px 240px 240px !important;
+  min-height: 620px !important;            /* 余白不足による下切れを防ぐ */
+}
+
+/* backdrop-filter が文字を滲ませる時があるのでテーブル内は切る */
+.handBox{
+  backdrop-filter: none !important;
+}
+
+/* 小さい文字のコントラストUP */
+.muted{ color: rgba(255,255,255,.88) !important; }
+.small{ color: rgba(255,255,255,.72) !important; }
+.badge{ color: rgba(255,255,255,.84) !important; }
+
+/* カード領域が下で切れないように微調整 */
+.playerZone .cards{ padding-bottom: 6px !important; }
+
   </style>
 </head>
-<body>
-  <button onclick="onClickStartSession()">Start Session</button>
 
+<body>
   <div class="wrap">
     <div class="topbar">
       <div class="brand">
         <div class="logo"></div>
-        <div>
-          <h1>BlackJack</h1>
-          <div class="sub" id="subLine">loading engine...</div>
+        <div class="brandTxt">
+          <h1>BLACKJACK</h1>
+          <div class="sub">
+            <span id="subLine">booting…</span>
+            <span id="engineBadge" class="statusBadge"><span class="dot"></span><span id="engineText">LOADING</span></span>
+          </div>
         </div>
       </div>
 
       <div class="stats">
-        <div class="pill"><span>Bank</span><b id="bank">-</b></div>
+        <div class="pill bank"><span>Bank</span><b id="bank">-</b></div>
         <div class="pill"><span>Round</span><b id="round">-</b></div>
         <div class="pill"><span>Time</span><b id="time">-</b></div>
 
-        <button class="btn ghost" id="btnPause" title="Pause">MENU</button>
-        <button class="btn danger" id="btnReset">Reset</button>
+        <button class="btn ghost" id="btnPause" title="Menu">MENU</button>
+        <button class="btn danger" id="btnReset" title="Hold to reset">Reset</button>
       </div>
     </div>
 
@@ -302,20 +822,20 @@
     <div class="screen active" id="screenTitle">
       <div class="card">
         <div class="titleHero">
-          <div class="badge good">3:2 payout • 6 decks • H17</div>
-          <h2>3分でサクッと、One more playing!</h2>
-          <p>ルールを選んでスタート。</p>
-        </div>
-        <div class="bd">
-          <div class="row" style="justify-content:center; gap:12px;">
-            <button class="btn primary" id="btnStart" style="min-width:220px;">Start Session</button>
+          <div class="chipline">🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1</div>
+          <h2>One more… が止まらない Blackjack</h2>
+          <p>配布は気持ちよく。勝ったらBankがぬるっと伸びる。</p>
+
+          <div class="ctaRow">
+            <button class="btn primary ctaBig" id="btnStart" disabled>DEAL / START</button>
+            <button class="btn ghost" id="btnHowTitle">遊び方</button>
           </div>
+        </div>
 
-          <div class="divider"></div>
-
-          <div class="row">
+        <div class="bd">
+          <div class="row" style="justify-content:space-between; align-items:flex-end;">
             <div>
-              <div class="muted">Bet（偶数のみ推奨：3:2 や insurance bet/2 で端数を出さない）</div>
+              <div class="muted">Bet（偶数推奨：Insurance = bet/2 で端数回避）</div>
               <div class="row" style="margin-top:8px;">
                 <input id="betInput" type="number" value="100" step="10" min="10">
                 <div class="chips">
@@ -332,23 +852,22 @@
           <div class="divider"></div>
 
           <div class="muted">Options（タイトルでON/OFF）</div>
-          <div class="optGrid" style="margin-top:10px;">
+          <div class="optGrid">
             <div class="opt"><label><input type="checkbox" id="optDouble" checked> Double Down</label></div>
             <div class="opt"><label><input type="checkbox" id="optSplit" checked> Split</label></div>
             <div class="opt"><label><input type="checkbox" id="optSurrender" checked> Surrender (Late)</label></div>
             <div class="opt"><label><input type="checkbox" id="optInsurance" checked> Insurance</label></div>
             <div class="opt"><label><input type="checkbox" id="optEvenMoney" checked> Even Money</label></div>
-            <div class="opt"><label><input type="checkbox" id="optDAS" checked> DAS (Double after split)</label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> Split BJ as 
-            </label></div>
+            <div class="opt"><label><input type="checkbox" id="optDAS" checked> DAS</label></div>
+            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> Split BJ as BJ</label></div>
             <div class="opt"><label><input type="checkbox" id="optH17" checked> Dealer hits Soft 17</label></div>
           </div>
 
           <div class="divider"></div>
 
           <div class="row" style="justify-content:space-between">
-            <div class="muted">Tips：Reset は “1回タップ → Hold to reset → 2秒長押し”</div>
-            <button class="btn" id="btnHowTitle">遊び方</button>
+            <div class="small">Tips：Reset は「1回タップで武装 → 2秒長押し」で実行</div>
+            <button class="btn" id="btnHowTitle2">マーキング/操作</button>
           </div>
         </div>
       </div>
@@ -359,42 +878,81 @@
       <div class="grid">
         <div class="card">
           <div class="hd">
-            <h2>TABLE</h2>
+            <h2>CASINO TABLE</h2>
             <div class="badge" id="phaseBadge">-</div>
           </div>
           <div class="bd">
-            <div class="table">
-              <div class="handBox" id="dealerBox">
-                <div class="row" style="justify-content:space-between;">
-                  <div>
-                    <b>Dealer</b>
-                    <span class="muted" id="dealerScoreLine"></span>
+            <div class="tableStage">
+              <div class="tableTilt">
+                <div class="tableFrame">
+                  <div class="tableSurface">
+
+                    <!-- Markings (②C) -->
+                    <svg class="markings" viewBox="0 0 1000 650" preserveAspectRatio="none">
+                      <path id="arcPayout" d="M140,510 C260,600 740,600 860,510" />
+                      <path id="arcInner"  d="M210,475 C320,555 680,555 790,475" />
+                      <path class="markLine" d="M160,515 C280,610 720,610 840,515" />
+                      <path class="markDots" d="M210,478 C320,558 680,558 790,478" />
+
+                      <text font-size="28" class="markText">
+                        <textPath href="#arcPayout" startOffset="50%" text-anchor="middle">
+                          BLACKJACK PAYS 3 TO 2
+                        </textPath>
+                      </text>
+
+                      <text font-size="20" class="markText" style="letter-spacing:.22em;">
+                        <textPath href="#arcInner" startOffset="50%" text-anchor="middle">
+                          INSURANCE PAYS 2 TO 1
+                        </textPath>
+                      </text>
+
+                      <!-- Small rules line -->
+                      <text x="500" y="100" text-anchor="middle" font-size="20" class="markSmall">
+                        DEALER MUST DRAW TO 16 AND STAND ON 17 • 6 DECKS • HOUSE RULES APPLY
+                      </text>
+                    </svg>
+
+                    <!-- Dealer -->
+                    <div class="dealerZone">
+                      <div class="handBox" id="dealerBox">
+                        <div class="row" style="justify-content:space-between;">
+                          <div>
+                            <b>Dealer</b>
+                            <span class="muted" id="dealerScoreLine"></span>
+                          </div>
+                          <div class="badge" id="dealerHole">-</div>
+                        </div>
+                        <div class="cards" id="dealerCards"></div>
+                      </div>
+                    </div>
+
+                    <!-- Player -->
+                    <div class="playerZone">
+                      <div class="handArea" id="playerHands"></div>
+
+                      <div class="banner" id="roundBanner" style="display:none;">
+                        <div class="msg neutral" id="roundMsg">-</div>
+                        <div class="muted" id="roundMeta">-</div>
+                      </div>
+                    </div>
+
                   </div>
-                  <div class="badge" id="dealerHole">-</div>
                 </div>
-                <div class="cards" id="dealerCards"></div>
               </div>
-
-              <div class="handArea" id="playerHands"></div>
-
-              <div class="banner" id="roundBanner" style="display:none;">
-                <div class="msg neutral" id="roundMsg">-</div>
-                <div class="muted" id="roundMeta">-</div>
-              </div>
-            </div>
+            </div><!-- /tableStage -->
           </div>
         </div>
 
         <div class="card">
           <div class="hd">
-            <h2>CONTROLS</h2>
+            <h2>BET / INFO</h2>
             <div class="badge" id="rulesMini">-</div>
           </div>
           <div class="bd">
             <div class="row">
               <div class="muted">Bet</div>
               <input id="betInGame" type="number" value="100" step="10">
-              <button class="btn" id="btnSetBet">set_bet</button>
+              <button class="btn" id="btnSetBet">SET</button>
             </div>
 
             <div class="row chips" style="margin-top:10px;">
@@ -406,40 +964,27 @@
 
             <div class="divider"></div>
 
-            <div class="actions">
-              <button class="btn primary" id="btnDeal">Deal / Next Round</button>
-              <button class="btn" id="btnHit">Hit</button>
-              <button class="btn" id="btnStand">Stand</button>
-              <button class="btn" id="btnDouble">Double</button>
-              <button class="btn" id="btnSplit">Split</button>
-              <button class="btn" id="btnSurrender">Surrender</button>
+            <div class="row" style="justify-content:space-between;">
+              <div class="muted">Main actions are in DOCK</div>
+              <button class="btn ghost" id="btnMore" disabled>MORE</button>
             </div>
 
             <div class="divider"></div>
 
-            <div class="handBox" id="insuranceBox" style="display:none;">
-              <div class="row" style="justify-content:space-between;">
-                <b>Insurance</b>
-                <span class="muted" id="insHint">-</span>
-              </div>
-              <div class="row" style="margin-top:10px;">
-                <input id="insAmount" type="number" value="0" step="2" min="0">
-                <button class="btn" id="btnInsBuy">buy_insurance</button>
-                <button class="btn" id="btnInsNo">No thanks</button>
-              </div>
-              <div class="row" style="margin-top:8px;">
-                <button class="btn" id="btnEvenMoney">Even Money</button>
-              </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="muted small" id="debugLine">-</div>
+            <div class="small" id="debugLine">-</div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Bottom Dock -->
+  <nav class="dock" aria-label="main controls">
+    <button class="btn primary" id="btnDeal" disabled>DEAL <span class="k">D</span></button>
+    <button class="btn" id="btnHit" disabled>HIT <span class="k">H</span></button>
+    <button class="btn" id="btnStand" disabled>STAND <span class="k">S</span></button>
+    <button class="btn ghost" id="btnDockMore" disabled>MORE <span class="k">M</span></button>
+  </nav>
 
   <!-- OVERLAYS -->
   <div class="overlay" id="overlayPause">
@@ -472,7 +1017,7 @@
           <ul>
             <li>目標：<b>21に近づける</b>（21超えはBust）</li>
             <li>10/J/Q/Kは<b>全部10扱い</b>、Aは<b>1 or 11</b></li>
-            <li><b>Deal</b>で開始（RoundOver中は次ラウンドに進む）</li>
+            <li><b>DEAL</b>で開始（RoundOver中は次ラウンドに進む）</li>
             <li><b>Double</b>：同額追加→1回Hitで強制終了</li>
             <li><b>Split</b>：同“点数”ならOK。Aスプリットは1枚で終了</li>
             <li><b>Surrender</b>：最初の2枚のみ。掛け金の半分が返る（Late／peek後）</li>
@@ -480,6 +1025,43 @@
             <li><b>Even Money</b>：プレイヤーBJ時に提示</li>
           </ul>
           <p>※操作可否はC++が返す <b>state.can</b> が真実。ボタンは自動で無効化されます。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MORE overlay (Advanced actions + Insurance) -->
+  <div class="overlay" id="overlayMore">
+    <div class="modal">
+      <div class="hd">
+        <b>MORE / ACTIONS</b>
+        <button class="btn ghost" id="btnCloseMore">Close</button>
+      </div>
+      <div class="bd">
+        <div class="muted">基本は下のDOCKでOK。ここは“特殊手”だけ。</div>
+
+        <div class="actionsGrid">
+          <button class="btn" id="btnDouble">Double</button>
+          <button class="btn" id="btnSplit">Split</button>
+          <button class="btn" id="btnSurrender">Surrender</button>
+          <button class="btn ghost" id="btnOpenHow">How</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="handBox" id="insuranceBox" style="display:none;">
+          <div class="row" style="justify-content:space-between;">
+            <b>Insurance</b>
+            <span class="muted" id="insHint">-</span>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <input id="insAmount" type="number" value="0" step="2" min="0">
+            <button class="btn" id="btnInsBuy">BUY</button>
+            <button class="btn" id="btnInsNo">NO</button>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <button class="btn" id="btnEvenMoney">Even Money</button>
+          </div>
         </div>
       </div>
     </div>
@@ -522,20 +1104,99 @@
       return `${m}:${String(r).padStart(2,"0")}`;
     }
 
-    // ========= Engine bjApi =========
-    //let bjApi = null;
-    //let state = null;
+    function setEngineBadge(text, kind){
+      const b = $("engineBadge");
+      const t = $("engineText");
+      t.textContent = text;
+      b.classList.remove("good","bad");
+      if (kind) b.classList.add(kind);
+    }
 
-    // timer (JS drives timeLeftMs)
+    function animateNumber(el, from, to, duration=520){
+      from = Number(from); to = Number(to);
+      if (!Number.isFinite(from)) from = 0;
+      if (!Number.isFinite(to)) to = 0;
+      if (from === to){ el.textContent = String(to); return; }
+      const start = performance.now();
+      const diff = to - from;
+      const ease = (x)=> 1 - Math.pow(1-x, 3);
+      const step = (now)=>{
+        const t = Math.min(1, (now - start) / duration);
+        const v = Math.round(from + diff * ease(t));
+        el.textContent = String(v);
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    // ========= Engine bjApi =========
+    // blackjack_ui.js 側で Engine / engineReady / bjApi を用意している想定
+    let Engine = null;
+    let bjApi = null;
+    let state = null;
+
+ function apiReady(){
+   return (typeof engineReady !== "undefined" && engineReady) &&
+          (typeof Engine !== "undefined" && Engine) &&
+          (typeof bjApi !== "undefined" && bjApi);
+ }
+
+    function syncEngine(){
+      if (apiReady()){
+        // Engine = window.Engine;
+        // bjApi = window.bjApi;
+
+        setEngineBadge("READY", "good");
+        $("subLine").textContent = "ready.";
+        $("btnStart").disabled = false;
+        $("btnMore").disabled = false;
+        $("btnDockMore").disabled = false;
+
+        toast("Engine ready!");
+        return;
+      }
+      setEngineBadge("LOADING", null);
+      $("subLine").textContent = "loading engine…";
+      requestAnimationFrame(syncEngine);
+    }
+
+    // ========= timer =========
     let sessionMs = 300000;
-    let startTickAt = 0;        // performance.now
+    let startTickAt = 0;
     let pausedAt = 0;
     let pausedTotal = 0;
     let tickHandle = null;
     let lastTimePush = 0;
 
+    function startTick(){
+      stopTick();
+      startTickAt = performance.now();
+      pausedTotal = 0;
+      pausedAt = 0;
+      lastTimePush = 0;
+      tickHandle = setInterval(()=>{
+        if (!state) return;
+        if (state.phase === "paused") return;
+
+        const now = performance.now();
+        const elapsed = now - startTickAt - pausedTotal;
+        const left = Math.max(0, sessionMs - elapsed);
+
+        if (now - lastTimePush > 1000){
+          bjApi.set_time_left_ms(left|0);
+          lastTimePush = now;
+          refresh();
+        } else {
+          $("time").textContent = fmtTime(left|0);
+        }
+      }, 120);
+    }
+
+    function stopTick(){
+      if (tickHandle){ clearInterval(tickHandle); tickHandle = null; }
+    }
+
     function rulesMaskFromUI(){
-      // C++側 RuleBits と一致
       const RB_ALLOW_DOUBLE      = 1 << 0;
       const RB_ALLOW_SPLIT       = 1 << 1;
       const RB_ALLOW_SURRENDER   = 1 << 2;
@@ -557,16 +1218,15 @@
       return m >>> 0;
     }
 
-function refresh(){
-  if (!bjApi) return;
-  const p = bjApi.get_state_json();
-  const s = Engine.UTF8ToString(p);
-  bjApi.free_ptr(p);
-  state = JSON.parse(s);
-  render();
-  return state;
-}
-
+    function refresh(){
+      if (!bjApi) return;
+      const p = bjApi.get_state_json();
+      const s = Engine.UTF8ToString(p);
+      bjApi.free_ptr(p);
+      state = JSON.parse(s);
+      render();
+      return state;
+    }
 
     function callAction(fnName, ...args){
       const rc = bjApi[fnName](...args);
@@ -581,52 +1241,6 @@ function refresh(){
     function goScreen(name){
       $("screenTitle").classList.toggle("active", name==="title");
       $("screenGame").classList.toggle("active", name==="game");
-    }
-
-    function startTick(){
-      stopTick();
-      startTickAt = performance.now();
-      pausedTotal = 0;
-      pausedAt = 0;
-      lastTimePush = 0;
-      tickHandle = setInterval(()=>{
-        if (!state) return;
-        // paused phaseなら進めない
-        if (state.phase === "paused") return;
-
-        const now = performance.now();
-        const elapsed = now - startTickAt - pausedTotal;
-        const left = Math.max(0, sessionMs - elapsed);
-        // C++へは1秒に1回くらいで十分
-        if (now - lastTimePush > 1000){
-          bjApi.set_time_left_ms(left|0);
-          lastTimePush = now;
-          refresh();
-        } else {
-          // UIの表示用だけ更新（stateは次refreshで追従）
-          $("time").textContent = fmtTime(left|0);
-        }
-      }, 120);
-    }
-
-    function stopTick(){
-      if (tickHandle){ clearInterval(tickHandle); tickHandle = null; }
-    }
-
-    function pauseOn(){
-      if (!state) return;
-      callAction("set_paused", 1);
-      pausedAt = performance.now();
-      $("overlayPause").classList.add("show");
-    }
-    function pauseOff(){
-      if (!state) return;
-      if (pausedAt){
-        pausedTotal += performance.now() - pausedAt;
-        pausedAt = 0;
-      }
-      callAction("set_paused", 0);
-      $("overlayPause").classList.remove("show");
     }
 
     // ========= Hold to reset =========
@@ -646,7 +1260,6 @@ function refresh(){
       $("btnReset").textContent = "Hold to reset";
       $("btnReset").classList.add("danger");
       toast("2秒長押しでリセット");
-      // 5秒で自動解除
       setTimeout(()=>{ if (resetArmed) disarmReset(); }, 5000);
     }
 
@@ -656,17 +1269,39 @@ function refresh(){
       callAction("reset_session");
       $("overlayPause").classList.remove("show");
       $("overlayHow").classList.remove("show");
+      $("overlayMore").classList.remove("show");
       goScreen("title");
       $("subLine").textContent = "ready.";
       toast("Reset!");
+      // animation caches reset
+      prevDealerCards = [];
+      prevPlayerLens = [];
+      prevBank = null;
     }
+
+    // ========= Anim caches =========
+    let prevBank = null;
+    let prevDealerCards = [];
+    let prevPlayerLens = [];
 
     // ========= Render =========
     function render(){
       if (!state) return;
 
       $("subLine").textContent = `phase: ${state.phase}`;
-      $("bank").textContent = state.bank;
+
+      // Bank anim
+      const bankEl = $("bank");
+      const bankPill = bankEl.closest(".pill");
+      const newBank = Number(state.bank);
+      if (prevBank === null){
+        bankEl.textContent = String(newBank);
+      } else if (prevBank !== newBank){
+        animateNumber(bankEl, prevBank, newBank, 520);
+        bankPill.classList.remove("bankFlash"); void bankPill.offsetWidth; bankPill.classList.add("bankFlash");
+      }
+      prevBank = newBank;
+
       $("round").textContent = `${state.session.round}/${state.session.roundLimit}`;
       $("time").textContent = fmtTime(state.session.timeLeftMs);
 
@@ -688,20 +1323,36 @@ function refresh(){
 
       const dWrap = $("dealerCards");
       dWrap.innerHTML = "";
-      (state.dealer.cards||[]).forEach((c, idx)=>{
+      const dealerCards = (state.dealer.cards||[]);
+      dealerCards.forEach((c, idx)=>{
         const el = document.createElement("div");
-        if (c === "?") { el.className="cardBack"; }
-        else { el.className="cardFace"; el.textContent=c; }
+        const prev = prevDealerCards[idx];
+
+        if (c === "?"){
+          el.className = "cardBack";
+        } else {
+          el.className = "cardFace";
+          el.textContent = c;
+        }
+
+        const isNew = idx >= prevDealerCards.length;
+        const reveal = (prev === "?" && c !== "?");
+        if (isNew) el.classList.add("dealIn");
+        if (reveal) el.classList.add("flipIn");
+
         dWrap.appendChild(el);
       });
+      prevDealerCards = dealerCards.slice();
 
       // Player hands
       const ph = $("playerHands");
       ph.innerHTML = "";
       const hands = (state.player && state.player.hands) ? state.player.hands : [];
+
       hands.forEach((h, i)=>{
         const box = document.createElement("div");
         box.className = "handBox" + (i === state.player.activeHandIndex ? " active" : "");
+
         const flags = [];
         if (h.flags.blackjack) flags.push("BJ");
         if (h.flags.bust) flags.push("BUST");
@@ -709,22 +1360,39 @@ function refresh(){
         if (h.flags.surrendered) flags.push("SUR");
         if (h.flags.fromSplit) flags.push("SPLIT");
         if (h.flags.splitAces) flags.push("A-SPLIT");
+
         const badgeClass =
           h.flags.blackjack ? "good" :
-          h.flags.bust ? "bad" :
-          h.flags.surrendered ? "bad" : "";
+          (h.flags.bust || h.flags.surrendered) ? "bad" : "";
 
-        box.innerHTML = `
-          <div class="row" style="justify-content:space-between;">
-            <div>
-              <b>Player ${hands.length>1 ? `Hand ${i+1}` : ""}</b>
-              <span class="muted"> score ${h.score} / bet ${h.bet}</span>
-            </div>
-            <div class="badge ${badgeClass}">${flags.length?flags.join(" • "):"playing"}</div>
+        const header = document.createElement("div");
+        header.className = "row";
+        header.style.justifyContent = "space-between";
+        header.innerHTML = `
+          <div>
+            <b>Player ${hands.length>1 ? `Hand ${i+1}` : ""}</b>
+            <span class="muted"> score ${h.score} / bet ${h.bet}</span>
           </div>
-          <div class="cards">${(h.cards||[]).map(cc=>`<div class="cardFace">${cc}</div>`).join("")}</div>
+          <div class="badge ${badgeClass}">${flags.length?flags.join(" • "):"playing"}</div>
         `;
+        box.appendChild(header);
+
+        const cards = document.createElement("div");
+        cards.className = "cards";
+        const prevLen = prevPlayerLens[i] ?? 0;
+
+        (h.cards||[]).forEach((cc, idx)=>{
+          const ce = document.createElement("div");
+          ce.className = "cardFace";
+          ce.textContent = cc;
+          if (idx >= prevLen) ce.classList.add("dealIn"); // ④A slide
+          cards.appendChild(ce);
+        });
+
+        box.appendChild(cards);
         ph.appendChild(box);
+
+        prevPlayerLens[i] = (h.cards||[]).length;
       });
 
       // Controls enable/disable from state.can
@@ -732,11 +1400,12 @@ function refresh(){
       $("btnDeal").disabled = !can.deal;
       $("btnHit").disabled = !can.hit;
       $("btnStand").disabled = !can.stand;
+
       $("btnDouble").disabled = !can.double;
       $("btnSplit").disabled = !can.split;
       $("btnSurrender").disabled = !can.surrender;
 
-      // Insurance UI
+      // Insurance UI (in MORE overlay)
       const showIns = (state.phase === "offerInsurance");
       $("insuranceBox").style.display = showIns ? "block" : "none";
       $("btnInsBuy").disabled = !can.insurance;
@@ -776,16 +1445,11 @@ function refresh(){
 
       $("debugLine").textContent = `lastErrorCode=${state.lastErrorCode} lastError="${state.lastError || ""}"`;
 
-      // bet hint
-      const hint = $("betHint");
       const v = floorEven($("betInput").value);
-      hint.textContent = `入力=${$("betInput").value} → 偶数化=${v}（min ${state.minBet} / max bank）`;
+      $("betHint").textContent = `入力=${$("betInput").value} → 偶数化=${v}`;
     }
 
-    // ========= Module (emscripten) =========
-
     // ========= UI events =========
-    // Title chips
     document.querySelectorAll('[data-add]').forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const cur = Number($("betInput").value||0);
@@ -801,23 +1465,36 @@ function refresh(){
     });
 
     $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
+    $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowPause").onclick = ()=> $("overlayHow").classList.add("show");
+    $("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
 
+    $("btnMore").onclick = ()=> $("overlayMore").classList.add("show");
+    $("btnDockMore").onclick = ()=> $("overlayMore").classList.add("show");
+    $("btnCloseMore").onclick = ()=> $("overlayMore").classList.remove("show");
+
     $("btnPause").onclick = ()=>{
-      if (!state) return;
-      // ゲーム画面だけで有効
+      if (!state) return toast("ゲーム中に使えます");
       if ($("screenGame").classList.contains("active")){
-        pauseOn();
+        callAction("set_paused", 1);
+        pausedAt = performance.now();
+        $("overlayPause").classList.add("show");
       } else {
         toast("ゲーム中に使えます");
       }
     };
-    $("btnClosePause").onclick = pauseOff;
-    $("btnContinue").onclick = pauseOff;
+    $("btnClosePause").onclick = ()=>{
+      if (pausedAt){
+        pausedTotal += performance.now() - pausedAt;
+        pausedAt = 0;
+      }
+      callAction("set_paused", 0);
+      $("overlayPause").classList.remove("show");
+    };
+    $("btnContinue").onclick = $("btnClosePause").onclick;
     $("btnQuit").onclick = ()=> doResetToTitle();
 
-    // Reset: 1回タップでHoldモードへ、2秒長押しで実行
     $("btnReset").addEventListener("click", ()=>{
       if (!resetArmed) armResetOnce();
     });
@@ -826,7 +1503,7 @@ function refresh(){
       if (!resetArmed) return;
       holdStart = performance.now();
       const btn = $("btnReset");
-      btn.textContent = "Holding...";
+      btn.textContent = "Holding…";
       const wrap = document.createElement("div");
       wrap.className = "prog";
       const bar = document.createElement("div");
@@ -855,29 +1532,33 @@ function refresh(){
     $("btnReset").addEventListener("pointerleave", cancelHold);
     $("btnReset").addEventListener("pointercancel", cancelHold);
 
-$("btnStart").onclick = () => {
-  if (!engineReady || !bjApi){
-    toast("engine not ready");
-    return;
-  }
+    // Start session (engine ready guard)
+    $("btnStart").onclick = () => {
+      if (!apiReady()){
+        toast("engine not ready");
+        return;
+      }
 
-  const {lo,hi} = seed64();
-  const mask = rulesMaskFromUI();
-  const sessionSeconds = 300;   // 5分
-  const roundLimit = 12;
+      const {lo,hi} = seed64();
+      const mask = rulesMaskFromUI();
+      const sessionSeconds = 300;
+      const roundLimit = 12;
 
-  callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
+      callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
 
-  // set_bet
-  const bet = floorEven($("betInput").value);
-  $("betInGame").value = bet;
-  callAction("set_bet", bet);
+      const bet = floorEven($("betInput").value);
+      $("betInGame").value = bet;
+      callAction("set_bet", bet);
 
-  goScreen("game");
-  startTick();
-  toast("Good luck!");
-};
+      // clear animation caches
+      prevDealerCards = [];
+      prevPlayerLens = [];
+      prevBank = null;
 
+      goScreen("game");
+      startTick();
+      toast("Good luck!");
+    };
 
     $("btnSetBet").onclick = ()=>{
       const v = floorEven($("betInGame").value);
@@ -885,9 +1566,12 @@ $("btnStart").onclick = () => {
       callAction("set_bet", v);
     };
 
+    // Main actions (Dock)
     $("btnDeal").onclick = ()=> callAction("deal");
     $("btnHit").onclick = ()=> callAction("hit");
     $("btnStand").onclick = ()=> callAction("stand");
+
+    // Advanced (More)
     $("btnDouble").onclick = ()=> callAction("double_down");
     $("btnSplit").onclick = ()=> callAction("split");
     $("btnSurrender").onclick = ()=> callAction("surrender");
@@ -900,11 +1584,35 @@ $("btnStart").onclick = () => {
     };
     $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
 
+    // keyboard shortcuts
+    window.addEventListener("keydown", (e)=>{
+      if (!apiReady() || !$("screenGame").classList.contains("active")) return;
+      const k = e.key.toLowerCase();
+      if (k === "d") $("btnDeal").click();
+      if (k === "h") $("btnHit").click();
+      if (k === "s") $("btnStand").click();
+      if (k === "m") $("btnDockMore").click();
+      if (k === "escape"){
+        if ($("overlayMore").classList.contains("show")) $("overlayMore").classList.remove("show");
+        else if ($("overlayHow").classList.contains("show")) $("overlayHow").classList.remove("show");
+        else if ($("overlayPause").classList.contains("show")) $("btnClosePause").click();
+      }
+    });
+
+    // bet hint pre-engine
+    function updateBetHintPreEngine(){
+      const v = floorEven($("betInput").value);
+      $("betHint").textContent = `入力=${$("betInput").value} → 偶数化=${v}`;
+    }
+    $("betInput").addEventListener("input", updateBetHintPreEngine);
+    updateBetHintPreEngine();
+
+    // kick engine sync loop
+    syncEngine();
   </script>
 
   <!-- build -->
-<script src="blackjack.js"></script>
-<script src="blackjack_ui.js"></script>
-
+  <script src="blackjack.js"></script>
+  <script src="blackjack_ui.js"></script>
 </body>
 </html>

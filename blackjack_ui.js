@@ -1,8 +1,8 @@
 // ========= Global =========
-let Engine = null;
-let bjApi = null;
-let state = null;
-let engineReady = false;
+// let Engine = null;
+// let bjApi = null;
+// let state = null;
+// let engineReady = false;
 
 //const $ = (id)=>document.getElementById(id);
 
@@ -34,3 +34,6 @@ Module().then(mod => {
   toast("Engine ready");
   refresh(); // 初回反映
 });
+globalThis.Engine = Engine;
+globalThis.bjApi = bjApi;
+globalThis.engineReady = engineReady;
