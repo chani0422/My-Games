@@ -649,6 +649,16 @@
       background: rgba(0,0,0,.14);
     }
 
+    /* === Insurance dock mode === */
+.dock.insMode{
+  grid-template-columns: 1fr 1fr;
+}
+.dock.insMode #btnDeal,
+.dock.insMode #btnDockMore{
+  display:none;
+}
+
+
     /* ===== Overlays ===== */
     .overlay{
       position:fixed; inset:0;
@@ -873,8 +883,8 @@ body{
       <div class="card">
         <div class="titleHero">
           <div class="chipline">🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1</div>
-          <h2>One more… が止まらない Blackjack</h2>
-          <p>配布は気持ちよく。勝ったらBankがぬるっと伸びる。</p>
+          <h2>Blackjack</h2>
+          <p>ランキングで自己ベスト更新を目指せ！！</p>
 
           <div class="ctaRow">
             <button class="btn primary ctaBig" id="btnStart" disabled>DEAL / START</button>
@@ -1033,6 +1043,26 @@ body{
             </div>
 
             <div class="divider"></div>
+<div class="handBox" id="insSideBox" style="display:none; margin-top:12px;">
+  <div class="row" style="justify-content:space-between;">
+    <b>Insurance</b>
+    <span class="muted" id="insHintSide">-</span>
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <input id="insAmountSide" type="number" value="0" step="2" min="0">
+    <button class="btn" id="btnInsMaxSide">MAX</button>
+    <button class="btn ghost" id="btnInsZeroSide">0</button>
+  </div>
+
+  <div class="muted small" style="margin-top:8px;">
+    下のDOCKで <b>YES / NO</b> を選択
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <button class="btn" id="btnEvenMoneyIns">Even Money</button>
+  </div>
+</div>
 
             <div class="small" id="debugLine">-</div>
           </div>
@@ -1133,6 +1163,9 @@ body{
   <div class="toastWrap" id="toastWrap"></div>
 
   <script>
+
+    let prevPhase = null;
+
     // ========= Utilities =========
     const $ = (id)=>document.getElementById(id);
 
@@ -1283,6 +1316,7 @@ function apiReady(){
     }
 
     function refresh(){
+      //if (!state) return;
       if (!bjApi) return;
       const p = bjApi.get_state_json();
       const s = Engine.UTF8ToString(p);
@@ -1347,16 +1381,25 @@ function apiReady(){
     let prevBank = null;
     let prevDealerCards = [];
     let prevPlayerLens = [];
+    let hideBoardAfterSet = false;   // ← これを追加（グローバル）
 
     // ========= Render =========
     function render(){
-function setDis(id, disabled){
-  const el = document.getElementById(id);
-  if (el) el.disabled = !!disabled;
-}
+
+      function setDis(id, disabled){
+        const el = document.getElementById(id);
+        if (el) el.disabled = !!disabled;
+      }
 
       if (!state) return;
 
+      const phase = state.phase;
+      // roundOver / sessionOver 以外のフェーズに移ったらフラグを解除
+      if (phase !== "roundOver" && phase !== "sessionOver") {
+        hideBoardAfterSet = false;
+      }
+      const hideBoard =
+        hideBoardAfterSet && (phase === "roundOver" || phase === "sessionOver");
       $("subLine").textContent = `phase: ${state.phase}`;
 
       // Bank anim
@@ -1387,20 +1430,26 @@ function setDis(id, disabled){
       ].filter(Boolean).join(" • ") || "-";
 
       // Dealer
-const totalText = state.dealer.holeKnown ? String(state.dealer.score) : "?";
+      const totalText = hideBoard
+        ? "-"
+        : (state.dealer.holeKnown ? String(state.dealer.score) : "?");
 
-$("dealerScoreLine").innerHTML = `
-  <span class="metaLine">
-    <span class="kv"><span class="k">Shown</span><b class="v">${state.dealer.scoreShown}</b></span>
-    <span class="kv"><span class="k">Total</span><b class="v">${totalText}</b></span>
-  </span>
-`;
+      const shownText = hideBoard ? "-" : state.dealer.scoreShown;
 
-      $("dealerHole").textContent = state.dealer.holeKnown ? "hole open" : "hole hidden";
+      $("dealerScoreLine").innerHTML = `
+        <span class="metaLine">
+          <span class="kv"><span class="k">Shown</span><b class="v">${shownText}</b></span>
+          <span class="kv"><span class="k">Total</span><b class="v">${totalText}</b></span>
+        </span>
+      `;
+
+      $("dealerHole").textContent = hideBoard
+        ? "-"
+        : (state.dealer.holeKnown ? "hole open" : "hole hidden");
 
       const dWrap = $("dealerCards");
       dWrap.innerHTML = "";
-      const dealerCards = (state.dealer.cards||[]);
+      const dealerCards = hideBoard ? [] : (state.dealer.cards || []);
       dealerCards.forEach((c, idx)=>{
         const el = document.createElement("div");
         const prev = prevDealerCards[idx];
@@ -1424,8 +1473,10 @@ $("dealerScoreLine").innerHTML = `
       // Player hands
       const ph = $("playerHands");
       ph.innerHTML = "";
-      const hands = (state.player && state.player.hands) ? state.player.hands : [];
-
+          const hands =
+        (!hideBoard && state.player && state.player.hands)
+          ? state.player.hands
+          : [];
       hands.forEach((h, i)=>{
         const box = document.createElement("div");
         box.className = "handBox" + (i === state.player.activeHandIndex ? " active" : "");
@@ -1539,8 +1590,7 @@ setDis("btnEvenMoneySide", !can.evenMoney);
 
       // ===== Bet lock/unlock =====
 // BETを編集できるのは「配る前」or「勝敗確定後」だけ
-const betEditable = (state.phase === "betting" || state.phase === "roundOver");
-
+  const betEditable = (state.phase === "betting" || state.phase === "roundOver" || state.phase === "sessionOver");
 // 入力欄とSETボタン
 setDis("betInGame", !betEditable);
 setDis("btnSetBet", !betEditable);
@@ -1549,10 +1599,76 @@ setDis("btnSetBet", !betEditable);
 document.querySelectorAll("[data-add2]").forEach((b) => {
   b.disabled = !betEditable;
 });
+// ===== Insurance DOCK + Side panel =====
+const insMode = (state.phase === "offerInsurance");
+document.querySelector(".dock").classList.toggle("insMode", insMode);
+
+// DOCKラベルを切り替え
+function setDockLabel(id, label, key){
+  const el = $(id);
+  if (!el) return;
+  el.innerHTML = `${label} <span class="k">${key}</span>`;
+}
+
+
+
+if (insMode){
+  setDockLabel("btnHit", "YES", "Y");
+  setDockLabel("btnStand", "NO", "N");
+
+  // YES/NO を押せるか（C++の真実）
+  $("btnHit").disabled = !(can.insurance);
+  $("btnStand").disabled = !(can.insurance);
+
+  // 右側：金額入力表示
+  $("insSideBox").style.display = "block";
+  $("insAmountSide").disabled = false;
+
+  const mx = state.insurance.max|0;
+  $("insHintSide").textContent = `max ${mx} (bet/2)`;
+  const a = $("insAmountSide");
+  a.max = mx;
+  a.step = 2;
+
+  // 初回突入時は MAX を入れておく（好みで 0 にしてもOK）
+  if (prevPhase !== "offerInsurance"){
+    a.value = mx;
+  } else {
+    a.value = Math.min(floorEven(a.value), mx);
+  }
+
+  // Even Money（あるときだけ）
+  $("btnEvenMoneyIns").style.display = (can.evenMoney ? "block" : "none");
+  $("btnEvenMoneyIns").disabled = !can.evenMoney;
+
+  // 混乱防止：MOREは封印
+  $("btnDockMore").disabled = true;
+
+} else {
+  setDockLabel("btnHit", "HIT", "H");
+  setDockLabel("btnStand", "STAND", "S");
+
+  $("insSideBox").style.display = "none";
+  $("insAmountSide").disabled = true;
+
+  // いつもの制御に戻す（あなたの既存setDisでもOK）
+  $("btnHit").disabled = !can.hit;
+  $("btnStand").disabled = !can.stand;
+}
+
+// render() の最後に
+prevPhase = state.phase;
 
       console.log("render ok", state.phase);
 
     }
+
+if (state && (state.phase === "betting" || state.phase === "roundOver")) {
+    prevDealerCards = [];
+    prevPlayerLens = [];
+}
+
+
 
     // ========= UI events =========
     document.querySelectorAll('[data-add]').forEach(btn=>{
@@ -1594,11 +1710,39 @@ document.querySelectorAll("[data-add2]").forEach((b) => {
         pausedTotal += performance.now() - pausedAt;
         pausedAt = 0;
       }
+  $("btnDeal").onclick = ()=> {
+  if (state && (state.phase === "betting" || state.phase === "roundOver")) {
+    prevDealerCards = [];
+    prevPlayerLens  = [];
+  }
+  callAction("deal");
+};
+
       callAction("set_paused", 0);
       $("overlayPause").classList.remove("show");
     };
     $("btnContinue").onclick = $("btnClosePause").onclick;
     $("btnQuit").onclick = ()=> doResetToTitle();
+
+    $("btnInsMaxSide").onclick = ()=> {
+  if (!state || state.phase !== "offerInsurance") return;
+  $("insAmountSide").value = state.insurance.max|0;
+};
+$("btnInsZeroSide").onclick = ()=> {
+  if (!state || state.phase !== "offerInsurance") return;
+  $("insAmountSide").value = 0;
+};
+$("btnEvenMoneyIns").onclick = ()=> callAction("take_even_money");
+
+$("btnDeal").onclick = ()=> {
+  $("btnHit").disabled = true;
+  $("btnStand").disabled = true;
+  setTimeout(()=>{ 
+    callAction("deal"); 
+  }, 50);
+};
+
+
 
     $("btnReset").addEventListener("click", ()=>{
       if (!resetArmed) armResetOnce();
@@ -1656,27 +1800,77 @@ document.querySelectorAll("[data-add2]").forEach((b) => {
       callAction("set_bet", bet);
 
       // clear animation caches
-      prevDealerCards = [];
-      prevPlayerLens = [];
-      prevBank = null;
-
+       prevDealerCards = [];
+       prevPlayerLens = [];
+       prevBank = null;
+       hideBoardAfterSet = false;   // ← 追加：SET 後に盤面を隠す用
       goScreen("game");
       startTick();
       toast("Good luck!");
     };
 
 $("btnSetBet").onclick = ()=>{
-  if (!state || !(state.phase === "betting" || state.phase === "roundOver")) return;
+  if (!state) return;
+  const phase = state.phase;
   const v = floorEven($("betInGame").value);
   $("betInGame").value = v;
-  callAction("set_bet", v);
+
+  // BETTING / roundOver 中は今まで通りエンジンに bet を送る
+  if (phase === "betting" || phase === "roundOver") {
+    callAction("set_bet", v);
+    // roundOver 中に SET したら盤面を消して「次ラウンド待ち」の見た目にする
+    if (phase === "roundOver") {
+      hideBoardAfterSet = true;
+      render();
+    }
+    return;
+  }
+
+  // ★ sessionOver 中に SET を押した場合 → 盤面だけ消す
+  if (phase === "sessionOver") {
+    hideBoardAfterSet = true;
+    render();      // エンジンには触らず、見た目だけ更新
+    return;
+  }
 };
 
 
     // Main actions (Dock)
     $("btnDeal").onclick = ()=> callAction("deal");
-    $("btnHit").onclick = ()=> callAction("hit");
-    $("btnStand").onclick = ()=> callAction("stand");
+$("btnHit").onclick = ()=> {
+  if (!state) return;
+
+  if (state.phase === "offerInsurance") {
+    const mx = state.insurance?.max ?? 0;
+    let v = floorEven($("insAmountSide").value);
+    v = Math.max(0, Math.min(v, mx));
+    $("insAmountSide").value = v;
+    return callAction("buy_insurance", v); // YES
+  }
+
+  return callAction("hit");
+};
+
+$("btnStand").onclick = ()=> {
+  if (!state) return;
+
+  if (state.phase === "offerInsurance") {
+    return callAction("buy_insurance", 0); // NO
+  }
+
+  return callAction("stand");
+};
+
+
+$("btnStand").onclick = ()=> {
+  if (!state) return;
+  if (state.phase === "offerInsurance"){
+    $("insAmountSide").value = 0;
+    return callAction("buy_insurance", 0);   // NO
+  }
+  return callAction("stand");
+};
+
 
     // Advanced (More)
     $("btnDouble").onclick = ()=> callAction("double_down");
@@ -1717,6 +1911,12 @@ $("btnEvenMoneySide").onclick = ()=> callAction("take_even_money");
         else if ($("overlayHow").classList.contains("show")) $("overlayHow").classList.remove("show");
         else if ($("overlayPause").classList.contains("show")) $("btnClosePause").click();
       }
+      if (state && state.phase === "offerInsurance"){
+      if (k === "y") $("btnHit").click();
+      if (k === "n") $("btnStand").click();
+      return;
+    }
+
     });
 
     // bet hint pre-engine

@@ -35,6 +35,9 @@ Module().then(mod => {
     take_even_money: Engine.cwrap('take_even_money', 'number', []),
     get_state_json: Engine.cwrap('get_state_json', 'number', []),
     free_ptr: Engine.cwrap('free_ptr', null, ['number']),
+    
+      next_round: Engine.cwrap('next_round', 'number', []),
+  debug_set_shoe: Engine.cwrap('debug_set_shoe', 'number', ['string']),
   };
 
 globalThis.Engine = Engine;

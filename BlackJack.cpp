@@ -512,23 +512,29 @@ int set_bet(int amount) {
   }
   clear_error();
 
-  // ★ 奇数は絶対に禁止（丸めない）
-  if (amount % 2 != 0) {
-    return set_error(INVALID_BET, "Bet must be even");
-  }
-
-  if (amount < minBet) {
-    return set_error(INVALID_BET, "Bet < minBet");
-  }
-
-  if (amount > bank) {
-    return set_error(INVALID_BET, "Bet > bank");
-  }
+  if (amount % 2 != 0) return set_error(INVALID_BET, "Bet must be even");
+  if (amount < minBet) return set_error(INVALID_BET, "Bet < minBet");
+  if (amount > bank)   return set_error(INVALID_BET, "Bet > bank");
 
   baseBet = amount;
+
+  // ★ここが肝：ROUND_OVER から SET したら盤面を消す
+  if (phase == Phase::ROUND_OVER) {
+    dealer.clear();
+    dealerHoleKnown = false;
+    dealerPeekNoBJ = false;
+
+    hands.clear();
+    activeHandIndex = 0;
+
+    ins = InsuranceState{};
+    // rr は残してOK（表示したいなら）
+  }
+
   set_phase(Phase::BETTING);
   return OK;
 }
+
 
 
 
