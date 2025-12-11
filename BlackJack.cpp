@@ -1,3 +1,5 @@
+//BlackJack.cpp
+
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -586,7 +588,7 @@ int set_bet(int amount) {
 
     if (upIsAce && rules.allowInsurance) {
       ins.offered = true;
-      ins.max = baseBet / 2;
+      ins.max = std::min(baseBet / 2, bank);
       ins.bet = 0;
       ins.evenMoneyOffered = (rules.allowEvenMoney && hands[0].flags.blackjack);
       ins.evenMoneyTaken = false;

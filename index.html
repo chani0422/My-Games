@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -654,9 +655,9 @@
   grid-template-columns: 1fr 1fr;
 }
 .dock.insMode #btnDeal,
-.dock.insMode #btnDockMore{
+/* .dock.insMode #btnDockMore{
   display:none;
-}
+} */
 
 
     /* ===== Overlays ===== */
@@ -1076,7 +1077,6 @@ body{
     <button class="btn primary" id="btnDeal" disabled>DEAL <span class="k">D</span></button>
     <button class="btn" id="btnHit" disabled>HIT <span class="k">H</span></button>
     <button class="btn" id="btnStand" disabled>STAND <span class="k">S</span></button>
-    <button class="btn ghost" id="btnDockMore" disabled>MORE <span class="k">M</span></button>
   </nav>
 
   <!-- OVERLAYS -->
@@ -1123,42 +1123,6 @@ body{
     </div>
   </div>
 
-  <!-- MORE overlay (Advanced actions + Insurance) -->
-  <div class="overlay" id="overlayMore">
-    <div class="modal">
-      <div class="hd">
-        <b>MORE / ACTIONS</b>
-        <button class="btn ghost" id="btnCloseMore">Close</button>
-      </div>
-      <div class="bd">
-        <div class="muted">基本は下のDOCKでOK。ここは“特殊手”だけ。</div>
-
-        <div class="actionsGrid">
-          <button class="btn" id="btnDouble">Double</button>
-          <button class="btn" id="btnSplit">Split</button>
-          <button class="btn" id="btnSurrender">Surrender</button>
-          <button class="btn ghost" id="btnOpenHow">How</button>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="handBox" id="insuranceBox" style="display:none;">
-          <div class="row" style="justify-content:space-between;">
-            <b>Insurance</b>
-            <span class="muted" id="insHint">-</span>
-          </div>
-          <div class="row" style="margin-top:10px;">
-            <input id="insAmount" type="number" value="0" step="2" min="0">
-            <button class="btn" id="btnInsBuy">BUY</button>
-            <button class="btn" id="btnInsNo">NO</button>
-          </div>
-          <div class="row" style="margin-top:8px;">
-            <button class="btn" id="btnEvenMoney">Even Money</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div class="toastWrap" id="toastWrap"></div>
 
@@ -1247,7 +1211,6 @@ function apiReady(){
         $("subLine").textContent = "ready.";
         $("btnStart").disabled = false;
         $("btnMore").disabled = false;
-        $("btnDockMore").disabled = false;
 
         toast("Engine ready!");
         return;
@@ -1367,7 +1330,6 @@ function apiReady(){
       callAction("reset_session");
       $("overlayPause").classList.remove("show");
       $("overlayHow").classList.remove("show");
-      $("overlayMore").classList.remove("show");
       goScreen("title");
       $("subLine").textContent = "ready.";
       toast("Reset!");
@@ -1528,36 +1490,42 @@ header.innerHTML = `
       });
 
       // Controls enable/disable from state.can
+// Controls enable/disable from state.can
 const can = state.can || {};
+const insMode = (state.phase === "offerInsurance");
 
-setDis("btnDeal", !can.deal);
-setDis("btnHit", !can.hit);
-setDis("btnStand", !can.stand);
-setDis("btnDouble", !can.double);
-setDis("btnSplit", !can.split);
-setDis("btnSurrender", !can.surrender);
+// === Dock main buttons ===
+if (insMode) {
+  // Insurance 中は DOCK = YES / NO 専用
+  setDis("btnDeal", true);                 // DEAL は封印
+  setDis("btnHit", !can.insurance);        // YES
+  setDis("btnStand", !can.insurance);      // NO
+  setDis("btnDouble", true);
+  setDis("btnSplit", true);
+  setDis("btnSurrender", true);
+} else {
+  // 通常時は C++ の can.* をそのまま使う
+  setDis("btnDeal", !can.deal);
+  setDis("btnHit", !can.hit);
+  setDis("btnStand", !can.stand);
+  setDis("btnDouble", !can.double);
+  setDis("btnSplit", !can.split);
+  setDis("btnSurrender", !can.surrender);
+}
 
-// 右パネル側（追加）
-
-setDis("btnDoubleSide", !can.double);
-setDis("btnSplitSide", !can.split);
-setDis("btnSurrenderSide", !can.surrender);
-setDis("btnEvenMoneySide", !can.evenMoney);
-
-      // Insurance UI (in MORE overlay)
-      const showIns = (state.phase === "offerInsurance");
-      $("insuranceBox").style.display = showIns ? "block" : "none";
-      $("btnInsBuy").disabled = !can.insurance;
-      $("btnInsNo").disabled = !can.insurance;
-      $("btnEvenMoney").disabled = !can.evenMoney;
-
-      if (showIns){
-        $("insHint").textContent = `max ${state.insurance.max}`;
-        const a = $("insAmount");
-        a.max = state.insurance.max;
-        a.step = 2;
-        a.value = Math.min(Number(a.value||0), state.insurance.max);
-      }
+// === 右パネル側も同様 ===
+if (insMode) {
+  setDis("btnDoubleSide", true);
+  setDis("btnSplitSide", true);
+  setDis("btnSurrenderSide", true);
+  // Even Money は insMode のときだけ意味があるのでここで制御
+  setDis("btnEvenMoneySide", !can.evenMoney);
+} else {
+  setDis("btnDoubleSide", !can.double);
+  setDis("btnSplitSide", !can.split);
+  setDis("btnSurrenderSide", !can.surrender);
+  setDis("btnEvenMoneySide", !can.evenMoney);
+}
 
       // Round banner
       const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
@@ -1600,7 +1568,7 @@ document.querySelectorAll("[data-add2]").forEach((b) => {
   b.disabled = !betEditable;
 });
 // ===== Insurance DOCK + Side panel =====
-const insMode = (state.phase === "offerInsurance");
+//const insMode = (state.phase === "offerInsurance");
 document.querySelector(".dock").classList.toggle("insMode", insMode);
 
 // DOCKラベルを切り替え
@@ -1616,9 +1584,7 @@ if (insMode){
   setDockLabel("btnHit", "YES", "Y");
   setDockLabel("btnStand", "NO", "N");
 
-  // YES/NO を押せるか（C++の真実）
-  $("btnHit").disabled = !(can.insurance);
-  $("btnStand").disabled = !(can.insurance);
+  // ボタンの enable/disable は上の setDis ブロックに任せる
 
   // 右側：金額入力表示
   $("insSideBox").style.display = "block";
@@ -1630,19 +1596,14 @@ if (insMode){
   a.max = mx;
   a.step = 2;
 
-  // 初回突入時は MAX を入れておく（好みで 0 にしてもOK）
   if (prevPhase !== "offerInsurance"){
     a.value = mx;
   } else {
     a.value = Math.min(floorEven(a.value), mx);
   }
 
-  // Even Money（あるときだけ）
   $("btnEvenMoneyIns").style.display = (can.evenMoney ? "block" : "none");
   $("btnEvenMoneyIns").disabled = !can.evenMoney;
-
-  // 混乱防止：MOREは封印
-  $("btnDockMore").disabled = true;
 
 } else {
   setDockLabel("btnHit", "HIT", "H");
@@ -1651,10 +1612,9 @@ if (insMode){
   $("insSideBox").style.display = "none";
   $("insAmountSide").disabled = true;
 
-  // いつもの制御に戻す（あなたの既存setDisでもOK）
-  $("btnHit").disabled = !can.hit;
-  $("btnStand").disabled = !can.stand;
+  // HIT/STAND の disable は setDis に任せる
 }
+
 
 // render() の最後に
 prevPhase = state.phase;
@@ -1688,12 +1648,8 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowPause").onclick = ()=> $("overlayHow").classList.add("show");
-    $("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
+    // $("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
-
-    //$("btnMore").onclick = ()=> $("overlayMore").classList.add("show");
-    $("btnDockMore").onclick = ()=> $("overlayMore").classList.add("show");
-    $("btnCloseMore").onclick = ()=> $("overlayMore").classList.remove("show");
 
     $("btnPause").onclick = ()=>{
       if (!state) return toast("ゲーム中に使えます");
@@ -1710,13 +1666,14 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
         pausedTotal += performance.now() - pausedAt;
         pausedAt = 0;
       }
-  $("btnDeal").onclick = ()=> {
-  if (state && (state.phase === "betting" || state.phase === "roundOver")) {
-    prevDealerCards = [];
-    prevPlayerLens  = [];
-  }
-  callAction("deal");
-};
+//おそらく不要になったコード
+//   $("btnDeal").onclick = ()=> {
+//   if (state && (state.phase === "betting" || state.phase === "roundOver")) {
+//     prevDealerCards = [];
+//     prevPlayerLens  = [];
+//   }
+//   callAction("deal");
+// };
 
       callAction("set_paused", 0);
       $("overlayPause").classList.remove("show");
@@ -1828,7 +1785,7 @@ $("btnSetBet").onclick = ()=>{
 
   // ★ sessionOver 中に SET を押した場合 → 盤面だけ消す
   if (phase === "sessionOver") {
-    hideBoardAfterSet = true;
+    // hideBoardAfterSet = true; //// boardHidden = true で空に描く
     render();      // エンジンには触らず、見た目だけ更新
     return;
   }
@@ -1853,50 +1810,12 @@ $("btnHit").onclick = ()=> {
 
 $("btnStand").onclick = ()=> {
   if (!state) return;
-
-  if (state.phase === "offerInsurance") {
-    return callAction("buy_insurance", 0); // NO
-  }
-
-  return callAction("stand");
-};
-
-
-$("btnStand").onclick = ()=> {
-  if (!state) return;
   if (state.phase === "offerInsurance"){
     $("insAmountSide").value = 0;
     return callAction("buy_insurance", 0);   // NO
   }
   return callAction("stand");
 };
-
-
-    // Advanced (More)
-    $("btnDouble").onclick = ()=> callAction("double_down");
-    $("btnSplit").onclick = ()=> callAction("split");
-    $("btnSurrender").onclick = ()=> callAction("surrender");
-
-    $("btnInsNo").onclick = ()=> callAction("buy_insurance", 0);
-    $("btnInsBuy").onclick = ()=>{
-      const v = floorEven($("insAmount").value);
-      $("insAmount").value = v;
-      callAction("buy_insurance", v);
-    };
-    $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
-
-    //追加したものです。
-    // MORE: 右パネルの開閉
-$("btnMore").onclick = ()=> {
-  $("morePanel").classList.toggle("open");
-};
-
-// 右パネルの各アクション
-$("btnDoubleSide").onclick = ()=> callAction("double_down");
-$("btnSplitSide").onclick  = ()=> callAction("split");
-$("btnSurrenderSide").onclick = ()=> callAction("surrender");
-$("btnEvenMoneySide").onclick = ()=> callAction("take_even_money");
-
 
     // keyboard shortcuts
     window.addEventListener("keydown", (e)=>{
@@ -1905,12 +1824,13 @@ $("btnEvenMoneySide").onclick = ()=> callAction("take_even_money");
       if (k === "d") $("btnDeal").click();
       if (k === "h") $("btnHit").click();
       if (k === "s") $("btnStand").click();
-      if (k === "m") $("btnDockMore").click();
       if (k === "escape"){
-        if ($("overlayMore").classList.contains("show")) $("overlayMore").classList.remove("show");
-        else if ($("overlayHow").classList.contains("show")) $("overlayHow").classList.remove("show");
-        else if ($("overlayPause").classList.contains("show")) $("btnClosePause").click();
-      }
+        if ($("overlayHow").classList.contains("show")) {
+            $("overlayHow").classList.remove("show");
+        } else if ($("overlayPause").classList.contains("show")) {
+            $("btnClosePause").click();
+        }
+  }
       if (state && state.phase === "offerInsurance"){
       if (k === "y") $("btnHit").click();
       if (k === "n") $("btnStand").click();
