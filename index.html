@@ -654,8 +654,9 @@
 .dock.insMode{
   grid-template-columns: 1fr 1fr;
 }
-.dock.insMode #btnDeal,
-/* .dock.insMode #btnDockMore{
+.dock.insMode #btnDeal{
+  display:none;
+}/* .dock.insMode #btnDockMore{
   display:none;
 } */
 
@@ -868,16 +869,16 @@ body{
           </div>
         </div>
       </div>
+<div class="stats">
+  <div class="pill"><span>Bank</span><b id="bank">-</b></div>
+  <div class="pill"><span>Round</span><b id="round">-</b></div>
+  <div class="pill"><span>Time</span><b id="time">-</b></div>
 
-      <div class="stats">
-        <div class="pill bank"><span>Bank</span><b id="bank">-</b></div>
-        <div class="pill"><span>Round</span><b id="round">-</b></div>
-        <div class="pill"><span>Time</span><b id="time">-</b></div>
+  <button class="btn ghost" id="btnPause" title="Menu">MENU</button>
+  <button class="btn ghost" id="btnHistory" title="History / Records">History</button>
+  <button class="btn danger" id="btnReset" title="Hold to reset">Reset</button>
+</div>
 
-        <button class="btn ghost" id="btnPause" title="Menu">MENU</button>
-        <button class="btn danger" id="btnReset" title="Hold to reset">Reset</button>
-      </div>
-    </div>
 
     <!-- TITLE -->
     <div class="screen active" id="screenTitle">
@@ -1098,30 +1099,50 @@ body{
       </div>
     </div>
   </div>
-
-  <div class="overlay" id="overlayHow">
-    <div class="modal">
-      <div class="hd">
-        <b>HOW TO PLAY</b>
-        <button class="btn ghost" id="btnCloseHow">Close</button>
-      </div>
-      <div class="bd">
-        <div class="muted">
-          <ul>
-            <li>目標：<b>21に近づける</b>（21超えはBust）</li>
-            <li>10/J/Q/Kは<b>全部10扱い</b>、Aは<b>1 or 11</b></li>
-            <li><b>DEAL</b>で開始（RoundOver中は次ラウンドに進む）</li>
-            <li><b>Double</b>：同額追加→1回Hitで強制終了</li>
-            <li><b>Split</b>：同“点数”ならOK。Aスプリットは1枚で終了</li>
-            <li><b>Surrender</b>：最初の2枚のみ。掛け金の半分が返る（Late／peek後）</li>
-            <li><b>Insurance</b>：ディーラー表がAの時のみ。最大 bet/2</li>
-            <li><b>Even Money</b>：プレイヤーBJ時に提示</li>
-          </ul>
-          <p>※操作可否はC++が返す <b>state.can</b> が真実。ボタンは自動で無効化されます。</p>
-        </div>
+<!-- How to play -->
+<div class="overlay" id="overlayHow">
+  <div class="modal">
+    <div class="hd">
+      <b>HOW TO PLAY</b>
+      <button class="btn ghost" id="btnCloseHow">Close</button>
+    </div>
+    <div class="bd">
+      <div class="muted">
+        <ul>
+          <li>目標：<b>21に近づける</b>（21超えはBust）</li>
+          <li>10/J/Q/Kは<b>全部10扱い</b>、Aは<b>1 or 11</b></li>
+          <li><b>DEAL</b>で開始（RoundOver中は次ラウンドに進む）</li>
+          <li><b>Double</b>：同額追加→1回Hitで強制終了</li>
+          <li><b>Split</b>：同“点数”ならOK。Aスプリットは1枚で終了</li>
+          <li><b>Surrender</b>：最初の2枚のみ。掛け金の半分が返る（Late／peek後）</li>
+          <li><b>Insurance</b>：ディーラー表がAの時のみ。最大 bet/2</li>
+          <li><b>Even Money</b>：プレイヤーBJ時に提示</li>
+        </ul>
+        <p>※操作可否はC++が返す <b>state.can</b> が真実。ボタンは自動で無効化されます。</p>
       </div>
     </div>
   </div>
+</div>
+
+<!-- History -->
+<div class="overlay" id="overlayHistory">
+  <div class="modal">
+    <div class="hd">
+      <b>HISTORY</b>
+      <button class="btn ghost" id="btnCloseHistory">Close</button>
+    </div>
+    <div class="bd">
+      <p class="muted small" style="margin-top:0;">
+        直近のラウンド結果を記録しています（最大 100 件）。ページを閉じてもブラウザに保存されます。
+      </p>
+      <div class="handBox" id="historyList"
+           style="max-height:320px; overflow:auto; margin-top:10px;">
+        <div class="small muted">まだ履歴がありません。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 
   <div class="toastWrap" id="toastWrap"></div>
@@ -1187,6 +1208,109 @@ body{
         if (t < 1) requestAnimationFrame(step);
       };
       requestAnimationFrame(step);
+    }
+
+        // ========= History (localStorage) =========
+    const HISTORY_KEY = "bjHistory_v1";
+
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr;
+      } catch(e){
+        console.warn("history load failed", e);
+        return [];
+      }
+    }
+
+    function saveHistory(list){
+      try{
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+      } catch(e){
+        console.warn("history save failed", e);
+      }
+    }
+
+    // ラウンド終了時だけ呼び出される想定
+    function pushHistoryEntry(st){
+      if (!st) return;
+
+      const phase = st.phase;
+      const isEndPhase = (phase === "roundOver" || phase === "sessionOver");
+      const wasEndPhase = (prevPhase === "roundOver" || prevPhase === "sessionOver");
+
+      // 「さっきまでは end 状態じゃなくて、今 end 状態になった瞬間」だけ記録
+      if (!isEndPhase || wasEndPhase) return;
+
+      const hands = (st.player && st.player.hands) || [];
+      const mainHand = hands[0] || {};
+
+      const entry = {
+        ts: Date.now(),
+        round: st.session ? st.session.round : 0,
+        bank: ("bank" in st) ? st.bank : 0,
+        bet: ("bet" in mainHand) ? mainHand.bet : 0,
+        net: (st.roundResult && "netProfit"     in st.roundResult) ? st.roundResult.netProfit     : 0,
+        streak: (st.roundResult && "streak"     in st.roundResult) ? st.roundResult.streak       : 0,
+        bonusPercent: (st.roundResult && "bonusPercent" in st.roundResult) ? st.roundResult.bonusPercent : 0,
+        bonusApplied: (st.roundResult && "bonusApplied" in st.roundResult) ? st.roundResult.bonusApplied : 0,
+      };
+
+      const list = loadHistory();
+      list.unshift(entry);          // 新しいものを先頭に
+      if (list.length > 100) list.length = 100; // 最大100件
+      saveHistory(list);
+    }
+
+    function formatHistoryTime(ts){
+      const d = new Date(ts);
+      const n = +d;
+      if (!Number.isFinite(n)) return "-";
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      return `${mm}/${dd} ${hh}:${mi}`;
+    }
+
+    function renderHistoryOverlay(){
+      const box = $("historyList");
+      if (!box) return;
+      const hist = loadHistory();
+      if (!hist.length){
+        box.innerHTML = '<div class="small muted">まだ履歴がありません。</div>';
+        return;
+      }
+
+      let html = '<table class="small" style="width:100%; border-collapse:collapse;">';
+      html += '<thead><tr>';
+      html += '<th style="text-align:left;padding:4px 8px;">Time</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Round</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Bet</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Net</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Bank</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Streak</th>';
+      html += '</tr></thead><tbody>';
+
+      hist.slice(0, 40).forEach(e=>{
+        const netClass =
+          e.net > 0 ? ' style="color:#37d67a;"' :
+          e.net < 0 ? ' style="color:#ff4d4d;"' : '';
+        html += '<tr>';
+        html += `<td style="padding:4px 8px;">${formatHistoryTime(e.ts)}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;">${e.round}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;">${e.bet}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;"${netClass}>${e.net}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;">${e.bank}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;">${e.streak}</td>`;
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      box.innerHTML = html;
     }
 
     // ========= Engine bjApi =========
@@ -1330,7 +1454,10 @@ function apiReady(){
       callAction("reset_session");
       $("overlayPause").classList.remove("show");
       $("overlayHow").classList.remove("show");
+      $("overlayMore") && $("overlayMore").classList.remove("show");
+      $("overlayHistory") && $("overlayHistory").classList.remove("show");
       goScreen("title");
+
       $("subLine").textContent = "ready.";
       toast("Reset!");
       // animation caches reset
@@ -1527,9 +1654,12 @@ if (insMode) {
   setDis("btnEvenMoneySide", !can.evenMoney);
 }
 
-      // Round banner
-      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
+       const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
+      // ラウンドが終わった瞬間だけ履歴に追加
+      pushHistoryEntry(state);
+
       $("roundBanner").style.display = isRoundOver ? "flex" : "none";
+
       const net = state.roundResult.netProfit|0;
       const msgEl = $("roundMsg");
       const metaEl = $("roundMeta");
@@ -1619,9 +1749,19 @@ if (insMode){
 // render() の最後に
 prevPhase = state.phase;
 
+      // ラウンドが終わった瞬間だけ履歴を追加
+if (prevPhase !== "roundOver" && prevPhase !== "sessionOver"
+    && (state.phase === "roundOver" || state.phase === "sessionOver")) {
+  pushHistoryEntry(state);
+}
+
+prevPhase = state.phase;
+
+
       console.log("render ok", state.phase);
 
     }
+
 
 if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     prevDealerCards = [];
@@ -1648,8 +1788,15 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowPause").onclick = ()=> $("overlayHow").classList.add("show");
-    // $("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
+    $("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
+
+        // History overlay
+    $("btnHistory").onclick = ()=>{
+      renderHistoryOverlay();
+      $("overlayHistory").classList.add("show");
+    };
+    $("btnCloseHistory").onclick = ()=> $("overlayHistory").classList.remove("show");
 
     $("btnPause").onclick = ()=>{
       if (!state) return toast("ゲーム中に使えます");
@@ -1834,6 +1981,10 @@ $("btnStand").onclick = ()=> {
       if (state && state.phase === "offerInsurance"){
       if (k === "y") $("btnHit").click();
       if (k === "n") $("btnStand").click();
+      if (k === "m") {
+        const btn = $("btnDockMore");
+        if (btn) btn.click();
+      }
       return;
     }
 
