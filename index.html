@@ -620,7 +620,7 @@
       bottom: calc(12px + env(safe-area-inset-bottom, 0px));
       height: var(--dockH);
       display:grid;
-      grid-template-columns: 1.25fr 1fr 1fr .95fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap:10px;
       padding:10px;
       border-radius: 22px;
@@ -858,25 +858,30 @@ body{
 
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <div class="brand">
-        <div class="logo"></div>
-        <div class="brandTxt">
-          <h1>BLACKJACK</h1>
-          <div class="sub">
-            <span id="subLine">booting…</span>
-            <span id="engineBadge" class="statusBadge"><span class="dot"></span><span id="engineText">LOADING</span></span>
-          </div>
-        </div>
+<div class="topbar">
+  <div class="brand">
+    <div class="logo"></div>
+    <div class="brandTxt">
+      <h1>BLACKJACK</h1>
+      <div class="sub">
+        <span id="subLine">booting…</span>
+        <span id="engineBadge" class="statusBadge">
+          <span class="dot"></span><span id="engineText">LOADING</span>
+        </span>
       </div>
-<div class="stats">
-  <div class="pill"><span>Bank</span><b id="bank">-</b></div>
-  <div class="pill"><span>Round</span><b id="round">-</b></div>
-  <div class="pill"><span>Time</span><b id="time">-</b></div>
+    </div>
+  </div>
 
-  <button class="btn ghost" id="btnPause" title="Menu">MENU</button>
-  <button class="btn ghost" id="btnHistory" title="History / Records">History</button>
-  <button class="btn danger" id="btnReset" title="Hold to reset">Reset</button>
+  <div class="stats">
+    <div class="pill"><span>Bank</span><b id="bank">-</b></div>
+    <div class="pill"><span>Round</span><b id="round">-</b></div>
+    <div class="pill"><span>Time</span><b id="time">-</b></div>
+
+    <button class="btn ghost" id="btnPause" title="Menu">MENU</button>
+    <button class="btn ghost" id="btnHistory" title="History / Records">History</button>
+    <button class="btn danger" id="btnReset" title="Hold to reset">Reset</button>
+    <button class="btn ghost" id="btnRanking" title="Leaderboard">Ranking</button>
+  </div>
 </div>
 
 
@@ -1143,6 +1148,34 @@ body{
   </div>
 </div>
 
+<!-- Ranking -->
+<div class="overlay" id="overlayRanking">
+  <div class="modal">
+    <div class="hd">
+      <b>RANKING</b>
+      <button class="btn ghost" id="btnCloseRanking">Close</button>
+    </div>
+    <div class="bd">
+      <p class="muted small" style="margin-top:0;">
+        セッション結果（Profit順）を保存しています（最大 50 件）。
+      </p>
+
+      <div class="row" style="justify-content:space-between; margin-top:10px;">
+        <div class="muted small">Name（任意）</div>
+        <input id="nameInput" type="text" maxlength="12" placeholder="YOU" style="width:180px;">
+      </div>
+
+      <div class="handBox" id="rankingList"
+           style="max-height:320px; overflow:auto; margin-top:10px;">
+        <div class="small muted">まだランキングがありません。</div>
+      </div>
+      <!-- このコメントアウトはランキングの記録をクリアする機能です、 -->
+      <!-- <div class="row" style="justify-content:flex-end; margin-top:10px; gap:10px;">
+        <button class="btn danger" id="btnClearRanking">Clear</button>
+      </div> -->
+    </div>
+  </div>
+</div>
 
 
   <div class="toastWrap" id="toastWrap"></div>
@@ -1150,6 +1183,7 @@ body{
   <script>
 
     let prevPhase = null;
+    
 
     // ========= Utilities =========
     const $ = (id)=>document.getElementById(id);
@@ -1250,6 +1284,7 @@ body{
 
       const entry = {
         ts: Date.now(),
+        sessionId: currentSessionId,
         round: st.session ? st.session.round : 0,
         bank: ("bank" in st) ? st.bank : 0,
         bet: ("bet" in mainHand) ? mainHand.bet : 0,
@@ -1657,6 +1692,7 @@ if (insMode) {
        const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
       // ラウンドが終わった瞬間だけ履歴に追加
       pushHistoryEntry(state);
+      finalizeSessionRanking(state);
 
       $("roundBanner").style.display = isRoundOver ? "flex" : "none";
 
@@ -1749,11 +1785,11 @@ if (insMode){
 // render() の最後に
 prevPhase = state.phase;
 
-      // ラウンドが終わった瞬間だけ履歴を追加
-if (prevPhase !== "roundOver" && prevPhase !== "sessionOver"
-    && (state.phase === "roundOver" || state.phase === "sessionOver")) {
-  pushHistoryEntry(state);
-}
+//       // ラウンドが終わった瞬間だけ履歴を追加
+// if (prevPhase !== "roundOver" && prevPhase !== "sessionOver"
+//     && (state.phase === "roundOver" || state.phase === "sessionOver")) {
+//   pushHistoryEntry(state);
+// }
 
 prevPhase = state.phase;
 
@@ -1762,6 +1798,34 @@ prevPhase = state.phase;
 
     }
 
+// //ranking history 保存用 
+// // ラウンド終了時に 1 件追加 
+// function pushHistoryEntry(state) {
+//   if (!state) return;
+
+//   const isRoundOver =
+//     state.phase === "roundOver" || state.phase === "sessionOver";
+//   if (!isRoundOver) return;
+
+//   const hands = (state.player && state.player.hands) || [];
+//   const h0 = hands[0] || {};
+
+//   const entry = {
+//     ts: Date.now(),               // 時刻
+//     round: state.session.round,   // 何ラウンド目か
+//     bank: state.bank,             // 現在の所持金
+//     bet: h0.bet || 0,             // 基本ベット
+//     net: state.roundResult.netProfit,       // このラウンドの損益
+//     streak: state.roundResult.streak,       // 連勝数
+//     bonusPercent: state.roundResult.bonusPercent, // ボーナス(%)
+//   };
+
+//   const arr = loadHistory();
+//   arr.unshift(entry);            // 先頭に追加（新しい順）
+
+//   if (arr.length > 100) arr.length = 100; // 最大100件に制限
+//   saveHistory(arr);
+// }
 
 if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     prevDealerCards = [];
@@ -1788,7 +1852,7 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowPause").onclick = ()=> $("overlayHow").classList.add("show");
-    $("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
+    //$("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
 
         // History overlay
@@ -1797,6 +1861,140 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
       $("overlayHistory").classList.add("show");
     };
     $("btnCloseHistory").onclick = ()=> $("overlayHistory").classList.remove("show");
+
+// ========= Ranking (localStorage) =========
+const RANK_KEY = "bjRanking_v1";
+const NAME_KEY = "bjPlayerName_v1";
+
+let currentSessionId = null;
+let sessionStartBank = 0;
+let sessionFinalized = false;
+
+function loadRanking(){
+  try{
+    const raw = localStorage.getItem(RANK_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch(e){
+    console.warn("ranking load failed", e);
+    return [];
+  }
+}
+function saveRanking(list){
+  try{
+    localStorage.setItem(RANK_KEY, JSON.stringify(list));
+  } catch(e){
+    console.warn("ranking save failed", e);
+  }
+}
+function fmtDur(ms){
+  ms = Math.max(0, ms|0);
+  const s = Math.floor(ms/1000);
+  const m = Math.floor(s/60);
+  const r = s%60;
+  return `${m}:${String(r).padStart(2,"0")}`;
+}
+
+function getPlayerName(){
+  const inp = $("nameInput");
+  const v = (inp ? inp.value : "").trim().slice(0,12);
+  const name = v || (localStorage.getItem(NAME_KEY) || "YOU");
+  localStorage.setItem(NAME_KEY, name);
+  return name;
+}
+
+function addRankingRecord(rec){
+  const list = loadRanking();
+  list.unshift(rec);
+  if (list.length > 50) list.length = 50;
+
+  // Profit desc → finalBank desc → duration asc
+  list.sort((a,b)=>{
+    const pa = (a.profit|0), pb = (b.profit|0);
+    if (pb !== pa) return pb - pa;
+    const ba = (a.finalBank|0), bb = (b.finalBank|0);
+    if (bb !== ba) return bb - ba;
+    return (a.durationMs|0) - (b.durationMs|0);
+  });
+
+  saveRanking(list);
+}
+
+function renderRankingOverlay(){
+  const box = $("rankingList");
+  if (!box) return;
+
+  const list = loadRanking();
+  if (!list.length){
+    box.innerHTML = '<div class="small muted">まだランキングがありません。</div>';
+    return;
+  }
+
+  let html = '<table class="small" style="width:100%; border-collapse:collapse;">';
+  html += '<thead><tr>';
+  html += '<th style="text-align:left;padding:4px 8px;">#</th>';
+  html += '<th style="text-align:left;padding:4px 8px;">Name</th>';
+  html += '<th style="text-align:right;padding:4px 8px;">Profit</th>';
+  html += '<th style="text-align:right;padding:4px 8px;">Final</th>';
+  html += '<th style="text-align:right;padding:4px 8px;">Streak</th>';
+  html += '<th style="text-align:right;padding:4px 8px;">Time</th>';
+  html += '<th style="text-align:left;padding:4px 8px;">When</th>';
+  html += '</tr></thead><tbody>';
+
+  list.slice(0, 30).forEach((e, i)=>{
+    const profit = e.profit|0;
+    const pStyle = profit>0 ? ' style="color:#37d67a;"'
+                 : profit<0 ? ' style="color:#ff4d4d;"' : '';
+    html += '<tr>';
+    html += `<td style="padding:4px 8px;">${i+1}</td>`;
+    html += `<td style="padding:4px 8px;">${(e.name||"YOU")}</td>`;
+    html += `<td style="padding:4px 8px;text-align:right;"${pStyle}>${profit>=0?`+${profit}`:profit}</td>`;
+    html += `<td style="padding:4px 8px;text-align:right;">${e.finalBank|0}</td>`;
+    html += `<td style="padding:4px 8px;text-align:right;">${e.maxStreak|0}</td>`;
+    html += `<td style="padding:4px 8px;text-align:right;">${fmtDur(e.durationMs|0)}</td>`;
+    html += `<td style="padding:4px 8px;">${formatHistoryTime(e.ts)}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  box.innerHTML = html;
+}
+
+// セッション終了時に1回だけ呼ぶ
+function finalizeSessionRanking(st){
+  if (sessionFinalized) return;
+  if (!st || st.phase !== "sessionOver") return;
+  if (!currentSessionId) return;
+
+  sessionFinalized = true;
+
+  // このセッションのラウンド履歴だけ集める（sessionIdが無い旧データは無視される）
+  const hist = loadHistory().filter(e => e.sessionId === currentSessionId);
+
+  const totalNet = hist.reduce((a,e)=> a + (e.net|0), 0);
+  const maxStreak = hist.reduce((a,e)=> Math.max(a, e.streak|0), 0);
+
+  const durationMs = Math.max(0, (performance.now() - startTickAt - pausedTotal));
+  const finalBank = st.bank|0;
+  const profit = finalBank - (sessionStartBank|0);
+
+  addRankingRecord({
+    ts: Date.now(),
+    name: getPlayerName(),
+    sessionId: currentSessionId,
+    profit,
+    finalBank,
+    totalNet,
+    maxStreak,
+    rounds: st.session?.round|0,
+    durationMs,
+  });
+
+  // 表示して気持ちよくする（任意）
+  toast(`Saved Ranking: ${profit>=0?`+${profit}`:profit}`);
+}
+
 
     $("btnPause").onclick = ()=>{
       if (!state) return toast("ゲーム中に使えます");
@@ -1899,6 +2097,14 @@ $("btnDeal").onclick = ()=> {
 
       callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
 
+      // ===== Ranking session begin =====
+currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+sessionStartBank = Number(state?.bank || 0);   // start_session直後のbank
+sessionFinalized = false;
+
+const savedName = localStorage.getItem(NAME_KEY);
+if (savedName && $("nameInput")) $("nameInput").value = savedName;
+
       const bet = floorEven($("betInput").value);
       $("betInGame").value = bet;
       callAction("set_bet", bet);
@@ -1940,7 +2146,6 @@ $("btnSetBet").onclick = ()=>{
 
 
     // Main actions (Dock)
-    $("btnDeal").onclick = ()=> callAction("deal");
 $("btnHit").onclick = ()=> {
   if (!state) return;
 
@@ -1963,6 +2168,24 @@ $("btnStand").onclick = ()=> {
   }
   return callAction("stand");
 };
+
+$("btnRanking").onclick = ()=> {
+  renderRankingOverlay();
+  $("overlayRanking").classList.add("show");
+};
+$("btnCloseRanking").onclick = ()=> $("overlayRanking").classList.remove("show");
+
+//このコメントアウトはランキング削除機能を無効化するためのものです
+// $("btnClearRanking").onclick = ()=> {
+//   saveRanking([]);
+//   renderRankingOverlay();
+//   toast("Ranking cleared");
+// };
+
+$("nameInput")?.addEventListener("input", ()=>{
+  const v = $("nameInput").value.trim().slice(0,12) || "YOU";
+  localStorage.setItem(NAME_KEY, v);
+});
 
     // keyboard shortcuts
     window.addEventListener("keydown", (e)=>{
