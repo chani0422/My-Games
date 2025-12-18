@@ -853,8 +853,150 @@ body{
 .kv .v{ font-size:14px; font-weight:900; color:#fff; }
 #btnMore{ display:none; }
 
+  
+    /* ===== Session Over Flow ===== */
+    .soSplash{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:28px 10px;
+      text-align:center;
+    }
+    .soBig{
+      font-size: clamp(28px, 6vw, 44px);
+      font-weight: 1000;
+      letter-spacing: .06em;
+      color: #fff;
+      text-shadow: 0 10px 30px rgba(0,0,0,.55);
+    }
+    .soSub{
+      color: rgba(255,255,255,.78);
+      font-weight: 800;
+      letter-spacing:.04em;
+    }
+    .soResults{ display:none; width:100%; }
+    .soStats{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .soStat{
+      display:flex;
+      align-items:baseline;
+      gap:8px;
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      min-width: 160px;
+    }
+    .soStat .k{ font-size:11px; color:rgba(255,255,255,.78); letter-spacing:.04em; }
+    .soStat .v{ font-size:14px; font-weight: 1000; color:#fff; }
+    .soLockRow{
+      margin-top:12px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .soLockNote{ font-size:12px; color:rgba(255,255,255,.78); }
+    .soBtns{ margin-top:14px; justify-content:flex-end; gap:10px; }
+    .soBannerWrap{
+      margin-top:12px;
+      border-radius:16px;
+      border:1px dashed rgba(255,255,255,.18);
+      background: rgba(0,0,0,.12);
+      padding:10px;
+    }
+    /* Must have non-null size for responsive banner */
+    #cg-so-banner{
+      width: min(520px, 100%);
+      height: 90px;
+      margin: 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
   </style>
 </head>
+
+<!-- CrazyGames SDK v3 (safe init) -->
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<script>
+  // Safe wrapper so local development / non-CrazyGames domains won't crash.
+  window.CG = window.CG || {};
+  window.CG.ready = false;
+
+  window.CG.init = async function () {
+    try {
+      if (!window.CrazyGames || !window.CrazyGames.SDK || !window.CrazyGames.SDK.init) return false;
+      await window.CrazyGames.SDK.init();
+      window.CG.ready = true;
+      console.log("[CrazyGames] SDK ready");
+      return true;
+    } catch (e) {
+      console.warn("[CrazyGames] SDK init failed:", e);
+      return false;
+    }
+  };
+// Init on DOMContentLoaded
+window.CG.p = new Promise((resolve) => {
+  window.addEventListener("DOMContentLoaded", async () => {
+    const ok = await window.CG.init();
+    resolve(ok);
+  });
+});
+
+</script>
+
+<script>
+  // ---- Idempotent event helpers ----
+  window.CG._loadingDepth = 0;
+  window.CG._inGameplay = false;
+
+  window.CG._call = async function (fn) {
+    try {
+      await window.CG.p;
+      if (!window.CG.ready) return;
+      fn();
+    } catch (_) {}
+  };
+
+  window.CG.loadingStart = function () {
+    return window.CG._call(() => {
+      if (window.CG._loadingDepth++ === 0) window.CrazyGames.SDK.game.loadingStart();
+    });
+  };
+
+  window.CG.loadingStop = function () {
+    return window.CG._call(() => {
+      if (window.CG._loadingDepth > 0 && --window.CG._loadingDepth === 0) window.CrazyGames.SDK.game.loadingStop();
+    });
+  };
+
+  window.CG.gameplayStart = function () {
+    return window.CG._call(() => {
+      if (window.CG._inGameplay) return;
+      window.CG._inGameplay = true;
+      window.CrazyGames.SDK.game.gameplayStart();
+    });
+  };
+
+  window.CG.gameplayStop = function () {
+    return window.CG._call(() => {
+      if (!window.CG._inGameplay) return;
+      window.CG._inGameplay = false;
+      window.CrazyGames.SDK.game.gameplayStop();
+    });
+  };
+
+
+</script>
+
+
 
 <body>
   <div class="wrap">
@@ -1086,6 +1228,42 @@ body{
   </nav>
 
   <!-- OVERLAYS -->
+
+  <!-- SESSION OVER FLOW -->
+  <div class="overlay" id="overlaySessionOver">
+    <div class="modal">
+      <div class="hd">
+        <b>SESSION</b>
+        <span class="badge neutral" id="soBadge">OVER</span>
+      </div>
+      <div class="bd">
+        <div class="soSplash" id="soSplash">
+          <div class="soBig" id="soBigText">SESSION OVER!!</div>
+          <div class="soSub" id="soSubText">集計中…</div>
+        </div>
+
+        <div class="soResults" id="soResults">
+          <div class="soStats" id="soStats"></div>
+
+          <div class="soLockRow">
+            <div class="soLockNote" id="soLockNote">Please wait…</div>
+            <div class="soLockNote" id="soAdNote"></div>
+          </div>
+
+          <div class="soBannerWrap" id="soBannerWrap">
+            <div class="muted" style="font-size:12px; margin-bottom:6px;">Sponsored</div>
+            <div id="cg-so-banner"></div>
+          </div>
+
+          <div class="row soBtns">
+            <button class="btn ghost" id="btnSOTitle" disabled>タイトルへ</button>
+            <button class="btn primary" id="btnSORetry" disabled>リトライ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="overlay" id="overlayPause">
     <div class="modal">
       <div class="hd">
@@ -1181,7 +1359,7 @@ body{
   <div class="toastWrap" id="toastWrap"></div>
 
   <script>
-
+    window.CG?.loadingStart?.();
     let prevPhase = null;
     
 
@@ -1363,9 +1541,9 @@ function apiReady(){
 
     function syncEngine(){
       if (apiReady()){
-        // Engine = window.Engine;
-        // bjApi = window.bjApi;
-
+        setEngineBadge("READY", "good");
+        window.CG?.loadingStop?.();
+        
         setEngineBadge("READY", "good");
         $("subLine").textContent = "ready.";
         $("btnStart").disabled = false;
@@ -1458,11 +1636,19 @@ function apiReady(){
       return rc;
     }
 
-    function goScreen(name){
-      $("screenTitle").classList.toggle("active", name==="title");
-      $("screenGame").classList.toggle("active", name==="game");
-    }
+function goScreen(name){
+  const wasGame = $("screenGame").classList.contains("active");
+  const willGame = (name === "game");
 
+  $("screenTitle").classList.toggle("active", name==="title");
+  $("screenGame").classList.toggle("active", willGame);
+
+  // CrazyGames: gameplay on/off
+  if (willGame && !wasGame) window.CG?.gameplayStart?.();
+  if (!willGame && wasGame) window.CG?.gameplayStop?.();
+}
+
+//a
     // ========= Hold to reset =========
     let resetArmed = false;
     let holdTimer = null;
@@ -1488,6 +1674,8 @@ function apiReady(){
       disarmReset();
       callAction("reset_session");
       $("overlayPause").classList.remove("show");
+      $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
+      try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO?.bannerId || "cg-so-banner"); }catch(e){}
       $("overlayHow").classList.remove("show");
       $("overlayMore") && $("overlayMore").classList.remove("show");
       $("overlayHistory") && $("overlayHistory").classList.remove("show");
@@ -1506,6 +1694,184 @@ function apiReady(){
     let prevDealerCards = [];
     let prevPlayerLens = [];
     let hideBoardAfterSet = false;   // ← これを追加（グローバル）
+
+// ===== Session Over Flow =====
+// 仕様：sessionOverに入ったら
+//   1) 中央に "SESSION OVER!!" を 2秒表示
+//   2) リザルト表示に切替
+//   3) そこから最低5秒はボタン操作不可
+//   4) その間に midgame広告を自動リクエスト（ボタン紐づけ無し）
+//   5) 5秒経過 AND 広告終了（or error/unfilled）したらボタン解放
+window.SO = window.SO || {
+  active:false,
+  lockUntil:0,
+  adDone:false,
+  unlockTimer:null,
+  splashTimer:null,
+  adFailSafe:null,
+  bannerShown:false,
+  bannerId:"cg-so-banner",
+};
+
+function soSetView(stage){
+  const splash = document.getElementById("soSplash");
+  const results = document.getElementById("soResults");
+  if (!splash || !results) return;
+  splash.style.display  = (stage === "splash")  ? "flex"  : "none";
+  results.style.display = (stage === "results") ? "block" : "none";
+}
+
+function soSetButtonsEnabled(enabled){
+  const b1 = document.getElementById("btnSOTitle");
+  const b2 = document.getElementById("btnSORetry");
+  if (b1) b1.disabled = !enabled;
+  if (b2) b2.disabled = !enabled;
+}
+
+function soClearTimers(){
+  if (window.SO.unlockTimer){ clearInterval(window.SO.unlockTimer); window.SO.unlockTimer=null; }
+  if (window.SO.splashTimer){ clearTimeout(window.SO.splashTimer); window.SO.splashTimer=null; }
+  if (window.SO.adFailSafe){ clearTimeout(window.SO.adFailSafe); window.SO.adFailSafe=null; }
+}
+
+function soHideOverlay(){
+  const ov = document.getElementById("overlaySessionOver");
+  if (ov) ov.classList.remove("show");
+  try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO.bannerId); }catch(e){}
+  window.SO.bannerShown = false;
+  window.SO.active = false;
+  window.SO.adDone = false;
+  soClearTimers();
+}
+
+function soFillStats(st){
+  const stats = document.getElementById("soStats");
+  if (!stats || !st) return;
+
+  let totalNet = 0, maxStreak = 0;
+  try{
+    const hist = (typeof loadHistory === "function" && currentSessionId)
+      ? loadHistory().filter(e => e.sessionId === currentSessionId)
+      : [];
+    totalNet = hist.reduce((a,e)=> a + (e.net|0), 0);
+    maxStreak = hist.reduce((a,e)=> Math.max(a, e.streak|0), 0);
+  }catch(e){}
+
+  const finalBank = st.bank|0;
+  const profit = finalBank - (sessionStartBank|0);
+
+  const durMs = Math.max(0, (performance.now() - (startTickAt||0) - (pausedTotal||0)));
+  const rounds = st.session ? `${st.session.round}/${st.session.roundLimit}` : "-";
+  const timeLeft = st.session ? fmtTime(st.session.timeLeftMs) : "-";
+
+  const items = [
+    ["Final Bank", String(finalBank)],
+    ["Profit", (profit>=0? "+":"") + String(profit)],
+    ["Total Net", (totalNet>=0? "+":"") + String(totalNet)],
+    ["Max Streak", String(maxStreak)],
+    ["Rounds", rounds],
+    ["Time Left", timeLeft],
+    ["Duration", fmtTime(durMs)],
+  ];
+
+  stats.innerHTML = "";
+  items.forEach(([k,v])=>{
+    const el = document.createElement("span");
+    el.className = "soStat";
+    el.innerHTML = `<span class="k">${k}</span><b class="v">${v}</b>`;
+    stats.appendChild(el);
+  });
+}
+
+async function soRequestBanner(){
+  if (window.SO.bannerShown) return;
+
+  const wrap = document.getElementById("soBannerWrap");
+  if (wrap) wrap.style.display = "none";
+
+  try{
+    await window.CG?.p;
+    if (!window.CG?.ready) throw 0;
+    await window.CrazyGames?.SDK?.banner?.requestResponsiveBanner?.(window.SO.bannerId);
+    window.SO.bannerShown = true;
+    if (wrap) wrap.style.display = "block";
+  }catch(e){
+    if (wrap) wrap.style.display = "none";
+  }
+}
+
+function soRequestMidgame(){
+  const note = document.getElementById("soAdNote");
+
+  const finish = () => {
+    window.SO.adDone = true;
+    if (note) note.textContent = "";
+    soUpdateLock();
+  };
+
+  window.SO.adDone = false;
+  if (note) note.textContent = "広告を読み込み中…";
+
+  try{
+    const callbacks = {
+      adStarted: () => { if (note) note.textContent = "広告再生中…"; },
+      adFinished: finish,
+      adError: () => finish(),
+    };
+    window.CrazyGames?.SDK?.ad?.requestAd?.("midgame", callbacks);
+  }catch(e){
+    finish();
+  }
+
+  window.SO.adFailSafe = setTimeout(finish, 15000);
+}
+
+function soUpdateLock(){
+  const lockNote = document.getElementById("soLockNote");
+  const remain = Math.max(0, window.SO.lockUntil - performance.now());
+
+  if (remain > 0){
+    if (lockNote) lockNote.textContent = `結果表示中…（${(remain/1000).toFixed(1)}s）`;
+    return;
+  }
+  if (!window.SO.adDone){
+    if (lockNote) lockNote.textContent = "広告の終了を待っています…";
+    return;
+  }
+  if (lockNote) lockNote.textContent = "選択できます";
+  soSetButtonsEnabled(true);
+  if (window.SO.unlockTimer){ clearInterval(window.SO.unlockTimer); window.SO.unlockTimer=null; }
+}
+
+function beginSessionOverFlow(st){
+  if (window.SO.active) return;
+  window.SO.active = true;
+  window.SO.adDone = false;
+  window.SO.bannerShown = false;
+  soClearTimers();
+
+  const ov = document.getElementById("overlaySessionOver");
+  if (ov) ov.classList.add("show");
+  soSetButtonsEnabled(false);
+  soSetView("splash");
+
+  window.CG?.gameplayStop?.();
+
+  window.SO.splashTimer = setTimeout(()=>{
+    soSetView("results");
+    soFillStats(st);
+
+    window.SO.lockUntil = performance.now() + 5000;
+    soSetButtonsEnabled(false);
+    soUpdateLock();
+
+    soRequestBanner();
+    soRequestMidgame();
+
+    window.SO.unlockTimer = setInterval(soUpdateLock, 100);
+  }, 2000);
+}
+
 
     // ========= Render =========
     function render(){
@@ -1693,6 +2059,7 @@ if (insMode) {
       // ラウンドが終わった瞬間だけ履歴に追加
       pushHistoryEntry(state);
       finalizeSessionRanking(state);
+      if (state.phase === "sessionOver") beginSessionOverFlow(state);
 
       $("roundBanner").style.display = isRoundOver ? "flex" : "none";
 
@@ -1996,32 +2363,29 @@ function finalizeSessionRanking(st){
 }
 
 
-    $("btnPause").onclick = ()=>{
-      if (!state) return toast("ゲーム中に使えます");
-      if ($("screenGame").classList.contains("active")){
-        callAction("set_paused", 1);
-        pausedAt = performance.now();
-        $("overlayPause").classList.add("show");
-      } else {
-        toast("ゲーム中に使えます");
-      }
-    };
+$("btnPause").onclick = ()=>{
+  if (!state) return toast("ゲーム中に使えます");
+  if (!$("screenGame").classList.contains("active")) return toast("ゲーム中に使えます");
+
+  callAction("set_paused", 1);
+  pausedAt = performance.now();
+  $("overlayPause").classList.add("show");
+
+  window.CG?.gameplayStop?.(); // ← 実際にポーズした時だけ
+};
+
     $("btnClosePause").onclick = ()=>{
       if (pausedAt){
         pausedTotal += performance.now() - pausedAt;
         pausedAt = 0;
       }
-//おそらく不要になったコード
-//   $("btnDeal").onclick = ()=> {
-//   if (state && (state.phase === "betting" || state.phase === "roundOver")) {
-//     prevDealerCards = [];
-//     prevPlayerLens  = [];
-//   }
-//   callAction("deal");
-// };
-
       callAction("set_paused", 0);
       $("overlayPause").classList.remove("show");
+      $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
+      try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO?.bannerId || "cg-so-banner"); }catch(e){}
+      if ($("screenGame").classList.contains("active")) {
+  window.CG?.gameplayStart?.();
+}
     };
     $("btnContinue").onclick = $("btnClosePause").onclick;
     $("btnQuit").onclick = ()=> doResetToTitle();
@@ -2085,6 +2449,9 @@ $("btnDeal").onclick = ()=> {
 
     // Start session (engine ready guard)
     $("btnStart").onclick = () => {
+      try{ soHideOverlay(); }catch(e){}
+
+      sessionEndAdDone = false; // セッション終了広告フラグリセット
       if (!apiReady()){
         toast("engine not ready");
         return;
