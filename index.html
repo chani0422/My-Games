@@ -1668,7 +1668,7 @@ function goScreen(name){
       toast("2秒長押しでリセット");
       setTimeout(()=>{ if (resetArmed) disarmReset(); }, 5000);
     }
-
+    
     function doResetToTitle(){
       stopTick();
       disarmReset();
@@ -2083,7 +2083,12 @@ if (insMode) {
         metaEl.textContent = `streak ${state.roundResult.streak} / bonus ${state.roundResult.bonusPercent}% (+${state.roundResult.bonusApplied})`;
       }
 
-      $("debugLine").textContent = `lastErrorCode=${state.lastErrorCode} lastError="${state.lastError || ""}"`;
+      $("debugLine").innerHTML = `
+        err=${state.lastErrorCode} "${state.lastError||""}"<br>
+        can: D=${can.double?"o":"x"} S=${can.split?"o":"x"}<br>
+        Rules: D=${state.rules.allowDouble?"on":"off"} S=${state.rules.allowSplit?"on":"off"}<br>
+        bank=${state.bank} bet=${state.player?.hands?.[state.player.activeHandIndex]?.bet||0}
+      `;
 
       const v = floorEven($("betInput").value);
       $("betHint").textContent = `入力=${$("betInput").value} → 偶数化=${v}`;
@@ -2535,6 +2540,12 @@ $("btnStand").onclick = ()=> {
   }
   return callAction("stand");
 };
+
+// ★ Missing Event Listeners Added ★
+$("btnDoubleSide").onclick = ()=> callAction("double_down");
+$("btnSplitSide").onclick = ()=> callAction("split");
+$("btnSurrenderSide").onclick = ()=> callAction("surrender");
+$("btnEvenMoneySide").onclick = ()=> callAction("take_even_money");
 
 $("btnRanking").onclick = ()=> {
   renderRankingOverlay();
