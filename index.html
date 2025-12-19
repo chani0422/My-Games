@@ -1711,6 +1711,7 @@ window.SO = window.SO || {
   adFailSafe:null,
   bannerShown:false,
   bannerId:"cg-so-banner",
+  sessionCount:0, // Counter for sessions
 };
 
 function soSetView(stage){
@@ -1803,6 +1804,20 @@ async function soRequestBanner(){
 function soRequestMidgame(){
   const note = document.getElementById("soAdNote");
 
+  // Show ad only every 2nd session (Satisfying user request: "every 2 sessions")
+  // sessionCount is incremented in beginSessionOverFlow.
+  // 1st session: 1 -> skip
+  // 2nd session: 2 -> show
+  // 3rd session: 3 -> skip
+  if (window.SO.sessionCount % 2 !== 0){
+    console.log("Skip ad (session count: " + window.SO.sessionCount + ")");
+    window.SO.adDone = true;
+    if (note) note.textContent = "";
+    soUpdateLock();
+    return;
+  }
+
+
   const finish = () => {
     window.SO.adDone = true;
     if (note) note.textContent = "";
@@ -1848,7 +1863,9 @@ function beginSessionOverFlow(st){
   window.SO.active = true;
   window.SO.adDone = false;
   window.SO.bannerShown = false;
+  window.SO.sessionCount = (window.SO.sessionCount || 0) + 1; // Increment counter
   soClearTimers();
+
 
   const ov = document.getElementById("overlaySessionOver");
   if (ov) ov.classList.add("show");
@@ -2033,8 +2050,13 @@ if (insMode) {
   setDis("btnSurrender", true);
 } else {
   // 通常時は C++ の can.* をそのまま使う
-  setDis("btnDeal", !can.deal);
+  // ただし、Bet > Bank の場合でも自動調整できるように、BettingフェーズかつBank>0ならDEALを押せるようにする
+  const forceEnableDeal = ((state.phase === "betting" || state.phase === "roundOver") && state.bank > 0);
+  setDis("btnDeal", !can.deal && !forceEnableDeal);
+
+
   setDis("btnHit", !can.hit);
+
   setDis("btnStand", !can.stand);
   setDis("btnDouble", !can.double);
   setDis("btnSplit", !can.split);
@@ -2408,6 +2430,19 @@ $("btnEvenMoneyIns").onclick = ()=> callAction("take_even_money");
 $("btnDeal").onclick = ()=> {
   $("btnHit").disabled = true;
   $("btnStand").disabled = true;
+
+  // Auto-cap bet before deal
+  if (state && (state.phase === "betting" || state.phase === "roundOver")) {
+    let bet = floorEven($("betInGame").value);
+    if (state.bank < bet) {
+
+      bet = floorEven(state.bank);
+      $("betInGame").value = bet;
+      callAction("set_bet", bet);
+      toast("Bet adjusted to Bank");
+    }
+  }
+
   setTimeout(()=>{ 
     callAction("deal"); 
   }, 50);
@@ -2474,12 +2509,17 @@ currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 sessionStartBank = Number(state?.bank || 0);   // start_session直後のbank
 sessionFinalized = false;
 
-const savedName = localStorage.getItem(NAME_KEY);
+      const savedName = localStorage.getItem(NAME_KEY);
 if (savedName && $("nameInput")) $("nameInput").value = savedName;
 
-      const bet = floorEven($("betInput").value);
+      // Bet cap for start
+      let bet = floorEven($("betInput").value);
+      if (bet > 5000) bet = 5000; // Cap at initial bank
+      $("betInput").value = bet;
+
       $("betInGame").value = bet;
       callAction("set_bet", bet);
+
 
       // clear animation caches
        prevDealerCards = [];
@@ -2494,12 +2534,14 @@ if (savedName && $("nameInput")) $("nameInput").value = savedName;
 $("btnSetBet").onclick = ()=>{
   if (!state) return;
   const phase = state.phase;
-  const v = floorEven($("betInGame").value);
+  let v = floorEven($("betInGame").value);
+  if (state.bank < v) v = floorEven(state.bank); // Cap at current bank
   $("betInGame").value = v;
 
   // BETTING / roundOver 中は今まで通りエンジンに bet を送る
   if (phase === "betting" || phase === "roundOver") {
     callAction("set_bet", v);
+
     // roundOver 中に SET したら盤面を消して「次ラウンド待ち」の見た目にする
     if (phase === "roundOver") {
       hideBoardAfterSet = true;
@@ -2546,6 +2588,14 @@ $("btnDoubleSide").onclick = ()=> callAction("double_down");
 $("btnSplitSide").onclick = ()=> callAction("split");
 $("btnSurrenderSide").onclick = ()=> callAction("surrender");
 $("btnEvenMoneySide").onclick = ()=> callAction("take_even_money");
+
+// Session Over buttons
+$("btnSOTitle").onclick = ()=> doResetToTitle();
+$("btnSORetry").onclick = ()=> {
+  doResetToTitle();
+  setTimeout(()=> $("btnStart").click(), 200);
+};
+
 
 $("btnRanking").onclick = ()=> {
   renderRankingOverlay();

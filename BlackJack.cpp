@@ -426,7 +426,9 @@ struct Engine {
 
     round += 1;
     if (session_over()) set_phase(Phase::SESSION_OVER);
+    else if (bank <= 0) set_phase(Phase::SESSION_OVER); // Bankrupt -> Session Over
   }
+
 
   // ★ここも skipDealerDraw をデフォルト false で受けて、最後に伝搬
   void advance_to_next_hand_or_settle(bool skipDealerDraw = false) {
@@ -641,6 +643,12 @@ int set_bet(int amount) {
     set_phase(Phase::SESSION_OVER);
     return set_error(INVALID_STATE, "Session over");
   }
+
+  if (bank <= 0) {
+    set_phase(Phase::SESSION_OVER);
+    return set_error(INVALID_STATE, "Bankrupt");
+  }
+
 
   // 次ラウンド開始準備（bank/ルール/連勝は維持）
   dealer.clear();
