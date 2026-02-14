@@ -12,6 +12,7 @@ FILES=(
   "blackjack.js"
   "blackjack.wasm"
   "blackjack_ui.js"
+  "loc.js"
 )
 
 # 1. ビルド (任意ですが推奨)

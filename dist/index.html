@@ -1021,7 +1021,7 @@ window.CG.p = new Promise((resolve) => {
 
 
 </script>
-
+<script src="loc.js"></script>
 
 
 <body>
@@ -1032,23 +1032,23 @@ window.CG.p = new Promise((resolve) => {
     <div class="brandTxt">
       <h1>BLACKJACK</h1>
       <div class="sub">
-        <span id="subLine">booting…</span>
+        <span id="subLine" data-i18n="ui.booting">booting…</span>
         <span id="engineBadge" class="statusBadge">
-          <span class="dot"></span><span id="engineText">LOADING</span>
+          <span class="dot"></span><span id="engineText" data-i18n="ui.loading">LOADING</span>
         </span>
       </div>
     </div>
   </div>
 
   <div class="stats">
-    <div class="pill"><span>Bank</span><b id="bank">-</b></div>
-    <div class="pill"><span>Round</span><b id="round">-</b></div>
-    <div class="pill"><span>Time</span><b id="time">-</b></div>
+    <div class="pill"><span data-i18n="stats.bank">Bank</span><b id="bank">-</b></div>
+    <div class="pill"><span data-i18n="stats.round">Round</span><b id="round">-</b></div>
+    <div class="pill"><span data-i18n="stats.time">Time</span><b id="time">-</b></div>
 
-    <button class="btn ghost" id="btnPause" title="Menu">MENU</button>
-    <button class="btn ghost" id="btnHistory" title="History / Records">History</button>
-    <button class="btn danger" id="btnReset" title="Hold to reset">Reset</button>
-    <button class="btn ghost" id="btnRanking" title="Leaderboard">Ranking</button>
+    <button class="btn ghost" id="btnPause" title="Menu" data-i18n="menu.menu">MENU</button>
+    <button class="btn ghost" id="btnHistory" title="History" data-i18n="menu.history">History</button>
+    <button class="btn danger" id="btnReset" title="Hold to reset" data-i18n="menu.reset">Reset</button>
+    <button class="btn ghost" id="btnRanking" title="Leaderboard" data-i18n="menu.ranking">Ranking</button>
   </div>
 </div>
 
@@ -1057,20 +1057,20 @@ window.CG.p = new Promise((resolve) => {
     <div class="screen active" id="screenTitle">
       <div class="card">
         <div class="titleHero">
-          <div class="chipline">🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1</div>
-          <h2>Blackjack</h2>
-          <p>ランキングで自己ベスト更新を目指せ！！</p>
+          <div class="chipline" data-i18n="title.payout">🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1</div>
+          <h2 data-i18n="title.main">Blackjack</h2>
+          <p data-i18n="title.sub">ランキングで自己ベスト更新を目指せ！！</p>
 
           <div class="ctaRow">
-            <button class="btn primary ctaBig" id="btnStart" disabled>DEAL / START</button>
-            <button class="btn ghost" id="btnHowTitle">遊び方</button>
+            <button class="btn primary ctaBig" id="btnStart" disabled data-i18n="title.deal_start">DEAL / START</button>
+            <button class="btn ghost" id="btnHowTitle" data-i18n="title.how">遊び方</button>
           </div>
         </div>
 
         <div class="bd">
           <div class="row" style="justify-content:space-between; align-items:flex-end;">
             <div>
-              <div class="muted">Bet（偶数推奨：Insurance = bet/2 で端数回避）</div>
+              <div class="muted" data-i18n="title.bet_hint">Bet（偶数推奨：Insurance = bet/2 で端数回避）</div>
               <div class="row" style="margin-top:8px;">
                 <input id="betInput" type="number" value="100" step="10" min="10">
                 <div class="chips">
@@ -1086,23 +1086,26 @@ window.CG.p = new Promise((resolve) => {
 
           <div class="divider"></div>
 
-          <div class="muted">Options（タイトルでON/OFF）</div>
+          <div class="muted" style="display:flex; justify-content:space-between; align-items:center;">
+             <span data-i18n="title.options">Options（タイトルでON/OFF）</span>
+             <button id="btnLangToggle" class="btn ghost" style="font-size:12px; padding:4px 8px;">EN / JP</button>
+          </div>
           <div class="optGrid">
-            <div class="opt"><label><input type="checkbox" id="optDouble" checked> Double Down</label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplit" checked> Split</label></div>
-            <div class="opt"><label><input type="checkbox" id="optSurrender" checked> Surrender (Late)</label></div>
-            <div class="opt"><label><input type="checkbox" id="optInsurance" checked> Insurance</label></div>
-            <div class="opt"><label><input type="checkbox" id="optEvenMoney" checked> Even Money</label></div>
-            <div class="opt"><label><input type="checkbox" id="optDAS" checked> DAS</label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> Split BJ as BJ</label></div>
-            <div class="opt"><label><input type="checkbox" id="optH17" checked> Dealer hits Soft 17</label></div>
+            <div class="opt"><label><input type="checkbox" id="optDouble" checked> <span data-i18n="opt.double">Double Down</span></label></div>
+            <div class="opt"><label><input type="checkbox" id="optSplit" checked> <span data-i18n="opt.split">Split</span></label></div>
+            <div class="opt"><label><input type="checkbox" id="optSurrender" checked> <span data-i18n="opt.surrender">Surrender (Late)</span></label></div>
+            <div class="opt"><label><input type="checkbox" id="optInsurance" checked> <span data-i18n="opt.insurance">Insurance</span></label></div>
+            <div class="opt"><label><input type="checkbox" id="optEvenMoney" checked> <span data-i18n="opt.even_money">Even Money</span></label></div>
+            <div class="opt"><label><input type="checkbox" id="optDAS" checked> <span data-i18n="opt.das">DAS</span></label></div>
+            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> <span data-i18n="opt.split_bj">Split BJ as BJ</span></label></div>
+            <div class="opt"><label><input type="checkbox" id="optH17" checked> <span data-i18n="opt.h17">Dealer hits Soft 17</span></label></div>
           </div>
 
           <div class="divider"></div>
 
           <div class="row" style="justify-content:space-between">
-            <div class="small">Tips：Reset は「1回タップで武装 → 2秒長押し」で実行</div>
-            <button class="btn" id="btnHowTitle2">マーキング/操作</button>
+            <div class="small" data-i18n="title.tips">Tips：Reset は「1回タップで武装 → 2秒長押し」で実行</div>
+            <button class="btn" id="btnHowTitle2" data-i18n="title.marking">マーキング/操作</button>
           </div>
         </div>
       </div>
@@ -1113,7 +1116,7 @@ window.CG.p = new Promise((resolve) => {
       <div class="grid">
         <div class="card">
           <div class="hd">
-            <h2>CASINO TABLE</h2>
+            <h2 data-i18n="game.garage">CASINO TABLE</h2>
             <div class="badge" id="phaseBadge">-</div>
           </div>
           <div class="bd">
@@ -1130,13 +1133,13 @@ window.CG.p = new Promise((resolve) => {
                       <path class="markDots" d="M210,478 C320,558 680,558 790,478" />
 
                       <text font-size="28" class="markText">
-                        <textPath href="#arcPayout" startOffset="50%" text-anchor="middle">
+                        <textPath href="#arcPayout" startOffset="50%" text-anchor="middle" data-i18n="title.payout">
                           BLACKJACK PAYS 3 TO 2
                         </textPath>
                       </text>
 
                       <text font-size="20" class="markText" style="letter-spacing:.22em;">
-                        <textPath href="#arcInner" startOffset="50%" text-anchor="middle">
+                        <textPath href="#arcInner" startOffset="50%" text-anchor="middle" data-i18n="title.payout">
                           INSURANCE PAYS 2 TO 1
                         </textPath>
                       </text>
@@ -1180,14 +1183,14 @@ window.CG.p = new Promise((resolve) => {
 
         <div class="card">
           <div class="hd">
-            <h2>BET / INFO</h2>
+            <h2 data-i18n="game.bet_info">BET / INFO</h2>
             <div class="badge" id="rulesMini">-</div>
           </div>
           <div class="bd">
             <div class="row">
-              <div class="muted">Bet</div>
+              <div class="muted" data-i18n="game.bet">Bet</div>
               <input id="betInGame" type="number" value="100" step="10">
-              <button class="btn" id="btnSetBet">SET</button>
+              <button class="btn" id="btnSetBet" data-i18n="game.set">SET</button>
             </div>
 
             <div class="row chips" style="margin-top:10px;">
@@ -1200,17 +1203,17 @@ window.CG.p = new Promise((resolve) => {
             <div class="divider"></div>
 
             <div class="row" style="justify-content:space-between;">
-              <div class="muted">Main actions are in DOCK</div>
-              <button class="btn ghost" id="btnMore" disabled>MORE</button>
+              <div class="muted" data-i18n="game.dock_hint">Main actions are in DOCK</div>
+              <button class="btn ghost" id="btnMore" disabled data-i18n="game.more">MORE</button>
               <div id="morePanel" class="morePanel">
-  <div class="moreHd">More actions</div>
+  <div class="moreHd" data-i18n="game.more_title">More actions</div>
   <div class="moreGrid">
-    <button class="btn" id="btnDoubleSide">Double</button>
-    <button class="btn" id="btnSplitSide">Split</button>
-    <button class="btn danger" id="btnSurrenderSide">Surrender</button>
-    <button class="btn" id="btnEvenMoneySide">Even Money</button>
+    <button class="btn" id="btnDoubleSide" data-i18n="cmd.double">Double</button>
+    <button class="btn" id="btnSplitSide" data-i18n="cmd.split">Split</button>
+    <button class="btn danger" id="btnSurrenderSide" data-i18n="cmd.surrender">Surrender</button>
+    <button class="btn" id="btnEvenMoneySide" data-i18n="cmd.even_money">Even Money</button>
   </div>
-  <div class="muted small" style="margin-top:8px;">
+  <div class="muted small" style="margin-top:8px;" data-i18n="game.more_hint">
     ※押せる場合に限り機能します。
   </div>
 </div>
@@ -1220,22 +1223,22 @@ window.CG.p = new Promise((resolve) => {
             <div class="divider"></div>
 <div class="handBox" id="insSideBox" style="display:none; margin-top:12px;">
   <div class="row" style="justify-content:space-between;">
-    <b>Insurance</b>
+    <b data-i18n="ins.insurance">Insurance</b>
     <span class="muted" id="insHintSide">-</span>
   </div>
 
   <div class="row" style="margin-top:10px;">
     <input id="insAmountSide" type="number" value="0" step="2" min="0">
-    <button class="btn" id="btnInsMaxSide">MAX</button>
+    <button class="btn" id="btnInsMaxSide" data-i18n="ins.max">MAX</button>
     <button class="btn ghost" id="btnInsZeroSide">0</button>
   </div>
 
-  <div class="muted small" style="margin-top:8px;">
+  <div class="muted small" style="margin-top:8px;" data-i18n="ins.dock_hint">
     下のDOCKで <b>YES / NO</b> を選択
   </div>
 
   <div class="row" style="margin-top:10px;">
-    <button class="btn" id="btnEvenMoneyIns">Even Money</button>
+    <button class="btn" id="btnEvenMoneyIns" data-i18n="cmd.even_money">Even Money</button>
   </div>
 </div>
 
@@ -1248,9 +1251,9 @@ window.CG.p = new Promise((resolve) => {
 
   <!-- Bottom Dock -->
   <nav class="dock" aria-label="main controls">
-    <button class="btn primary" id="btnDeal" disabled>DEAL <span class="k">D</span></button>
-    <button class="btn" id="btnHit" disabled>HIT <span class="k">H</span></button>
-    <button class="btn" id="btnStand" disabled>STAND <span class="k">S</span></button>
+    <button class="btn primary" id="btnDeal" disabled><span data-i18n="dock.deal">DEAL</span> <span class="k">D</span></button>
+    <button class="btn" id="btnHit" disabled><span data-i18n="dock.hit">HIT</span> <span class="k">H</span></button>
+    <button class="btn" id="btnStand" disabled><span data-i18n="dock.stand">STAND</span> <span class="k">S</span></button>
   </nav>
 
   <!-- OVERLAYS -->
@@ -1264,29 +1267,29 @@ window.CG.p = new Promise((resolve) => {
       </div>
       <div class="bd">
         <div class="soSplash" id="soSplash">
-          <div class="soBig" id="soBigText">SESSION OVER!!</div>
-          <div class="soSub" id="soSubText">集計中…</div>
+          <div class="soBig" id="soBigText" data-i18n="so.session_over">SESSION OVER!!</div>
+          <div class="soSub" id="soSubText" data-i18n="so.calculating">集計中…</div>
         </div>
 
         <div class="soResults" id="soResults">
           <div class="soStats" id="soStats"></div>
 
           <div class="soLockRow">
-            <div class="soLockNote" id="soLockNote">Please wait…</div>
+            <div class="soLockNote" id="soLockNote" data-i18n="so.wait">Please wait…</div>
             <div class="soLockNote" id="soAdNote"></div>
           </div>
 
           <div class="soBannerWrap" id="soBannerWrap">
-            <div class="muted" style="font-size:12px; margin-bottom:6px;">Sponsored</div>
+            <div class="muted" style="font-size:12px; margin-bottom:6px;" data-i18n="so.sponsored">Sponsored</div>
             <div id="cg-so-banner"></div>
           </div>
 
           <div class="row soBtns">
-            <button class="btn ghost" id="btnSOTitle" disabled>タイトルへ</button>
-            <button class="btn primary" id="btnSORetry" disabled>EARN 5000 & RETRY</button>
+            <button class="btn ghost" id="btnSOTitle" disabled data-i18n="so.to_title">タイトルへ</button>
+            <button class="btn primary" id="btnSORetry" disabled data-i18n="so.retry">EARN 5000 & RETRY</button>
           </div>
           <div class="row soBtns" id="soReviveRow" style="justify-content:center; margin-top:10px; display:none;">
-             <button class="btn good" id="btnSORevive" style="width:100%; font-size:15px; padding:14px;">
+             <button class="btn good" id="btnSORevive" style="width:100%; font-size:15px; padding:14px;" data-i18n="so.revive">
                📺 Watch Ad to Revive (+500)
              </button>
           </div>
@@ -1298,17 +1301,17 @@ window.CG.p = new Promise((resolve) => {
   <div class="overlay" id="overlayPause">
     <div class="modal">
       <div class="hd">
-        <b>PAUSED</b>
-        <button class="btn ghost" id="btnClosePause">Close</button>
+        <b data-i18n="pause.title">PAUSED</b>
+        <button class="btn ghost" id="btnClosePause" data-i18n="pause.close">Close</button>
       </div>
       <div class="bd">
-        <p class="muted" style="margin-top:0;">
+        <p class="muted" style="margin-top:0;" data-i18n="pause.msg">
           セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。
         </p>
         <div class="row" style="justify-content:flex-end; gap:10px;">
-          <button class="btn" id="btnHowPause">遊び方</button>
-          <button class="btn primary" id="btnContinue">Continue</button>
-          <button class="btn danger" id="btnQuit">Quit to Title</button>
+          <button class="btn" id="btnHowPause" data-i18n="title.how">遊び方</button>
+          <button class="btn primary" id="btnContinue" data-i18n="pause.continue">Continue</button>
+          <button class="btn danger" id="btnQuit" data-i18n="pause.quit">Quit to Title</button>
         </div>
       </div>
     </div>
@@ -1317,22 +1320,22 @@ window.CG.p = new Promise((resolve) => {
 <div class="overlay" id="overlayHow">
   <div class="modal">
     <div class="hd">
-      <b>HOW TO PLAY</b>
-      <button class="btn ghost" id="btnCloseHow">Close</button>
+      <b data-i18n="how.title">HOW TO PLAY</b>
+      <button class="btn ghost" id="btnCloseHow" data-i18n="how.close">Close</button>
     </div>
     <div class="bd">
       <div class="muted">
         <ul>
-          <li>目標：<b>21に近づける</b>（21超えはBust）</li>
-          <li>10/J/Q/Kは<b>全部10扱い</b>、Aは<b>1 or 11</b></li>
-          <li><b>DEAL</b>で開始（RoundOver中は次ラウンドに進む）</li>
-          <li><b>Double</b>：同額追加→1回Hitで強制終了</li>
-          <li><b>Split</b>：同“点数”ならOK。Aスプリットは1枚で終了</li>
-          <li><b>Surrender</b>：最初の2枚のみ。掛け金の半分が返る（Late／peek後）</li>
-          <li><b>Insurance</b>：ディーラー表がAの時のみ。最大 bet/2</li>
-          <li><b>Even Money</b>：プレイヤーBJ時に提示</li>
+          <li data-i18n="how.goal">目標：<b>21に近づける</b>（21超えはBust）</li>
+          <li data-i18n="how.cards">10/J/Q/Kは<b>全部10扱い</b>、Aは<b>1 or 11</b></li>
+          <li data-i18n="how.deal"><b>DEAL</b>で開始（RoundOver中は次ラウンドに進む）</li>
+          <li data-i18n="how.double"><b>Double</b>：同額追加→1回Hitで強制終了</li>
+          <li data-i18n="how.split"><b>Split</b>：同“点数”ならOK。Aスプリットは1枚で終了</li>
+          <li data-i18n="how.surrender"><b>Surrender</b>：最初の2枚のみ。掛け金の半分が返る（Late／peek後）</li>
+          <li data-i18n="how.insurance"><b>Insurance</b>：ディーラー表がAの時のみ。最大 bet/2</li>
+          <li data-i18n="how.even_money"><b>Even Money</b>：プレイヤーBJ時に提示</li>
         </ul>
-        <p>※操作可否はC++が返す <b>state.can</b> が真実。ボタンは自動で無効化されます。</p>
+        <p data-i18n="how.note">※操作可否はC++が返す <b>state.can</b> が真実。ボタンは自動で無効化されます。</p>
       </div>
     </div>
   </div>
@@ -1342,11 +1345,11 @@ window.CG.p = new Promise((resolve) => {
 <div class="overlay" id="overlayHistory">
   <div class="modal">
     <div class="hd">
-      <b>HISTORY</b>
-      <button class="btn ghost" id="btnCloseHistory">Close</button>
+      <b data-i18n="hist.title">HISTORY</b>
+      <button class="btn ghost" id="btnCloseHistory" data-i18n="hist.close">Close</button>
     </div>
     <div class="bd">
-      <p class="muted small" style="margin-top:0;">
+      <p class="muted small" style="margin-top:0;" data-i18n="hist.msg">
         直近のラウンド結果を記録しています（最大 100 件）。ページを閉じてもブラウザに保存されます。
       </p>
       <div class="handBox" id="historyList"
@@ -1361,16 +1364,16 @@ window.CG.p = new Promise((resolve) => {
 <div class="overlay" id="overlayRanking">
   <div class="modal">
     <div class="hd">
-      <b>RANKING</b>
-      <button class="btn ghost" id="btnCloseRanking">Close</button>
+      <b data-i18n="rank.title">RANKING</b>
+      <button class="btn ghost" id="btnCloseRanking" data-i18n="rank.close">Close</button>
     </div>
     <div class="bd">
-      <p class="muted small" style="margin-top:0;">
+      <p class="muted small" style="margin-top:0;" data-i18n="rank.msg">
         セッション結果（Profit順）を保存しています（最大 50 件）。
       </p>
 
       <div class="row" style="justify-content:space-between; margin-top:10px;">
-        <div class="muted small">Name（任意）</div>
+        <div class="muted small" data-i18n="rank.name">Name（任意）</div>
         <input id="nameInput" type="text" maxlength="12" placeholder="YOU" style="width:180px;">
       </div>
 
@@ -1706,7 +1709,7 @@ function setPause(paused) {
       resetArmed = true;
       $("btnReset").textContent = "Hold to reset";
       $("btnReset").classList.add("danger");
-      toast("2秒長押しでリセット");
+      toast(t("toast.reset_hold"));
       setTimeout(()=>{ if (resetArmed) disarmReset(); }, 5000);
     }
     
@@ -1722,8 +1725,8 @@ function setPause(paused) {
       $("overlayHistory") && $("overlayHistory").classList.remove("show");
       goScreen("title");
 
-      $("subLine").textContent = "ready.";
-      toast("Reset!");
+      $("subLine").textContent = t("ui.ready");
+      toast(t("toast.reset_done"));
       // animation caches reset
       prevDealerCards = [];
       prevPlayerLens = [];
@@ -1893,11 +1896,11 @@ function soRequestMidgame(){
   };
 
   window.SO.adDone = false;
-  if (note) note.textContent = "広告を読み込み中…";
+  if (note) note.textContent = t("so.calculating");
 
   try{
     const callbacks = {
-      adStarted: () => { if (note) note.textContent = "広告再生中…"; },
+      adStarted: () => { if (note) note.textContent = "Ad playing…"; },
       adFinished: finish,
       adError: () => finish(),
     };
@@ -1958,14 +1961,14 @@ function soUpdateLock(){
   const remain = Math.max(0, window.SO.lockUntil - performance.now());
 
   if (remain > 0){
-    if (lockNote) lockNote.textContent = `結果表示中…（${(remain/1000).toFixed(1)}s）`;
+    if (lockNote) lockNote.textContent = `${t("js.result_showing")} (${(remain/1000).toFixed(1)}s)`;
     return;
   }
   if (!window.SO.adDone){
-    if (lockNote) lockNote.textContent = "広告の終了を待っています…";
+    if (lockNote) lockNote.textContent = t("js.ad_waiting");
     return;
   }
-  if (lockNote) lockNote.textContent = "選択できます";
+  if (lockNote) lockNote.textContent = t("js.selectable");
   soSetButtonsEnabled(true);
   if (window.SO.unlockTimer){ clearInterval(window.SO.unlockTimer); window.SO.unlockTimer=null; }
 }
@@ -2064,7 +2067,7 @@ function beginSessionOverFlow(st){
 
       $("dealerHole").textContent = hideBoard
         ? "-"
-        : (state.dealer.holeKnown ? "hole open" : "hole hidden");
+        : (state.dealer.holeKnown ? t("dyn.hole_open") : t("dyn.hole_hidden"));
 
 
       const dWrap = $("dealerCards");
@@ -2187,7 +2190,7 @@ header.innerHTML = `
       <span class="kv"><span class="k">Bet</span><b class="v">${h.bet}</b></span>
     </div>
   </div>
-  <div class="badge ${badgeClass}">${flags.length ? flags.join(" • ") : "playing"}</div>
+  <div class="badge ${badgeClass}">${flags.length ? flags.join(" • ") : t("dyn.playing")}</div>
 `;
 
         box.appendChild(header);
@@ -2286,19 +2289,19 @@ if (insMode) {
       const metaEl = $("roundMeta");
       if (isRoundOver){
         if (state.phase === "sessionOver"){
-          msgEl.textContent = "SESSION OVER";
+          msgEl.textContent = t("so.session_over");
           msgEl.className = "msg neutral";
         } else if (net > 0){
-          msgEl.textContent = `WIN +${net}`;
+          msgEl.textContent = `${t("dyn.win")} +${net}`;
           msgEl.className = "msg win";
         } else if (net < 0){
-          msgEl.textContent = `LOSE ${net}`;
+          msgEl.textContent = `${t("dyn.lose")} ${net}`;
           msgEl.className = "msg lose";
         } else {
-          msgEl.textContent = "PUSH ±0";
+          msgEl.textContent = `${t("dyn.push")} ±0`;
           msgEl.className = "msg neutral";
         }
-        metaEl.textContent = `streak ${state.roundResult.streak} / bonus ${state.roundResult.bonusPercent}% (+${state.roundResult.bonusApplied})`;
+        metaEl.textContent = `${t("dyn.streak")} ${state.roundResult.streak} / ${t("dyn.bonus")} ${state.roundResult.bonusPercent}% (+${state.roundResult.bonusApplied})`;
       }
 
       $("debugLine").innerHTML = `
@@ -2309,7 +2312,7 @@ if (insMode) {
       `;
 
       const v = floorEven($("betInput").value);
-      $("betHint").textContent = `入力=${$("betInput").value} → 偶数化=${v}`;
+      $("betHint").textContent = `${t("dyn.input")}=${$("betInput").value} → ${t("dyn.even")}=${v}`;
 
 
       // ===== Bet lock/unlock =====
@@ -2337,8 +2340,8 @@ function setDockLabel(id, label, key){
 
 
 if (insMode){
-  setDockLabel("btnHit", "YES", "Y");
-  setDockLabel("btnStand", "NO", "N");
+  setDockLabel("btnHit", t("ins.yes"), "Y");
+  setDockLabel("btnStand", t("ins.no"), "N");
 
   // ボタンの enable/disable は上の setDis ブロックに任せる
 
@@ -2347,7 +2350,7 @@ if (insMode){
   $("insAmountSide").disabled = false;
 
   const mx = state.insurance.max|0;
-  $("insHintSide").textContent = `max ${mx} (bet/2)`;
+  $("insHintSide").textContent = `${t("dyn.max")} ${mx} (bet/2)`;
   const a = $("insAmountSide");
   a.max = mx;
   a.step = 2;
@@ -2362,8 +2365,8 @@ if (insMode){
   $("btnEvenMoneyIns").disabled = !can.evenMoney;
 
 } else {
-  setDockLabel("btnHit", "HIT", "H");
-  setDockLabel("btnStand", "STAND", "S");
+  setDockLabel("btnHit", t("dock.hit"), "H");
+  setDockLabel("btnStand", t("dock.stand"), "S");
 
   $("insSideBox").style.display = "none";
   $("insAmountSide").disabled = true;
@@ -2415,8 +2418,13 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowPause").onclick = ()=> $("overlayHow").classList.add("show");
-    //$("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
+    
+    $("btnLangToggle").onclick = () => {
+      const current = window.LOC.lang;
+      const next = current === "en" ? "ja" : "en";
+      window.LOC.lang = next;
+    };
 
         // History overlay
     $("btnHistory").onclick = ()=>{
@@ -2490,7 +2498,7 @@ function renderRankingOverlay(){
 
   const list = loadRanking();
   if (!list.length){
-    box.innerHTML = '<div class="small muted">まだランキングがありません。</div>';
+    box.innerHTML = `<div class="small muted">${t("rank.none")}</div>`;
     return;
   }
 
@@ -2555,7 +2563,7 @@ function finalizeSessionRanking(st){
   });
 
   // 表示して気持ちよくする（任意）
-  toast(`Saved Ranking: ${profit>=0?`+${profit}`:profit}`);
+  toast(`${t("rank.saved")}${profit>=0?`+${profit}`:profit}`);
 }
 
 
@@ -2603,7 +2611,7 @@ $("btnDeal").onclick = ()=> {
       bet = floorEven(state.bank);
       $("betInGame").value = bet;
       callAction("set_bet", bet);
-      toast("Bet adjusted to Bank");
+      toast(t("toast.bet_adjusted"));
     }
   }
 
@@ -2622,7 +2630,7 @@ $("btnDeal").onclick = ()=> {
       if (!resetArmed) return;
       holdStart = performance.now();
       const btn = $("btnReset");
-      btn.textContent = "Holding…";
+      btn.textContent = t("js.holding");
       const wrap = document.createElement("div");
       wrap.className = "prog";
       const bar = document.createElement("div");
@@ -2643,7 +2651,7 @@ $("btnDeal").onclick = ()=> {
     function cancelHold(){
       if (holdTimer){ clearInterval(holdTimer); holdTimer = null; }
       if (resetArmed){
-        $("btnReset").textContent = "Hold to reset";
+        $("btnReset").textContent = t("menu.reset"); // or toast.reset_hold?
         $("btnReset").classList.add("danger");
       }
     }
@@ -2657,7 +2665,7 @@ $("btnDeal").onclick = ()=> {
 
       sessionEndAdDone = false; // セッション終了広告フラグリセット
       if (!apiReady()){
-        toast("engine not ready");
+        toast(t("ui.engine_not_ready"));
         return;
       }
 
@@ -2692,7 +2700,7 @@ if (savedName && $("nameInput")) $("nameInput").value = savedName;
        hideBoardAfterSet = false;   // ← 追加：SET 後に盤面を隠す用
       goScreen("game");
       startTick();
-      toast("Good luck!");
+      toast(t("toast.good_luck"));
     };
 
 $("btnSetBet").onclick = ()=>{
