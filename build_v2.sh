@@ -27,6 +27,8 @@ echo "=== Building $GAME (v2) -> blackjack.js ==="
     "_next_round",
     "_get_state_json",
     "_free_ptr",
+    "_add_funds",
+    "_revive",
     "_debug_set_shoe"
   ]' \
   -s EXPORTED_RUNTIME_METHODS='["cwrap","UTF8ToString"]' \

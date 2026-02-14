@@ -39,7 +39,9 @@ Module().then(mod => {
     free_ptr: Engine.cwrap('free_ptr', null, ['number']),
     
       next_round: Engine.cwrap('next_round', 'number', []),
-  debug_set_shoe: Engine.cwrap('debug_set_shoe', 'number', ['string']),
+    revive: Engine.cwrap('revive', 'number', ['number']),
+    add_funds: Engine.cwrap('add_funds', 'number', ['number']),
+    debug_set_shoe: Engine.cwrap('debug_set_shoe', 'number', ['string']),
   };
 
 globalThis.Engine = Engine;

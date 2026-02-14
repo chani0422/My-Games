@@ -1280,7 +1280,12 @@ window.CG.p = new Promise((resolve) => {
 
           <div class="row soBtns">
             <button class="btn ghost" id="btnSOTitle" disabled>タイトルへ</button>
-            <button class="btn primary" id="btnSORetry" disabled>リトライ</button>
+            <button class="btn primary" id="btnSORetry" disabled>EARN 5000 & RETRY</button>
+          </div>
+          <div class="row soBtns" id="soReviveRow" style="justify-content:center; margin-top:10px; display:none;">
+             <button class="btn good" id="btnSORevive" style="width:100%; font-size:15px; padding:14px;">
+               📺 Watch Ad to Revive (+500)
+             </button>
           </div>
         </div>
       </div>
@@ -1671,6 +1676,16 @@ function goScreen(name){
   if (!willGame && wasGame) window.CG?.gameplayStop?.();
 }
 
+function setPause(paused) {
+    if (paused) {
+        $("overlayPause").classList.add("show");
+        window.CG?.gameplayStop?.();
+    } else {
+        $("overlayPause").classList.remove("show");
+        window.CG?.gameplayStart?.();
+    }
+}
+
 //a
     // ========= Hold to reset =========
     let resetArmed = false;
@@ -1813,6 +1828,14 @@ function soFillStats(st){
     el.innerHTML = `<span class="k">${k}</span><b class="v">${v}</b>`;
     stats.appendChild(el);
   });
+
+  // Revive button logic
+  const reviveRow = document.getElementById("soReviveRow");
+  if (st.bank <= 0 && st.session.timeLeftMs > 0 && st.session.round < st.session.roundLimit) {
+      if(reviveRow) reviveRow.style.display = "flex";
+  } else {
+      if(reviveRow) reviveRow.style.display = "none";
+  }
 }
 
 async function soRequestBanner(){
@@ -1870,6 +1893,44 @@ function soRequestMidgame(){
   }
 
   window.SO.adFailSafe = setTimeout(finish, 15000);
+}
+
+function doRevive(){
+    if (window.SO.adReviveActive) return;
+    window.SO.adReviveActive = true;
+    const btn = document.getElementById("btnSORevive");
+    const origText = btn.textContent;
+    btn.textContent = "Loading Ad...";
+    btn.disabled = true;
+
+    const finish = (success) => {
+        window.SO.adReviveActive = false;
+        btn.textContent = origText;
+        btn.disabled = false;
+        
+        if (success) {
+            callAction("revive", 500); // 500チップで復活
+            soHideOverlay();
+            window.CG?.gameplayStart?.();
+            toast("Revived with 500 chips!");
+        } else {
+            toast("Ad failed. Try again.");
+        }
+    };
+
+    try {
+        const callbacks = {
+          adFinished: () => finish(true),
+          adError: (error) => {
+              console.warn("Reward ad error:", error);
+              finish(false);
+          },
+        };
+        window.CrazyGames?.SDK?.ad?.requestAd?.("rewarded", callbacks);
+    } catch(e) {
+        console.error(e);
+        finish(false);
+    }
 }
 
 function soUpdateLock(){
@@ -2479,31 +2540,26 @@ function finalizeSessionRanking(st){
 
 
 $("btnPause").onclick = ()=>{
-  if (!state) return toast("ゲーム中に使えます");
-  if (!$("screenGame").classList.contains("active")) return toast("ゲーム中に使えます");
+  if (state.phase === "paused") return;
+  //if (!state) return toast("ゲーム中に使えます");
+  //if (!$("screenGame").classList.contains("active")) return toast("ゲーム中に使えます");
 
   callAction("set_paused", 1);
   pausedAt = performance.now();
-  $("overlayPause").classList.add("show");
-
-  window.CG?.gameplayStop?.(); // ← 実際にポーズした時だけ
+  setPause(true);
 };
 
-    $("btnClosePause").onclick = ()=>{
-      if (pausedAt){
-        pausedTotal += performance.now() - pausedAt;
-        pausedAt = 0;
-      }
-      callAction("set_paused", 0);
-      $("overlayPause").classList.remove("show");
-      $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
-      try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO?.bannerId || "cg-so-banner"); }catch(e){}
-      if ($("screenGame").classList.contains("active")) {
-  window.CG?.gameplayStart?.();
-}
-    };
-    $("btnContinue").onclick = $("btnClosePause").onclick;
-    $("btnQuit").onclick = ()=> doResetToTitle();
+$("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
+  if (pausedAt){
+    pausedTotal += performance.now() - pausedAt;
+    pausedAt = 0;
+  }
+  callAction("set_paused", 0);
+  setPause(false);
+};
+
+$("btnQuit").onclick = ()=> doResetToTitle();
+$("btnSORevive").onclick = doRevive;
 
     $("btnInsMaxSide").onclick = ()=> {
   if (!state || state.phase !== "offerInsurance") return;

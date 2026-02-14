@@ -503,6 +503,25 @@ struct Engine {
       return OK;
     }
   }
+
+  int revive(int amount) {
+    if (phase != Phase::SESSION_OVER) return set_error(INVALID_STATE, "Not session over");
+    if (bank > 0) return set_error(INVALID_STATE, "Not bankrupt");
+    
+    if (timeLeftMs <= 0 || round >= roundLimit) {
+         return set_error(INVALID_STATE, "Session ended naturally");
+    }
+
+    bank = amount;
+    set_phase(Phase::BETTING);
+    return OK;
+  }
+
+  int add_funds(int amount) {
+    if (amount <= 0) return OK;
+    bank += amount;
+    return OK;
+  }
 // 変更するかもーーーー
 static int floor_to_even(int x) {
   if (x < 0) x = 0;
@@ -1258,5 +1277,11 @@ EMSCRIPTEN_KEEPALIVE
 int debug_set_shoe(const char* seq) {
   return bj::g.debug_set_shoe(seq);
 }
+
+EMSCRIPTEN_KEEPALIVE
+int revive(int amount) { return bj::g.revive(amount); }
+
+EMSCRIPTEN_KEEPALIVE
+int add_funds(int amount) { return bj::g.add_funds(amount); }
 
 } // extern "C"
