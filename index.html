@@ -950,6 +950,9 @@ body{
 <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script>
   // Safe wrapper so local development / non-CrazyGames domains won't crash.
+  // Config: Set to false for CrazyGames "Basic Launch" submission.
+  const ENABLE_ADS = false;
+
   window.CG = window.CG || {};
   window.CG.ready = false;
 
@@ -1713,7 +1716,7 @@ function setPause(paused) {
       callAction("reset_session");
       $("overlayPause").classList.remove("show");
       $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
-      try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO?.bannerId || "cg-so-banner"); }catch(e){}
+      // try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO?.bannerId || "cg-so-banner"); }catch(e){}
       $("overlayHow").classList.remove("show");
       $("overlayMore") && $("overlayMore").classList.remove("show");
       $("overlayHistory") && $("overlayHistory").classList.remove("show");
@@ -1784,7 +1787,9 @@ function soClearTimers(){
 function soHideOverlay(){
   const ov = document.getElementById("overlaySessionOver");
   if (ov) ov.classList.remove("show");
-  try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO.bannerId); }catch(e){}
+  if (typeof ENABLE_ADS !== "undefined" && ENABLE_ADS) {
+      // try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO.bannerId); }catch(e){}
+  }
   window.SO.bannerShown = false;
   window.SO.active = false;
   window.SO.adDone = false;
@@ -1840,6 +1845,7 @@ function soFillStats(st){
 
 async function soRequestBanner(){
   if (window.SO.bannerShown) return;
+  if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) return; // Ads disabled
 
   const wrap = document.getElementById("soBannerWrap");
   if (wrap) wrap.style.display = "none";
@@ -1847,7 +1853,7 @@ async function soRequestBanner(){
   try{
     await window.CG?.p;
     if (!window.CG?.ready) throw 0;
-    await window.CrazyGames?.SDK?.banner?.requestResponsiveBanner?.(window.SO.bannerId);
+    // await window.CrazyGames?.SDK?.banner?.requestResponsiveBanner?.(window.SO.bannerId);
     window.SO.bannerShown = true;
     if (wrap) wrap.style.display = "block";
   }catch(e){
@@ -1857,6 +1863,14 @@ async function soRequestBanner(){
 
 function soRequestMidgame(){
   const note = document.getElementById("soAdNote");
+
+  if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) {
+     // Ads disabled: skip immediately
+    window.SO.adDone = true;
+    if (note) note.textContent = "";
+    soUpdateLock();
+    return;
+  }
 
   // Show ad only every 2nd session (Satisfying user request: "every 2 sessions")
   // sessionCount is incremented in beginSessionOverFlow.
@@ -1887,7 +1901,7 @@ function soRequestMidgame(){
       adFinished: finish,
       adError: () => finish(),
     };
-    window.CrazyGames?.SDK?.ad?.requestAd?.("midgame", callbacks);
+    // window.CrazyGames?.SDK?.ad?.requestAd?.("midgame", callbacks);
   }catch(e){
     finish();
   }
@@ -1897,6 +1911,12 @@ function soRequestMidgame(){
 
 function doRevive(){
     if (window.SO.adReviveActive) return;
+
+    if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) {
+        // toast("Ads are disabled in this version.");
+        console.log("Ads differred for Basic Launch");
+        return;
+    }
     window.SO.adReviveActive = true;
     const btn = document.getElementById("btnSORevive");
     const origText = btn.textContent;
@@ -1926,7 +1946,7 @@ function doRevive(){
               finish(false);
           },
         };
-        window.CrazyGames?.SDK?.ad?.requestAd?.("rewarded", callbacks);
+        // window.CrazyGames?.SDK?.ad?.requestAd?.("rewarded", callbacks);
     } catch(e) {
         console.error(e);
         finish(false);
