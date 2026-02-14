@@ -5,6 +5,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>BlackJack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -31,6 +34,7 @@
 
       --radius:18px;
       --dockH: 78px;
+      --font-serif: 'Cinzel', serif;
     }
 
     *{box-sizing:border-box}
@@ -76,6 +80,11 @@
       from{ transform: translate3d(-2%, -1%, 0) scale(1.02) }
       to  { transform: translate3d( 2%,  1%, 0) scale(1.04) }
     }
+    @keyframes shimmer {
+      0% { left: -100%; opacity: 0; }
+      50% { opacity: 0.5; }
+      100% { left: 200%; opacity: 0; }
+    }
 
     .wrap{
       max-width:1100px;
@@ -108,6 +117,7 @@
       box-shadow: 0 18px 40px rgba(0,0,0,.35);
       position:relative;
       overflow:hidden;
+      font-family: var(--font-serif);
     }
     .logo::after{
       content:"";
@@ -133,6 +143,7 @@
       overflow:hidden;
       text-overflow:ellipsis;
       text-shadow: 0 18px 40px rgba(0,0,0,.45);
+      font-family: var(--font-serif);
     }
     .sub{
       font-size:12px;
@@ -213,6 +224,17 @@
         radial-gradient(160px 70px at 50% 0%, rgba(255,223,138,.40), transparent 65%),
         linear-gradient(180deg, rgba(216,177,90,.18), rgba(0,0,0,.18));
       box-shadow: 0 26px 85px rgba(216,177,90,.20), 0 24px 55px rgba(0,0,0,.35);
+      position: relative; overflow: hidden;
+    }
+    .btn.primary::after {
+      content: "";
+      position: absolute;
+      top: 0; left: -100%;
+      width: 50%; height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+      transform: skewX(-25deg);
+      animation: shimmer 3s infinite;
+      pointer-events: none;
     }
     .btn.danger{
       border-color: rgba(255,77,77,.35);
@@ -493,7 +515,7 @@
       padding:12px;
       background: rgba(0,0,0,.18);
       transition: transform .12s ease, border-color .12s ease, filter .12s ease;
-      box-shadow: 0 18px 55px rgba(0,0,0,.16);
+      box-shadow: inset 0 2px 12px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
       backdrop-filter: blur(2px);
     }
     .handBox.active{
@@ -850,7 +872,7 @@ body{
   background:rgba(0,0,0,.18);
 }
 .kv .k{ font-size:11px; color:rgba(255,255,255,.78); letter-spacing:.04em; }
-.kv .v{ font-size:14px; font-weight:900; color:#fff; }
+.kv .v{ font-family: var(--font-serif); font-size:22px; font-weight:900; color:#fff; }
 #btnMore{ display:none; }
 
   
@@ -870,6 +892,7 @@ body{
       letter-spacing: .06em;
       color: #fff;
       text-shadow: 0 10px 30px rgba(0,0,0,.55);
+      font-family: var(--font-serif);
     }
     .soSub{
       color: rgba(255,255,255,.78);
@@ -1692,8 +1715,16 @@ function goScreen(name){
     // ========= Anim caches =========
     let prevBank = null;
     let prevDealerCards = [];
+    let prevDealerJson = ""; // Cache for Dealer
     let prevPlayerLens = [];
+    let prevPlayerJson = ""; // Cache for Player
     let hideBoardAfterSet = false;   // ← これを追加（グローバル）
+
+    // Dealer Draw Animation State
+    let dealerShowCount = 0;
+    let dealerAnimTimer = null;
+
+
 
 // ===== Session Over Flow =====
 // 仕様：sessionOverに入ったら
@@ -1954,10 +1985,56 @@ function beginSessionOverFlow(st){
         ? "-"
         : (state.dealer.holeKnown ? "hole open" : "hole hidden");
 
+
       const dWrap = $("dealerCards");
-      dWrap.innerHTML = "";
-      const dealerCards = hideBoard ? [] : (state.dealer.cards || []);
-      dealerCards.forEach((c, idx)=>{
+      let rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
+
+      // --- Dealer Animation Logic ---
+      const targetCount = rawDealerCards.length;
+      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
+      //const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
+
+      if (!isRoundOver) {
+        // Not in round over, show all cards immediately (sync)
+        if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        dealerShowCount = targetCount;
+      } else {
+        // In round over, check if we need to animate
+        if (dealerShowCount === 0 && targetCount > 0 && !dealerAnimTimer) {
+             // Initial load in roundOver? fast forward
+             dealerShowCount = targetCount;
+        } else if (dealerShowCount < targetCount) {
+             // Need to animate
+             if (!dealerAnimTimer) {
+                 dealerAnimTimer = setTimeout(() => {
+                     dealerShowCount++;
+                     dealerAnimTimer = null;
+                     render(); // Re-trigger render to show next card
+                 }, 600);
+             }
+        } else {
+            // Animation done
+             if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        }
+      }
+      
+      const isDealerAnimating = (dealerShowCount < targetCount);
+      // Slice cards based on show count
+      const dealerCards = rawDealerCards.slice(0, dealerShowCount);
+
+      // Cache check for Dealer
+
+      const dealerJson = JSON.stringify({
+         cards: dealerCards,
+         holeKnown: state.dealer.holeKnown,
+         scoreShown: state.dealer.scoreShown,
+         score: state.dealer.score
+      });
+      
+      if (dealerJson !== prevDealerJson) {
+        dWrap.innerHTML = "";
+        dealerCards.forEach((c, idx)=>{
+
         const el = document.createElement("div");
         const prev = prevDealerCards[idx];
 
@@ -1974,17 +2051,35 @@ function beginSessionOverFlow(st){
         if (reveal) el.classList.add("flipIn");
 
         dWrap.appendChild(el);
+        dWrap.appendChild(el);
       });
+      } // End of dealerJson check
       prevDealerCards = dealerCards.slice();
+
+      prevDealerJson = dealerJson; // Cache dealer state
+
 
       // Player hands
       const ph = $("playerHands");
-      ph.innerHTML = "";
-          const hands =
+      const hands =
         (!hideBoard && state.player && state.player.hands)
           ? state.player.hands
           : [];
-      hands.forEach((h, i)=>{
+
+
+      
+      const playerJson = JSON.stringify(hands.map(h => ({
+        cards: h.cards,
+        score: h.score,
+        bet: h.bet,
+        flags: h.flags,
+        active: (hands.indexOf(h) === state.player.activeHandIndex)
+      })));
+
+      if (playerJson !== prevPlayerJson) {
+        ph.innerHTML = "";
+        hands.forEach((h, i)=>{
+
         const box = document.createElement("div");
         box.className = "handBox" + (i === state.player.activeHandIndex ? " active" : "");
 
@@ -2032,7 +2127,13 @@ header.innerHTML = `
         ph.appendChild(box);
 
         prevPlayerLens[i] = (h.cards||[]).length;
+        prevPlayerLens[i] = (h.cards||[]).length;
       });
+      } // End of playerJson check
+      prevPlayerJson = playerJson; // Cache player state
+
+
+
 
       // Controls enable/disable from state.can
 // Controls enable/disable from state.can
@@ -2077,13 +2178,27 @@ if (insMode) {
   setDis("btnEvenMoneySide", !can.evenMoney);
 }
 
-       const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
+       // const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
       // ラウンドが終わった瞬間だけ履歴に追加
       pushHistoryEntry(state);
       finalizeSessionRanking(state);
       if (state.phase === "sessionOver") beginSessionOverFlow(state);
 
-      $("roundBanner").style.display = isRoundOver ? "flex" : "none";
+      $("roundBanner").style.display = (isRoundOver && !isDealerAnimating) ? "flex" : "none";
+
+      // Win Effect Trigger
+      if (isRoundOver) {
+         if (!isDealerAnimating) {
+            const net = state.roundResult.netProfit;
+            if (!winEffectDone && net > 0) {
+                window.triggerWinEffect && window.triggerWinEffect();
+                winEffectDone = true;
+            }
+         }
+      } else {
+         winEffectDone = false;
+      }
+
 
       const net = state.roundResult.netProfit|0;
       const msgEl = $("roundMsg");
@@ -2192,40 +2307,13 @@ prevPhase = state.phase;
 
     }
 
-// //ranking history 保存用 
-// // ラウンド終了時に 1 件追加 
-// function pushHistoryEntry(state) {
-//   if (!state) return;
-
-//   const isRoundOver =
-//     state.phase === "roundOver" || state.phase === "sessionOver";
-//   if (!isRoundOver) return;
-
-//   const hands = (state.player && state.player.hands) || [];
-//   const h0 = hands[0] || {};
-
-//   const entry = {
-//     ts: Date.now(),               // 時刻
-//     round: state.session.round,   // 何ラウンド目か
-//     bank: state.bank,             // 現在の所持金
-//     bet: h0.bet || 0,             // 基本ベット
-//     net: state.roundResult.netProfit,       // このラウンドの損益
-//     streak: state.roundResult.streak,       // 連勝数
-//     bonusPercent: state.roundResult.bonusPercent, // ボーナス(%)
-//   };
-
-//   const arr = loadHistory();
-//   arr.unshift(entry);            // 先頭に追加（新しい順）
-
-//   if (arr.length > 100) arr.length = 100; // 最大100件に制限
-//   saveHistory(arr);
-// }
 
 if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     prevDealerCards = [];
+    prevDealerJson = "";
     prevPlayerLens = [];
+    prevPlayerJson = "";
 }
-
 
 
     // ========= UI events =========
@@ -2651,10 +2739,88 @@ $("nameInput")?.addEventListener("input", ()=>{
 
     // kick engine sync loop
     syncEngine();
+  
   </script>
 
-  <!-- build -->
-  <script src="blackjack.js"></script>
-  <script src="blackjack_ui.js"></script>
+
+
+<!-- Last Build Scripts -->
+<script src="blackjack.js"></script>
+<script src="blackjack_ui.js"></script>
+
+<style>
+  #fxCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+</style>
+<script>
+  // Particle System
+  const fxCanvas = document.createElement("canvas");
+  fxCanvas.id = "fxCanvas";
+  document.body.appendChild(fxCanvas);
+  const fxCtx = fxCanvas.getContext("2d");
+  let particles = [];
+
+  function resizeFx(){
+    fxCanvas.width = window.innerWidth;
+    fxCanvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeFx);
+  resizeFx();
+
+  class Particle {
+    constructor(x, y, color){
+      this.x = x; this.y = y;
+      const ang = Math.random() * Math.PI * 2;
+      const spd = Math.random() * 6 + 2;
+      this.vx = Math.cos(ang) * spd;
+      this.vy = Math.sin(ang) * spd - 3; 
+      this.color = color;
+      this.life = 1.0;
+      this.decay = Math.random() * 0.01 + 0.015;
+      this.grav = 0.15;
+    }
+    update(){
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy += this.grav;
+      this.vx *= 0.96;
+      this.life -= this.decay;
+    }
+    draw(ctx){
+      ctx.globalAlpha = Math.max(0, this.life);
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+    }
+  }
+
+  function spawnConfetti(x, y){
+    const colors = ["#d8b15a", "#ffdf8a", "#ffffff", "#37d67a"];
+    for(let i=0; i<40; i++){
+      particles.push(new Particle(x, y, colors[Math.floor(Math.random()*colors.length)]));
+    }
+  }
+
+  function loopFx(){
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+    for(let i=particles.length-1; i>=0; i--){
+      const p = particles[i];
+      p.update();
+      if(p.life <= 0) particles.splice(i, 1);
+      else p.draw(fxCtx);
+    }
+    requestAnimationFrame(loopFx);
+  }
+  loopFx();
+  
+  window.triggerWinEffect = () => {
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    spawnConfetti(cx, cy);
+    spawnConfetti(cx - 100, cy - 50);
+    spawnConfetti(cx + 100, cy - 50);
+  };
+</script>
 </body>
 </html>
