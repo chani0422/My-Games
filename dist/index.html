@@ -1,0 +1,2882 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>BlackJack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --felt0:#071a10;
+      --felt1:#0b3d1a;
+      --felt2:#0f5a25;
+
+      --rail0:#0b0b0c;
+      --rail1:#17171a;
+
+      --gold:#d8b15a;
+      --gold2:#ffdf8a;
+
+      --text:#ffffff;
+      --muted:rgba(255,255,255,.78);
+      --muted2:rgba(255,255,255,.56);
+
+      --border:rgba(255,255,255,.14);
+      --shadow:rgba(0,0,0,.45);
+
+      --good:#37d67a;
+      --bad:#ff4d4d;
+      --warn:#ffcc66;
+
+      --radius:18px;
+      --dockH: 78px;
+      --font-serif: 'Cinzel', serif;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      color:var(--text);
+      overflow-x:hidden;
+
+      /* casino ambience */
+      background:
+        radial-gradient(1400px 920px at 50% -25%, rgba(255,223,138,.22), transparent 62%),
+        radial-gradient(980px 760px at 15% 10%, rgba(55,214,122,.12), transparent 62%),
+        radial-gradient(980px 760px at 85% 12%, rgba(216,177,90,.12), transparent 64%),
+        radial-gradient(1200px 900px at 50% 120%, rgba(0,0,0,.62), transparent 62%),
+        linear-gradient(180deg, #03120a, #052414 40%, #07351a);
+    }
+
+    body::before, body::after{
+      content:"";
+      position:fixed; inset:-20%;
+      pointer-events:none;
+      z-index:-1;
+    }
+    body::before{
+      background:
+        radial-gradient(620px 420px at 12% 28%, rgba(255,223,138,.10), transparent 60%),
+        radial-gradient(620px 420px at 88% 32%, rgba(255,255,255,.06), transparent 62%),
+        radial-gradient(520px 420px at 48% 5%, rgba(216,177,90,.08), transparent 62%);
+      filter: blur(1px);
+      animation: sweep 10s ease-in-out infinite alternate;
+      opacity:.9;
+    }
+    body::after{
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.02), rgba(255,255,255,.02) 1px, transparent 1px, transparent 2px);
+      mix-blend-mode: overlay;
+      opacity:.10;
+    }
+    @keyframes sweep{
+      from{ transform: translate3d(-2%, -1%, 0) scale(1.02) }
+      to  { transform: translate3d( 2%,  1%, 0) scale(1.04) }
+    }
+    @keyframes shimmer {
+      0% { left: -100%; opacity: 0; }
+      50% { opacity: 0.5; }
+      100% { left: 200%; opacity: 0; }
+    }
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:16px;
+      padding-bottom: calc(var(--dockH) + 34px);
+    }
+
+    /* ===== HUD ===== */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 12px;
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.22));
+      border-radius: calc(var(--radius) + 4px);
+      box-shadow: 0 22px 70px rgba(0,0,0,.28);
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+    }
+    .brand{display:flex; align-items:center; gap:12px; min-width:0}
+    .logo{
+      width:38px; height:38px; border-radius:14px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), rgba(255,255,255,.06)),
+        linear-gradient(135deg, rgba(255,223,138,.95), rgba(216,177,90,.55)),
+        linear-gradient(225deg, rgba(55,214,122,.55), rgba(0,0,0,0));
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      position:relative;
+      overflow:hidden;
+      font-family: var(--font-serif);
+    }
+    .logo::after{
+      content:"";
+      position:absolute; inset:-60% -40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+      transform: rotate(20deg);
+      animation: shine 2.8s ease-in-out infinite;
+      opacity:.9;
+    }
+    @keyframes shine{
+      0%{ transform: translateX(-40%) rotate(20deg) }
+      45%{ transform: translateX(60%) rotate(20deg) }
+      100%{ transform: translateX(60%) rotate(20deg) }
+    }
+
+    .brandTxt{min-width:0}
+    .brandTxt h1{
+      margin:0;
+      font-size:14px;
+      letter-spacing:.14em;
+      font-weight: 950;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      text-shadow: 0 18px 40px rgba(0,0,0,.45);
+      font-family: var(--font-serif);
+    }
+    .sub{
+      font-size:12px;
+      color:var(--muted2);
+      margin-top:2px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .statusBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(216,177,90,.35);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.18));
+      box-shadow: 0 16px 50px rgba(0,0,0,.25);
+      color: var(--muted);
+      font-weight: 900;
+      letter-spacing:.08em;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(255,255,255,.25);
+      box-shadow: 0 0 0 0 rgba(255,223,138,.0);
+    }
+    .statusBadge.good{ border-color: rgba(55,214,122,.40); color:#d8ffe7; }
+    .statusBadge.good .dot{ background: rgba(55,214,122,.85); box-shadow: 0 0 0 10px rgba(55,214,122,.12); }
+    .statusBadge.bad{ border-color: rgba(255,77,77,.40); color:#ffd1d1; }
+    .statusBadge.bad .dot{ background: rgba(255,77,77,.85); box-shadow: 0 0 0 10px rgba(255,77,77,.12); }
+
+    .stats{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end}
+    .pill{
+      display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+      padding:8px 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background: rgba(0,0,0,.20);
+      min-width: 140px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.22);
+    }
+    .pill span{font-size:12px;color:var(--muted)}
+    .pill b{font-size:13px; letter-spacing:.02em}
+    .pill.bank{
+      border-color: rgba(216,177,90,.35);
+      background:
+        radial-gradient(120px 70px at 10% 0%, rgba(255,223,138,.18), transparent 60%),
+        rgba(0,0,0,.20);
+    }
+    .bankFlash{ animation: bankFlash .35s ease; }
+    @keyframes bankFlash{
+      from{ transform: translateY(-1px) scale(1.01); filter: brightness(1.25) }
+      to{ transform:none; filter:none }
+    }
+
+    .btn{
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.18));
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      cursor:pointer;
+      transition: transform .08s ease, box-shadow .2s ease, filter .15s ease, opacity .15s ease;
+      user-select:none;
+      box-shadow: 0 14px 35px rgba(0,0,0,.25);
+      font-weight: 900;
+      letter-spacing:.06em;
+    }
+    .btn:hover{ box-shadow: 0 22px 60px rgba(0,0,0,.32); filter: brightness(1.06); }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn[disabled]{ opacity:.40; cursor:not-allowed; box-shadow:none; filter:saturate(.2); }
+    .btn.primary{
+      border-color: rgba(216,177,90,.45);
+      background:
+        radial-gradient(160px 70px at 50% 0%, rgba(255,223,138,.40), transparent 65%),
+        linear-gradient(180deg, rgba(216,177,90,.18), rgba(0,0,0,.18));
+      box-shadow: 0 26px 85px rgba(216,177,90,.20), 0 24px 55px rgba(0,0,0,.35);
+      position: relative; overflow: hidden;
+    }
+    .btn.primary::after {
+      content: "";
+      position: absolute;
+      top: 0; left: -100%;
+      width: 50%; height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+      transform: skewX(-25deg);
+      animation: shimmer 3s infinite;
+      pointer-events: none;
+    }
+    .btn.danger{
+      border-color: rgba(255,77,77,.35);
+      background: linear-gradient(180deg, rgba(255,77,77,.18), rgba(0,0,0,.18));
+    }
+    .btn.ghost{ background: rgba(0,0,0,.16); }
+
+    /* ===== Layout ===== */
+    .grid{
+      display:grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap:16px;
+      margin-top:16px;
+    }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr; }
+      .pill{ min-width:auto; }
+    }
+
+    .card{
+      border:1px solid var(--border);
+      background:
+        radial-gradient(1200px 500px at 30% -10%, rgba(255,223,138,.08), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.22));
+      border-radius: var(--radius);
+      box-shadow: 0 28px 90px rgba(0,0,0,.25);
+      overflow:hidden;
+      position:relative;
+    }
+    .card .hd{
+      padding:12px 14px;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+    }
+    .card .hd h2{
+      margin:0;
+      font-size:13px;
+      letter-spacing:.16em;
+      font-weight: 950;
+    }
+    .card .bd{ padding:14px; }
+
+    .muted{ color: var(--muted); font-size:12px; }
+    .small{ font-size:12px; color: var(--muted2); }
+    .divider{ height:1px; background: rgba(255,255,255,.12); margin:12px 0; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    input[type="number"]{
+      width: 160px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+      box-shadow: 0 18px 45px rgba(0,0,0,.20);
+      font-weight: 800;
+      letter-spacing:.02em;
+    }
+
+    /* chips = aligned (③A) */
+    .chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-start }
+    .chipbtn{
+      border:1px solid rgba(216,177,90,.35);
+      background:
+        radial-gradient(70px 40px at 30% 25%, rgba(255,223,138,.26), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.18));
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      color:var(--text);
+      font-weight: 950;
+      letter-spacing:.06em;
+      box-shadow: 0 20px 55px rgba(0,0,0,.20);
+      transition: transform .08s ease, filter .15s ease;
+    }
+    .chipbtn:hover{ filter: brightness(1.06) }
+    .chipbtn:active{ transform: translateY(1px) scale(.99) }
+
+    /* ===== Screens ===== */
+    .screen{ display:none; animation: fadeIn .20s ease; }
+    .screen.active{ display:block; }
+    @keyframes fadeIn{
+      from{ opacity:.5; transform: translateY(8px) }
+      to{ opacity:1; transform:none }
+    }
+
+    /* ===== Title hero ===== */
+    .titleHero{
+      padding:22px 16px;
+      text-align:center;
+      position:relative;
+    }
+    .titleHero .chipline{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid rgba(216,177,90,.35);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-weight:900;
+      letter-spacing:.06em;
+    }
+    .titleHero h2{
+      margin:12px 0 6px;
+      font-size:28px;
+      letter-spacing:.02em;
+      font-weight: 950;
+      text-shadow: 0 22px 60px rgba(0,0,0,.35);
+    }
+    .titleHero p{ margin:0; color: var(--muted); }
+
+    .ctaRow{
+      display:flex;
+      justify-content:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top: 14px;
+    }
+    .ctaBig{
+      min-width: 260px;
+      height: 54px;
+      border-radius: 18px;
+      font-size: 14px;
+      letter-spacing:.14em;
+    }
+
+    /* ===== Options ===== */
+    .optGrid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:10px;
+      margin-top:12px;
+    }
+    @media (max-width: 560px){ .optGrid{grid-template-columns:1fr} }
+    .opt{
+      padding:12px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      background: rgba(0,0,0,.16);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .opt label{display:flex; gap:10px; align-items:center; cursor:pointer; width:100%}
+    .opt input{ transform: scale(1.1) }
+
+    /* ===== Casino Table (★ここが見た目の本体) ===== */
+    .tableStage{
+      perspective: 900px; /* ①B: moderate */
+    }
+    .tableTilt{
+      transform: rotateX(12deg); /* ①B */
+      transform-origin: 50% 20%;
+    }
+
+    .tableFrame{
+      padding:14px;
+      border-radius: 28px 28px 380px 380px; /* ②A: half-ish */
+      background:
+        radial-gradient(1200px 500px at 50% 0%, rgba(255,223,138,.08), transparent 70%),
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.20));
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 40px 90px rgba(0,0,0,.32);
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* matte black rail */
+    .tableFrame::before{
+      content:"";
+      position:absolute; inset:0;
+      border-radius: inherit;
+      padding: 14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.65));
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+    /* 追加（標準） */
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+              mask-composite: exclude;
+      opacity:.95;
+      pointer-events:none;
+    }
+    .tableFrame::after{
+      /* subtle stitched highlight */
+      content:"";
+      position:absolute;
+      inset:10px 10px 18px 10px;
+      border-radius: 22px 22px 360px 360px;
+      border: 1px dashed rgba(255,255,255,.10);
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    .tableSurface{
+      position:relative;
+      border-radius: 18px 18px 340px 340px;
+      overflow:hidden;
+      min-height: 520px;
+      background:
+        radial-gradient(900px 520px at 50% -20%, rgba(255,255,255,.10), transparent 62%),
+        radial-gradient(900px 520px at 10% 10%, rgba(255,223,138,.06), transparent 62%),
+        radial-gradient(900px 520px at 90% 12%, rgba(55,214,122,.06), transparent 64%),
+        linear-gradient(180deg, var(--felt0), var(--felt1) 45%, var(--felt2));
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.30) inset;
+    }
+
+    /* felt grain */
+    .tableSurface::before{
+      content:"";
+      position:absolute; inset:0;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.015), rgba(255,255,255,.015) 1px, transparent 1px, transparent 3px),
+        radial-gradient(1200px 700px at 50% 120%, rgba(0,0,0,.25), transparent 62%);
+      mix-blend-mode: overlay;
+      opacity:.25;
+      pointer-events:none;
+    }
+
+    /* Markings: ②C (B + small rule text) but keep moderate overall (⑤B) */
+    .markings{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:.82;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.20));
+    }
+    .markText{
+      fill: rgba(255,255,255,.78);
+      font-weight: 900;
+      letter-spacing: .18em;
+    }
+    .markSmall{
+      fill: rgba(255,255,255,.48);
+      font-weight: 800;
+      letter-spacing: .14em;
+    }
+    .markLine{
+      stroke: rgba(255,255,255,.32);
+      stroke-width: 2.2;
+      fill:none;
+    }
+    .markDots{
+      stroke: rgba(255,223,138,.18);
+      stroke-width: 2;
+      stroke-dasharray: 3 10;
+      fill:none;
+    }
+
+    /* Zones on table */
+    .dealerZone{
+      position:absolute;
+      top: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(720px, 92%);
+    }
+    .playerZone{
+      position:absolute;
+      left: 50%;
+      bottom: 46px;
+      transform: translateX(-50%);
+      width: min(860px, 94%);
+    }
+
+    /* boxes */
+    .handBox{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:12px;
+      background: rgba(0,0,0,.18);
+      transition: transform .12s ease, border-color .12s ease, filter .12s ease;
+      box-shadow: inset 0 2px 12px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
+      backdrop-filter: blur(2px);
+    }
+    .handBox.active{
+      border-color: rgba(55,214,122,.55);
+      box-shadow:
+        0 0 0 2px rgba(55,214,122,.12) inset,
+        0 26px 70px rgba(0,0,0,.25);
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+
+    .handArea{ display:flex; flex-direction:column; gap:12px }
+
+    .cards{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    /* card look: ⑧A (photo-ish) */
+    .cardFace, .cardBack{
+      width: 48px;
+      height: 68px;
+      border-radius: 13px;
+      box-shadow: 0 16px 30px rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.14);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 950;
+      letter-spacing:.02em;
+      user-select:none;
+      position:relative;
+      overflow:hidden;
+      transform: translate3d(0,0,0);
+    }
+    .cardFace{
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,.90), rgba(255,255,255,.62)),
+        linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.70));
+      color:#0e0e10;
+      border-color: rgba(0,0,0,.10);
+    }
+    .cardFace::after{
+      content:"";
+      position:absolute;
+      inset:-30% -40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+      transform: rotate(22deg);
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    .cardBack{
+      background:
+        radial-gradient(circle at 25% 25%, rgba(255,255,255,.32), transparent 60%),
+        linear-gradient(135deg, rgba(255,223,138,.60), rgba(216,177,90,.22)),
+        linear-gradient(225deg, rgba(55,214,122,.38), rgba(0,0,0,0));
+      border-color: rgba(216,177,90,.28);
+    }
+    .cardBack::before{
+      /* back pattern */
+      content:"";
+      position:absolute; inset:10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.22);
+      background:
+        repeating-linear-gradient(45deg, rgba(255,255,255,.10) 0 6px, transparent 6px 12px),
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,.10), transparent 62%);
+      opacity:.85;
+    }
+
+    /* ④A: slide deal + flip (no extra spin/glow) */
+    .dealIn{
+      animation: dealIn .42s cubic-bezier(.2,.8,.2,1) both;
+    }
+    @keyframes dealIn{
+      from{ opacity:0; transform: translate(120px,-60px) rotate(-8deg) scale(.95); filter: blur(.35px) }
+      to{ opacity:1; transform:none; filter:none }
+    }
+    .flipIn{
+      animation: flipIn .46s cubic-bezier(.2,.8,.2,1) both;
+      transform-origin: center;
+    }
+    @keyframes flipIn{
+      0%{ transform: rotateY(0deg) }
+      50%{ transform: rotateY(90deg); filter: brightness(1.10) }
+      100%{ transform: rotateY(0deg); filter:none }
+    }
+
+    .badge{
+      font-size:12px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.16);
+      color: var(--muted);
+      font-weight: 900;
+      letter-spacing:.06em;
+    }
+    .badge.good{ border-color: rgba(55,214,122,.35); color:#d8ffe7 }
+    .badge.bad{ border-color: rgba(255,77,77,.35); color:#ffd1d1 }
+
+    .banner{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      box-shadow: 0 20px 60px rgba(0,0,0,.20);
+    }
+    .banner .msg{ font-weight: 950; letter-spacing:.10em; }
+    .banner .msg.win{ color:#d8ffe7 }
+    .banner .msg.lose{ color:#ffd1d1 }
+    .banner .msg.neutral{ color:#fff1cc }
+
+    /* ===== Dock (⑩A) ===== */
+    .dock{
+      position:fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      height: var(--dockH);
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+      padding:10px;
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.25));
+      backdrop-filter: blur(14px);
+      box-shadow: 0 40px 90px rgba(0,0,0,.45);
+      z-index: 30;
+    }
+    .dock .btn{
+      height:100%;
+      border-radius: 18px;
+      font-size: 13px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:0 12px;
+    }
+    .dock .btn .k{
+      font-size: 12px;
+      color: rgba(255,255,255,.75);
+      letter-spacing:.12em;
+      padding: 3px 8px;
+      border-radius:999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.14);
+    }
+
+    /* === Insurance dock mode === */
+.dock.insMode{
+  grid-template-columns: 1fr 1fr;
+}
+.dock.insMode #btnDeal{
+  display:none;
+}/* .dock.insMode #btnDockMore{
+  display:none;
+} */
+
+
+    /* ===== Overlays ===== */
+    .overlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.58);
+      display:none;
+      align-items:center; justify-content:center;
+      padding:18px;
+      z-index:60;
+      backdrop-filter: blur(10px);
+    }
+    .overlay.show{ display:flex }
+    .modal{
+      width:min(620px, 100%);
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background:
+        radial-gradient(900px 400px at 20% -20%, rgba(255,223,138,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.34));
+      box-shadow: 0 30px 90px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+    .modal .hd{
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.12);
+      display:flex; justify-content:space-between; align-items:center;
+      background: rgba(0,0,0,.16);
+    }
+    .modal .bd{ padding:14px; }
+    .actionsGrid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:10px;
+      margin-top: 10px;
+    }
+    .actionsGrid .btn{ width:100% }
+
+    /* Toast */
+    .toastWrap{
+      position:fixed;
+      left:50%; transform:translateX(-50%);
+      bottom: calc(var(--dockH) + 18px + env(safe-area-inset-bottom, 0px));
+      display:flex; flex-direction:column; gap:8px;
+      z-index:99;
+      pointer-events:none;
+    }
+    .toast{
+      pointer-events:none;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.62);
+      color:#fff;
+      box-shadow:0 18px 50px rgba(0,0,0,.28);
+      font-size:13px;
+      max-width:min(640px, calc(100vw - 24px));
+    }
+
+    /* Hold progress */
+    .prog{
+      height:8px; border-radius:999px; background: rgba(255,255,255,.12);
+      overflow:hidden; border:1px solid rgba(255,255,255,.10);
+      margin-top:8px;
+    }
+    .prog > div{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(255,223,138,.95), rgba(55,214,122,.90));
+    }
+    /* =========================
+   VISIBILITY FIX PACK
+   - sharper text
+   - markings behind content
+   - content stays inside frame
+   ========================= */
+
+/* 文字の滲みを減らす（全体） */
+body{
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+/* 3D変形がテキストを滲ませるので一旦OFF（最優先で見やすくする） */
+.tableStage{ perspective: none !important; }
+.tableTilt{ transform: none !important; }
+
+/* マーキングが“上に被ってる”のが最大の見づらさ：背面へ */
+.tableSurface{ position: relative; }
+.markings{
+  z-index: 0 !important;
+  filter: none !important;      /* drop-shadow が滲みやすい */
+  opacity: .60 !important;      /* 控えめに */
+  pointer-events: none;
+}
+
+/* 実コンテンツ（Dealer/Player）は前面へ */
+.dealerZone, .playerZone{
+  z-index: 2 !important;
+}
+
+/* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める */
+.tableSurface{
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+
+  /* 枠内に収めるための“安全地帯” */
+  padding: 64px 44px 120px !important;
+
+  /* 丸枠に合わせて中身が切れないように */
+  overflow: hidden;
+}
+
+/* absolute を解除してセンターに収める */
+.dealerZone, .playerZone{
+  position: relative !important;
+  top: auto !important; bottom: auto !important; left: auto !important;
+  transform: none !important;              /* translateX(-50%)を解除 */
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+.dealerZone{ max-width: 760px !important; }
+.playerZone{ max-width: 920px !important; }
+
+/* テーブルの曲率が強すぎると見切れやすい → 少し緩める */
+.tableFrame{
+  border-radius: 28px 28px 280px 280px !important;
+}
+.tableSurface{
+  border-radius: 18px 18px 240px 240px !important;
+  min-height: 620px !important;            /* 余白不足による下切れを防ぐ */
+}
+
+/* backdrop-filter が文字を滲ませる時があるのでテーブル内は切る */
+.handBox{
+  backdrop-filter: none !important;
+}
+
+/* 小さい文字のコントラストUP */
+.muted{ color: rgba(255,255,255,.88) !important; }
+.small{ color: rgba(255,255,255,.72) !important; }
+.badge{ color: rgba(255,255,255,.84) !important; }
+
+/* カード領域が下で切れないように微調整 */
+.playerZone .cards{ padding-bottom: 6px !important; }
+
+.morePanel{
+  display:block;
+  margin-top:10px;
+  padding:12px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.18));
+}
+.moreHd{ opacity:.9; }
+.moreGrid .btn{ font-weight:800; letter-spacing:.02em; }
+
+
+.moreHd{
+  font-weight:900;
+  letter-spacing:.06em;
+  font-size:12px;
+  opacity:.92;
+  margin-bottom:10px;
+}
+.moreGrid{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap:10px;
+}
+.moreGrid .btn{ width:100%; }
+
+.metaLine{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.kv{
+  display:inline-flex;
+  align-items:baseline;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.18);
+}
+.kv .k{ font-size:11px; color:rgba(255,255,255,.78); letter-spacing:.04em; }
+.kv .v{ font-family: var(--font-serif); font-size:22px; font-weight:900; color:#fff; }
+#btnMore{ display:none; }
+
+  
+    /* ===== Session Over Flow ===== */
+    .soSplash{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:28px 10px;
+      text-align:center;
+    }
+    .soBig{
+      font-size: clamp(28px, 6vw, 44px);
+      font-weight: 1000;
+      letter-spacing: .06em;
+      color: #fff;
+      text-shadow: 0 10px 30px rgba(0,0,0,.55);
+      font-family: var(--font-serif);
+    }
+    .soSub{
+      color: rgba(255,255,255,.78);
+      font-weight: 800;
+      letter-spacing:.04em;
+    }
+    .soResults{ display:none; width:100%; }
+    .soStats{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .soStat{
+      display:flex;
+      align-items:baseline;
+      gap:8px;
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      min-width: 160px;
+    }
+    .soStat .k{ font-size:11px; color:rgba(255,255,255,.78); letter-spacing:.04em; }
+    .soStat .v{ font-size:14px; font-weight: 1000; color:#fff; }
+    .soLockRow{
+      margin-top:12px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .soLockNote{ font-size:12px; color:rgba(255,255,255,.78); }
+    .soBtns{ margin-top:14px; justify-content:flex-end; gap:10px; }
+    .soBannerWrap{
+      margin-top:12px;
+      border-radius:16px;
+      border:1px dashed rgba(255,255,255,.18);
+      background: rgba(0,0,0,.12);
+      padding:10px;
+    }
+    /* Must have non-null size for responsive banner */
+    #cg-so-banner{
+      width: min(520px, 100%);
+      height: 90px;
+      margin: 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+  </style>
+</head>
+
+<!-- CrazyGames SDK v3 (safe init) -->
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<script>
+  // Safe wrapper so local development / non-CrazyGames domains won't crash.
+  window.CG = window.CG || {};
+  window.CG.ready = false;
+
+  window.CG.init = async function () {
+    try {
+      if (!window.CrazyGames || !window.CrazyGames.SDK || !window.CrazyGames.SDK.init) return false;
+      await window.CrazyGames.SDK.init();
+      window.CG.ready = true;
+      console.log("[CrazyGames] SDK ready");
+      return true;
+    } catch (e) {
+      console.warn("[CrazyGames] SDK init failed:", e);
+      return false;
+    }
+  };
+// Init on DOMContentLoaded
+window.CG.p = new Promise((resolve) => {
+  window.addEventListener("DOMContentLoaded", async () => {
+    const ok = await window.CG.init();
+    resolve(ok);
+  });
+});
+
+</script>
+
+<script>
+  // ---- Idempotent event helpers ----
+  window.CG._loadingDepth = 0;
+  window.CG._inGameplay = false;
+
+  window.CG._call = async function (fn) {
+    try {
+      await window.CG.p;
+      if (!window.CG.ready) return;
+      fn();
+    } catch (_) {}
+  };
+
+  window.CG.loadingStart = function () {
+    return window.CG._call(() => {
+      if (window.CG._loadingDepth++ === 0) window.CrazyGames.SDK.game.loadingStart();
+    });
+  };
+
+  window.CG.loadingStop = function () {
+    return window.CG._call(() => {
+      if (window.CG._loadingDepth > 0 && --window.CG._loadingDepth === 0) window.CrazyGames.SDK.game.loadingStop();
+    });
+  };
+
+  window.CG.gameplayStart = function () {
+    return window.CG._call(() => {
+      if (window.CG._inGameplay) return;
+      window.CG._inGameplay = true;
+      window.CrazyGames.SDK.game.gameplayStart();
+    });
+  };
+
+  window.CG.gameplayStop = function () {
+    return window.CG._call(() => {
+      if (!window.CG._inGameplay) return;
+      window.CG._inGameplay = false;
+      window.CrazyGames.SDK.game.gameplayStop();
+    });
+  };
+
+
+</script>
+
+
+
+<body>
+  <div class="wrap">
+<div class="topbar">
+  <div class="brand">
+    <div class="logo"></div>
+    <div class="brandTxt">
+      <h1>BLACKJACK</h1>
+      <div class="sub">
+        <span id="subLine">booting…</span>
+        <span id="engineBadge" class="statusBadge">
+          <span class="dot"></span><span id="engineText">LOADING</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="pill"><span>Bank</span><b id="bank">-</b></div>
+    <div class="pill"><span>Round</span><b id="round">-</b></div>
+    <div class="pill"><span>Time</span><b id="time">-</b></div>
+
+    <button class="btn ghost" id="btnPause" title="Menu">MENU</button>
+    <button class="btn ghost" id="btnHistory" title="History / Records">History</button>
+    <button class="btn danger" id="btnReset" title="Hold to reset">Reset</button>
+    <button class="btn ghost" id="btnRanking" title="Leaderboard">Ranking</button>
+  </div>
+</div>
+
+
+    <!-- TITLE -->
+    <div class="screen active" id="screenTitle">
+      <div class="card">
+        <div class="titleHero">
+          <div class="chipline">🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1</div>
+          <h2>Blackjack</h2>
+          <p>ランキングで自己ベスト更新を目指せ！！</p>
+
+          <div class="ctaRow">
+            <button class="btn primary ctaBig" id="btnStart" disabled>DEAL / START</button>
+            <button class="btn ghost" id="btnHowTitle">遊び方</button>
+          </div>
+        </div>
+
+        <div class="bd">
+          <div class="row" style="justify-content:space-between; align-items:flex-end;">
+            <div>
+              <div class="muted">Bet（偶数推奨：Insurance = bet/2 で端数回避）</div>
+              <div class="row" style="margin-top:8px;">
+                <input id="betInput" type="number" value="100" step="10" min="10">
+                <div class="chips">
+                  <button class="chipbtn" data-add="10">+10</button>
+                  <button class="chipbtn" data-add="50">+50</button>
+                  <button class="chipbtn" data-add="100">+100</button>
+                  <button class="chipbtn" data-add="200">+200</button>
+                </div>
+              </div>
+              <div class="muted" id="betHint" style="margin-top:6px;"></div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="muted">Options（タイトルでON/OFF）</div>
+          <div class="optGrid">
+            <div class="opt"><label><input type="checkbox" id="optDouble" checked> Double Down</label></div>
+            <div class="opt"><label><input type="checkbox" id="optSplit" checked> Split</label></div>
+            <div class="opt"><label><input type="checkbox" id="optSurrender" checked> Surrender (Late)</label></div>
+            <div class="opt"><label><input type="checkbox" id="optInsurance" checked> Insurance</label></div>
+            <div class="opt"><label><input type="checkbox" id="optEvenMoney" checked> Even Money</label></div>
+            <div class="opt"><label><input type="checkbox" id="optDAS" checked> DAS</label></div>
+            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> Split BJ as BJ</label></div>
+            <div class="opt"><label><input type="checkbox" id="optH17" checked> Dealer hits Soft 17</label></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="row" style="justify-content:space-between">
+            <div class="small">Tips：Reset は「1回タップで武装 → 2秒長押し」で実行</div>
+            <button class="btn" id="btnHowTitle2">マーキング/操作</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME -->
+    <div class="screen" id="screenGame">
+      <div class="grid">
+        <div class="card">
+          <div class="hd">
+            <h2>CASINO TABLE</h2>
+            <div class="badge" id="phaseBadge">-</div>
+          </div>
+          <div class="bd">
+            <div class="tableStage">
+              <div class="tableTilt">
+                <div class="tableFrame">
+                  <div class="tableSurface">
+
+                    <!-- Markings (②C) -->
+                    <svg class="markings" viewBox="0 0 1000 650" preserveAspectRatio="none">
+                      <path id="arcPayout" d="M140,510 C260,600 740,600 860,510" />
+                      <path id="arcInner"  d="M210,475 C320,555 680,555 790,475" />
+                      <path class="markLine" d="M160,515 C280,610 720,610 840,515" />
+                      <path class="markDots" d="M210,478 C320,558 680,558 790,478" />
+
+                      <text font-size="28" class="markText">
+                        <textPath href="#arcPayout" startOffset="50%" text-anchor="middle">
+                          BLACKJACK PAYS 3 TO 2
+                        </textPath>
+                      </text>
+
+                      <text font-size="20" class="markText" style="letter-spacing:.22em;">
+                        <textPath href="#arcInner" startOffset="50%" text-anchor="middle">
+                          INSURANCE PAYS 2 TO 1
+                        </textPath>
+                      </text>
+
+                      <!-- Small rules line -->
+                      <text x="500" y="100" text-anchor="middle" font-size="20" class="markSmall">
+                        DEALER MUST DRAW TO 16 AND STAND ON 17 • 6 DECKS • HOUSE RULES APPLY
+                      </text>
+                    </svg>
+
+                    <!-- Dealer -->
+                    <div class="dealerZone">
+                      <div class="handBox" id="dealerBox">
+                        <div class="row" style="justify-content:space-between;">
+                          <div>
+                            <b>Dealer</b>
+                            <span class="muted" id="dealerScoreLine"></span>
+                          </div>
+                          <div class="badge" id="dealerHole">-</div>
+                        </div>
+                        <div class="cards" id="dealerCards"></div>
+                      </div>
+                    </div>
+
+                    <!-- Player -->
+                    <div class="playerZone">
+                      <div class="handArea" id="playerHands"></div>
+
+                      <div class="banner" id="roundBanner" style="display:none;">
+                        <div class="msg neutral" id="roundMsg">-</div>
+                        <div class="muted" id="roundMeta">-</div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div><!-- /tableStage -->
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="hd">
+            <h2>BET / INFO</h2>
+            <div class="badge" id="rulesMini">-</div>
+          </div>
+          <div class="bd">
+            <div class="row">
+              <div class="muted">Bet</div>
+              <input id="betInGame" type="number" value="100" step="10">
+              <button class="btn" id="btnSetBet">SET</button>
+            </div>
+
+            <div class="row chips" style="margin-top:10px;">
+              <button class="chipbtn" data-add2="10">+10</button>
+              <button class="chipbtn" data-add2="50">+50</button>
+              <button class="chipbtn" data-add2="100">+100</button>
+              <button class="chipbtn" data-add2="200">+200</button>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="row" style="justify-content:space-between;">
+              <div class="muted">Main actions are in DOCK</div>
+              <button class="btn ghost" id="btnMore" disabled>MORE</button>
+              <div id="morePanel" class="morePanel">
+  <div class="moreHd">More actions</div>
+  <div class="moreGrid">
+    <button class="btn" id="btnDoubleSide">Double</button>
+    <button class="btn" id="btnSplitSide">Split</button>
+    <button class="btn danger" id="btnSurrenderSide">Surrender</button>
+    <button class="btn" id="btnEvenMoneySide">Even Money</button>
+  </div>
+  <div class="muted small" style="margin-top:8px;">
+    ※押せる場合に限り機能します。
+  </div>
+</div>
+
+            </div>
+
+            <div class="divider"></div>
+<div class="handBox" id="insSideBox" style="display:none; margin-top:12px;">
+  <div class="row" style="justify-content:space-between;">
+    <b>Insurance</b>
+    <span class="muted" id="insHintSide">-</span>
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <input id="insAmountSide" type="number" value="0" step="2" min="0">
+    <button class="btn" id="btnInsMaxSide">MAX</button>
+    <button class="btn ghost" id="btnInsZeroSide">0</button>
+  </div>
+
+  <div class="muted small" style="margin-top:8px;">
+    下のDOCKで <b>YES / NO</b> を選択
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <button class="btn" id="btnEvenMoneyIns">Even Money</button>
+  </div>
+</div>
+
+            <div class="small" id="debugLine">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Dock -->
+  <nav class="dock" aria-label="main controls">
+    <button class="btn primary" id="btnDeal" disabled>DEAL <span class="k">D</span></button>
+    <button class="btn" id="btnHit" disabled>HIT <span class="k">H</span></button>
+    <button class="btn" id="btnStand" disabled>STAND <span class="k">S</span></button>
+  </nav>
+
+  <!-- OVERLAYS -->
+
+  <!-- SESSION OVER FLOW -->
+  <div class="overlay" id="overlaySessionOver">
+    <div class="modal">
+      <div class="hd">
+        <b>SESSION</b>
+        <span class="badge neutral" id="soBadge">OVER</span>
+      </div>
+      <div class="bd">
+        <div class="soSplash" id="soSplash">
+          <div class="soBig" id="soBigText">SESSION OVER!!</div>
+          <div class="soSub" id="soSubText">集計中…</div>
+        </div>
+
+        <div class="soResults" id="soResults">
+          <div class="soStats" id="soStats"></div>
+
+          <div class="soLockRow">
+            <div class="soLockNote" id="soLockNote">Please wait…</div>
+            <div class="soLockNote" id="soAdNote"></div>
+          </div>
+
+          <div class="soBannerWrap" id="soBannerWrap">
+            <div class="muted" style="font-size:12px; margin-bottom:6px;">Sponsored</div>
+            <div id="cg-so-banner"></div>
+          </div>
+
+          <div class="row soBtns">
+            <button class="btn ghost" id="btnSOTitle" disabled>タイトルへ</button>
+            <button class="btn primary" id="btnSORetry" disabled>EARN 5000 & RETRY</button>
+          </div>
+          <div class="row soBtns" id="soReviveRow" style="justify-content:center; margin-top:10px; display:none;">
+             <button class="btn good" id="btnSORevive" style="width:100%; font-size:15px; padding:14px;">
+               📺 Watch Ad to Revive (+500)
+             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlayPause">
+    <div class="modal">
+      <div class="hd">
+        <b>PAUSED</b>
+        <button class="btn ghost" id="btnClosePause">Close</button>
+      </div>
+      <div class="bd">
+        <p class="muted" style="margin-top:0;">
+          セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。
+        </p>
+        <div class="row" style="justify-content:flex-end; gap:10px;">
+          <button class="btn" id="btnHowPause">遊び方</button>
+          <button class="btn primary" id="btnContinue">Continue</button>
+          <button class="btn danger" id="btnQuit">Quit to Title</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- How to play -->
+<div class="overlay" id="overlayHow">
+  <div class="modal">
+    <div class="hd">
+      <b>HOW TO PLAY</b>
+      <button class="btn ghost" id="btnCloseHow">Close</button>
+    </div>
+    <div class="bd">
+      <div class="muted">
+        <ul>
+          <li>目標：<b>21に近づける</b>（21超えはBust）</li>
+          <li>10/J/Q/Kは<b>全部10扱い</b>、Aは<b>1 or 11</b></li>
+          <li><b>DEAL</b>で開始（RoundOver中は次ラウンドに進む）</li>
+          <li><b>Double</b>：同額追加→1回Hitで強制終了</li>
+          <li><b>Split</b>：同“点数”ならOK。Aスプリットは1枚で終了</li>
+          <li><b>Surrender</b>：最初の2枚のみ。掛け金の半分が返る（Late／peek後）</li>
+          <li><b>Insurance</b>：ディーラー表がAの時のみ。最大 bet/2</li>
+          <li><b>Even Money</b>：プレイヤーBJ時に提示</li>
+        </ul>
+        <p>※操作可否はC++が返す <b>state.can</b> が真実。ボタンは自動で無効化されます。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- History -->
+<div class="overlay" id="overlayHistory">
+  <div class="modal">
+    <div class="hd">
+      <b>HISTORY</b>
+      <button class="btn ghost" id="btnCloseHistory">Close</button>
+    </div>
+    <div class="bd">
+      <p class="muted small" style="margin-top:0;">
+        直近のラウンド結果を記録しています（最大 100 件）。ページを閉じてもブラウザに保存されます。
+      </p>
+      <div class="handBox" id="historyList"
+           style="max-height:320px; overflow:auto; margin-top:10px;">
+        <div class="small muted">まだ履歴がありません。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ranking -->
+<div class="overlay" id="overlayRanking">
+  <div class="modal">
+    <div class="hd">
+      <b>RANKING</b>
+      <button class="btn ghost" id="btnCloseRanking">Close</button>
+    </div>
+    <div class="bd">
+      <p class="muted small" style="margin-top:0;">
+        セッション結果（Profit順）を保存しています（最大 50 件）。
+      </p>
+
+      <div class="row" style="justify-content:space-between; margin-top:10px;">
+        <div class="muted small">Name（任意）</div>
+        <input id="nameInput" type="text" maxlength="12" placeholder="YOU" style="width:180px;">
+      </div>
+
+      <div class="handBox" id="rankingList"
+           style="max-height:320px; overflow:auto; margin-top:10px;">
+        <div class="small muted">まだランキングがありません。</div>
+      </div>
+      <!-- このコメントアウトはランキングの記録をクリアする機能です、 -->
+      <!-- <div class="row" style="justify-content:flex-end; margin-top:10px; gap:10px;">
+        <button class="btn danger" id="btnClearRanking">Clear</button>
+      </div> -->
+    </div>
+  </div>
+</div>
+
+
+  <div class="toastWrap" id="toastWrap"></div>
+
+  <script>
+    window.CG?.loadingStart?.();
+    let prevPhase = null;
+    
+
+    // ========= Utilities =========
+    const $ = (id)=>document.getElementById(id);
+
+    function toast(msg){
+      const w = $("toastWrap");
+      const el = document.createElement("div");
+      el.className = "toast";
+      el.textContent = msg;
+      w.appendChild(el);
+      setTimeout(()=>{ el.style.opacity="0"; el.style.transform="translateY(6px)"; }, 1400);
+      setTimeout(()=>{ el.remove(); }, 1900);
+    }
+
+    function seed64(){
+      const a = new Uint32Array(2);
+      crypto.getRandomValues(a);
+      return {lo: a[0] >>> 0, hi: a[1] >>> 0};
+    }
+
+    function floorEven(x){
+      x = Number(x||0);
+      if (!Number.isFinite(x)) x = 0;
+      if (x < 0) x = 0;
+      return Math.floor(x/2)*2;
+    }
+
+    function fmtTime(ms){
+      ms = Math.max(0, ms|0);
+      const s = Math.ceil(ms/1000);
+      const m = Math.floor(s/60);
+      const r = s%60;
+      return `${m}:${String(r).padStart(2,"0")}`;
+    }
+
+    function setEngineBadge(text, kind){
+      const b = $("engineBadge");
+      const t = $("engineText");
+      t.textContent = text;
+      b.classList.remove("good","bad");
+      if (kind) b.classList.add(kind);
+    }
+
+    function animateNumber(el, from, to, duration=520){
+      from = Number(from); to = Number(to);
+      if (!Number.isFinite(from)) from = 0;
+      if (!Number.isFinite(to)) to = 0;
+      if (from === to){ el.textContent = String(to); return; }
+      const start = performance.now();
+      const diff = to - from;
+      const ease = (x)=> 1 - Math.pow(1-x, 3);
+      const step = (now)=>{
+        const t = Math.min(1, (now - start) / duration);
+        const v = Math.round(from + diff * ease(t));
+        el.textContent = String(v);
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+        // ========= History (localStorage) =========
+    const HISTORY_KEY = "bjHistory_v1";
+
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr;
+      } catch(e){
+        console.warn("history load failed", e);
+        return [];
+      }
+    }
+
+    function saveHistory(list){
+      try{
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+      } catch(e){
+        console.warn("history save failed", e);
+      }
+    }
+
+    // ラウンド終了時だけ呼び出される想定
+    function pushHistoryEntry(st){
+      if (!st) return;
+
+      const phase = st.phase;
+      const isEndPhase = (phase === "roundOver" || phase === "sessionOver");
+      const wasEndPhase = (prevPhase === "roundOver" || prevPhase === "sessionOver");
+
+      // 「さっきまでは end 状態じゃなくて、今 end 状態になった瞬間」だけ記録
+      if (!isEndPhase || wasEndPhase) return;
+
+      const hands = (st.player && st.player.hands) || [];
+      const mainHand = hands[0] || {};
+
+      const entry = {
+        ts: Date.now(),
+        sessionId: currentSessionId,
+        round: st.session ? st.session.round : 0,
+        bank: ("bank" in st) ? st.bank : 0,
+        bet: ("bet" in mainHand) ? mainHand.bet : 0,
+        net: (st.roundResult && "netProfit"     in st.roundResult) ? st.roundResult.netProfit     : 0,
+        streak: (st.roundResult && "streak"     in st.roundResult) ? st.roundResult.streak       : 0,
+        bonusPercent: (st.roundResult && "bonusPercent" in st.roundResult) ? st.roundResult.bonusPercent : 0,
+        bonusApplied: (st.roundResult && "bonusApplied" in st.roundResult) ? st.roundResult.bonusApplied : 0,
+      };
+
+      const list = loadHistory();
+      list.unshift(entry);          // 新しいものを先頭に
+      if (list.length > 100) list.length = 100; // 最大100件
+      saveHistory(list);
+    }
+
+    function formatHistoryTime(ts){
+      const d = new Date(ts);
+      const n = +d;
+      if (!Number.isFinite(n)) return "-";
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      return `${mm}/${dd} ${hh}:${mi}`;
+    }
+
+    function renderHistoryOverlay(){
+      const box = $("historyList");
+      if (!box) return;
+      const hist = loadHistory();
+      if (!hist.length){
+        box.innerHTML = '<div class="small muted">まだ履歴がありません。</div>';
+        return;
+      }
+
+      let html = '<table class="small" style="width:100%; border-collapse:collapse;">';
+      html += '<thead><tr>';
+      html += '<th style="text-align:left;padding:4px 8px;">Time</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Round</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Bet</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Net</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Bank</th>';
+      html += '<th style="text-align:right;padding:4px 8px;">Streak</th>';
+      html += '</tr></thead><tbody>';
+
+      hist.slice(0, 40).forEach(e=>{
+        const netClass =
+          e.net > 0 ? ' style="color:#37d67a;"' :
+          e.net < 0 ? ' style="color:#ff4d4d;"' : '';
+        html += '<tr>';
+        html += `<td style="padding:4px 8px;">${formatHistoryTime(e.ts)}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;">${e.round}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;">${e.bet}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;"${netClass}>${e.net}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;">${e.bank}</td>`;
+        html += `<td style="padding:4px 8px;text-align:right;">${e.streak}</td>`;
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      box.innerHTML = html;
+    }
+
+    // ========= Engine bjApi =========
+    // blackjack_ui.js 側で Engine / engineReady / bjApi を用意している想定
+    let Engine = null;
+    let bjApi = null;
+    let state = null;
+
+function apiReady(){
+  if (globalThis.bjApi) bjApi = globalThis.bjApi;
+  if (globalThis.Engine) Engine = globalThis.Engine;
+  return !!(globalThis.engineReady && Engine && bjApi);
+}
+
+
+    function syncEngine(){
+      if (apiReady()){
+        setEngineBadge("READY", "good");
+        window.CG?.loadingStop?.();
+        
+        setEngineBadge("READY", "good");
+        $("subLine").textContent = "ready.";
+        $("btnStart").disabled = false;
+        $("btnMore").disabled = false;
+
+        toast("Engine ready!");
+        return;
+      }
+      setEngineBadge("LOADING", null);
+      $("subLine").textContent = "loading engine…";
+      requestAnimationFrame(syncEngine);
+    }
+
+    // ========= timer =========
+    let sessionMs = 300000;
+    let startTickAt = 0;
+    let pausedAt = 0;
+    let pausedTotal = 0;
+    let tickHandle = null;
+    let lastTimePush = 0;
+
+    function startTick(){
+      stopTick();
+      startTickAt = performance.now();
+      pausedTotal = 0;
+      pausedAt = 0;
+      lastTimePush = 0;
+      tickHandle = setInterval(()=>{
+        if (!state) return;
+        if (state.phase === "paused") return;
+
+        const now = performance.now();
+        const elapsed = now - startTickAt - pausedTotal;
+        const left = Math.max(0, sessionMs - elapsed);
+
+        if (now - lastTimePush > 1000){
+          bjApi.set_time_left_ms(left|0);
+          lastTimePush = now;
+          refresh();
+        } else {
+          $("time").textContent = fmtTime(left|0);
+        }
+      }, 120);
+    }
+
+    function stopTick(){
+      if (tickHandle){ clearInterval(tickHandle); tickHandle = null; }
+    }
+
+    function rulesMaskFromUI(){
+      const RB_ALLOW_DOUBLE      = 1 << 0;
+      const RB_ALLOW_SPLIT       = 1 << 1;
+      const RB_ALLOW_SURRENDER   = 1 << 2;
+      const RB_ALLOW_INSURANCE   = 1 << 3;
+      const RB_ALLOW_EVEN_MONEY  = 1 << 4;
+      const RB_ALLOW_DAS         = 1 << 5;
+      const RB_SPLIT_BJ_AS_BJ    = 1 << 6;
+      const RB_DEALER_HIT_S17    = 1 << 7;
+
+      let m = 0;
+      if ($("optDouble").checked)   m |= RB_ALLOW_DOUBLE;
+      if ($("optSplit").checked)    m |= RB_ALLOW_SPLIT;
+      if ($("optSurrender").checked)m |= RB_ALLOW_SURRENDER;
+      if ($("optInsurance").checked)m |= RB_ALLOW_INSURANCE;
+      if ($("optEvenMoney").checked)m |= RB_ALLOW_EVEN_MONEY;
+      if ($("optDAS").checked)      m |= RB_ALLOW_DAS;
+      if ($("optSplitBJ").checked)  m |= RB_SPLIT_BJ_AS_BJ;
+      if ($("optH17").checked)      m |= RB_DEALER_HIT_S17;
+      return m >>> 0;
+    }
+
+    function refresh(){
+      //if (!state) return;
+      if (!bjApi) return;
+      const p = bjApi.get_state_json();
+      const s = Engine.UTF8ToString(p);
+      bjApi.free_ptr(p);
+      state = JSON.parse(s);
+      render();
+      return state;
+    }
+
+    function callAction(fnName, ...args){
+      const rc = bjApi[fnName](...args);
+      const st = refresh();
+      if (rc !== 0 || st.lastErrorCode !== 0){
+        if (st.lastError) toast(st.lastError);
+        console.warn("action", fnName, "rc=", rc, "err=", st.lastErrorCode, st.lastError);
+      }
+      return rc;
+    }
+
+function goScreen(name){
+  const wasGame = $("screenGame").classList.contains("active");
+  const willGame = (name === "game");
+
+  $("screenTitle").classList.toggle("active", name==="title");
+  $("screenGame").classList.toggle("active", willGame);
+
+  // CrazyGames: gameplay on/off
+  if (willGame && !wasGame) window.CG?.gameplayStart?.();
+  if (!willGame && wasGame) window.CG?.gameplayStop?.();
+}
+
+function setPause(paused) {
+    if (paused) {
+        $("overlayPause").classList.add("show");
+        window.CG?.gameplayStop?.();
+    } else {
+        $("overlayPause").classList.remove("show");
+        window.CG?.gameplayStart?.();
+    }
+}
+
+//a
+    // ========= Hold to reset =========
+    let resetArmed = false;
+    let holdTimer = null;
+    let holdStart = 0;
+
+    function disarmReset(){
+      resetArmed = false;
+      $("btnReset").textContent = "Reset";
+      $("btnReset").classList.remove("danger");
+      if (holdTimer){ clearInterval(holdTimer); holdTimer = null; }
+    }
+
+    function armResetOnce(){
+      resetArmed = true;
+      $("btnReset").textContent = "Hold to reset";
+      $("btnReset").classList.add("danger");
+      toast("2秒長押しでリセット");
+      setTimeout(()=>{ if (resetArmed) disarmReset(); }, 5000);
+    }
+    
+    function doResetToTitle(){
+      stopTick();
+      disarmReset();
+      callAction("reset_session");
+      $("overlayPause").classList.remove("show");
+      $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
+      try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO?.bannerId || "cg-so-banner"); }catch(e){}
+      $("overlayHow").classList.remove("show");
+      $("overlayMore") && $("overlayMore").classList.remove("show");
+      $("overlayHistory") && $("overlayHistory").classList.remove("show");
+      goScreen("title");
+
+      $("subLine").textContent = "ready.";
+      toast("Reset!");
+      // animation caches reset
+      prevDealerCards = [];
+      prevPlayerLens = [];
+      prevBank = null;
+    }
+
+    // ========= Anim caches =========
+    let prevBank = null;
+    let prevDealerCards = [];
+    let prevDealerJson = ""; // Cache for Dealer
+    let prevPlayerLens = [];
+    let prevPlayerJson = ""; // Cache for Player
+    let hideBoardAfterSet = false;   // ← これを追加（グローバル）
+
+    // Dealer Draw Animation State
+    let dealerShowCount = 0;
+    let dealerAnimTimer = null;
+
+
+
+// ===== Session Over Flow =====
+// 仕様：sessionOverに入ったら
+//   1) 中央に "SESSION OVER!!" を 2秒表示
+//   2) リザルト表示に切替
+//   3) そこから最低5秒はボタン操作不可
+//   4) その間に midgame広告を自動リクエスト（ボタン紐づけ無し）
+//   5) 5秒経過 AND 広告終了（or error/unfilled）したらボタン解放
+window.SO = window.SO || {
+  active:false,
+  lockUntil:0,
+  adDone:false,
+  unlockTimer:null,
+  splashTimer:null,
+  adFailSafe:null,
+  bannerShown:false,
+  bannerId:"cg-so-banner",
+  sessionCount:0, // Counter for sessions
+};
+
+function soSetView(stage){
+  const splash = document.getElementById("soSplash");
+  const results = document.getElementById("soResults");
+  if (!splash || !results) return;
+  splash.style.display  = (stage === "splash")  ? "flex"  : "none";
+  results.style.display = (stage === "results") ? "block" : "none";
+}
+
+function soSetButtonsEnabled(enabled){
+  const b1 = document.getElementById("btnSOTitle");
+  const b2 = document.getElementById("btnSORetry");
+  if (b1) b1.disabled = !enabled;
+  if (b2) b2.disabled = !enabled;
+}
+
+function soClearTimers(){
+  if (window.SO.unlockTimer){ clearInterval(window.SO.unlockTimer); window.SO.unlockTimer=null; }
+  if (window.SO.splashTimer){ clearTimeout(window.SO.splashTimer); window.SO.splashTimer=null; }
+  if (window.SO.adFailSafe){ clearTimeout(window.SO.adFailSafe); window.SO.adFailSafe=null; }
+}
+
+function soHideOverlay(){
+  const ov = document.getElementById("overlaySessionOver");
+  if (ov) ov.classList.remove("show");
+  try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO.bannerId); }catch(e){}
+  window.SO.bannerShown = false;
+  window.SO.active = false;
+  window.SO.adDone = false;
+  soClearTimers();
+}
+
+function soFillStats(st){
+  const stats = document.getElementById("soStats");
+  if (!stats || !st) return;
+
+  let totalNet = 0, maxStreak = 0;
+  try{
+    const hist = (typeof loadHistory === "function" && currentSessionId)
+      ? loadHistory().filter(e => e.sessionId === currentSessionId)
+      : [];
+    totalNet = hist.reduce((a,e)=> a + (e.net|0), 0);
+    maxStreak = hist.reduce((a,e)=> Math.max(a, e.streak|0), 0);
+  }catch(e){}
+
+  const finalBank = st.bank|0;
+  const profit = finalBank - (sessionStartBank|0);
+
+  const durMs = Math.max(0, (performance.now() - (startTickAt||0) - (pausedTotal||0)));
+  const rounds = st.session ? `${st.session.round}/${st.session.roundLimit}` : "-";
+  const timeLeft = st.session ? fmtTime(st.session.timeLeftMs) : "-";
+
+  const items = [
+    ["Final Bank", String(finalBank)],
+    ["Profit", (profit>=0? "+":"") + String(profit)],
+    ["Total Net", (totalNet>=0? "+":"") + String(totalNet)],
+    ["Max Streak", String(maxStreak)],
+    ["Rounds", rounds],
+    ["Time Left", timeLeft],
+    ["Duration", fmtTime(durMs)],
+  ];
+
+  stats.innerHTML = "";
+  items.forEach(([k,v])=>{
+    const el = document.createElement("span");
+    el.className = "soStat";
+    el.innerHTML = `<span class="k">${k}</span><b class="v">${v}</b>`;
+    stats.appendChild(el);
+  });
+
+  // Revive button logic
+  const reviveRow = document.getElementById("soReviveRow");
+  if (st.bank <= 0 && st.session.timeLeftMs > 0 && st.session.round < st.session.roundLimit) {
+      if(reviveRow) reviveRow.style.display = "flex";
+  } else {
+      if(reviveRow) reviveRow.style.display = "none";
+  }
+}
+
+async function soRequestBanner(){
+  if (window.SO.bannerShown) return;
+
+  const wrap = document.getElementById("soBannerWrap");
+  if (wrap) wrap.style.display = "none";
+
+  try{
+    await window.CG?.p;
+    if (!window.CG?.ready) throw 0;
+    await window.CrazyGames?.SDK?.banner?.requestResponsiveBanner?.(window.SO.bannerId);
+    window.SO.bannerShown = true;
+    if (wrap) wrap.style.display = "block";
+  }catch(e){
+    if (wrap) wrap.style.display = "none";
+  }
+}
+
+function soRequestMidgame(){
+  const note = document.getElementById("soAdNote");
+
+  // Show ad only every 2nd session (Satisfying user request: "every 2 sessions")
+  // sessionCount is incremented in beginSessionOverFlow.
+  // 1st session: 1 -> skip
+  // 2nd session: 2 -> show
+  // 3rd session: 3 -> skip
+  if (window.SO.sessionCount % 2 !== 0){
+    console.log("Skip ad (session count: " + window.SO.sessionCount + ")");
+    window.SO.adDone = true;
+    if (note) note.textContent = "";
+    soUpdateLock();
+    return;
+  }
+
+
+  const finish = () => {
+    window.SO.adDone = true;
+    if (note) note.textContent = "";
+    soUpdateLock();
+  };
+
+  window.SO.adDone = false;
+  if (note) note.textContent = "広告を読み込み中…";
+
+  try{
+    const callbacks = {
+      adStarted: () => { if (note) note.textContent = "広告再生中…"; },
+      adFinished: finish,
+      adError: () => finish(),
+    };
+    window.CrazyGames?.SDK?.ad?.requestAd?.("midgame", callbacks);
+  }catch(e){
+    finish();
+  }
+
+  window.SO.adFailSafe = setTimeout(finish, 15000);
+}
+
+function doRevive(){
+    if (window.SO.adReviveActive) return;
+    window.SO.adReviveActive = true;
+    const btn = document.getElementById("btnSORevive");
+    const origText = btn.textContent;
+    btn.textContent = "Loading Ad...";
+    btn.disabled = true;
+
+    const finish = (success) => {
+        window.SO.adReviveActive = false;
+        btn.textContent = origText;
+        btn.disabled = false;
+        
+        if (success) {
+            callAction("revive", 500); // 500チップで復活
+            soHideOverlay();
+            window.CG?.gameplayStart?.();
+            toast("Revived with 500 chips!");
+        } else {
+            toast("Ad failed. Try again.");
+        }
+    };
+
+    try {
+        const callbacks = {
+          adFinished: () => finish(true),
+          adError: (error) => {
+              console.warn("Reward ad error:", error);
+              finish(false);
+          },
+        };
+        window.CrazyGames?.SDK?.ad?.requestAd?.("rewarded", callbacks);
+    } catch(e) {
+        console.error(e);
+        finish(false);
+    }
+}
+
+function soUpdateLock(){
+  const lockNote = document.getElementById("soLockNote");
+  const remain = Math.max(0, window.SO.lockUntil - performance.now());
+
+  if (remain > 0){
+    if (lockNote) lockNote.textContent = `結果表示中…（${(remain/1000).toFixed(1)}s）`;
+    return;
+  }
+  if (!window.SO.adDone){
+    if (lockNote) lockNote.textContent = "広告の終了を待っています…";
+    return;
+  }
+  if (lockNote) lockNote.textContent = "選択できます";
+  soSetButtonsEnabled(true);
+  if (window.SO.unlockTimer){ clearInterval(window.SO.unlockTimer); window.SO.unlockTimer=null; }
+}
+
+function beginSessionOverFlow(st){
+  if (window.SO.active) return;
+  window.SO.active = true;
+  window.SO.adDone = false;
+  window.SO.bannerShown = false;
+  window.SO.sessionCount = (window.SO.sessionCount || 0) + 1; // Increment counter
+  soClearTimers();
+
+
+  const ov = document.getElementById("overlaySessionOver");
+  if (ov) ov.classList.add("show");
+  soSetButtonsEnabled(false);
+  soSetView("splash");
+
+  window.CG?.gameplayStop?.();
+
+  window.SO.splashTimer = setTimeout(()=>{
+    soSetView("results");
+    soFillStats(st);
+
+    window.SO.lockUntil = performance.now() + 5000;
+    soSetButtonsEnabled(false);
+    soUpdateLock();
+
+    soRequestBanner();
+    soRequestMidgame();
+
+    window.SO.unlockTimer = setInterval(soUpdateLock, 100);
+  }, 2000);
+}
+
+
+    // ========= Render =========
+    function render(){
+
+      function setDis(id, disabled){
+        const el = document.getElementById(id);
+        if (el) el.disabled = !!disabled;
+      }
+
+      if (!state) return;
+
+      const phase = state.phase;
+      // roundOver / sessionOver 以外のフェーズに移ったらフラグを解除
+      if (phase !== "roundOver" && phase !== "sessionOver") {
+        hideBoardAfterSet = false;
+      }
+      const hideBoard =
+        hideBoardAfterSet && (phase === "roundOver" || phase === "sessionOver");
+      $("subLine").textContent = `phase: ${state.phase}`;
+
+      // Bank anim
+      const bankEl = $("bank");
+      const bankPill = bankEl.closest(".pill");
+      const newBank = Number(state.bank);
+      if (prevBank === null){
+        bankEl.textContent = String(newBank);
+      } else if (prevBank !== newBank){
+        animateNumber(bankEl, prevBank, newBank, 520);
+        bankPill.classList.remove("bankFlash"); void bankPill.offsetWidth; bankPill.classList.add("bankFlash");
+      }
+      prevBank = newBank;
+
+      $("round").textContent = `${state.session.round}/${state.session.roundLimit}`;
+      $("time").textContent = fmtTime(state.session.timeLeftMs);
+
+      $("phaseBadge").textContent = state.phase;
+      $("rulesMini").textContent = [
+        state.rules.allowDouble ? "Dbl" : "",
+        state.rules.allowSplit ? "Spl" : "",
+        state.rules.allowSurrender ? "Sur" : "",
+        state.rules.allowInsurance ? "Ins" : "",
+        state.rules.allowEvenMoney ? "EM" : "",
+        state.rules.allowDAS ? "DAS" : "",
+        state.rules.splitBJAsBJ ? "SplitBJ" : "",
+        state.rules.dealerHitSoft17 ? "H17" : "S17"
+      ].filter(Boolean).join(" • ") || "-";
+
+      // Dealer
+      const totalText = hideBoard
+        ? "-"
+        : (state.dealer.holeKnown ? String(state.dealer.score) : "?");
+
+      const shownText = hideBoard ? "-" : state.dealer.scoreShown;
+
+      $("dealerScoreLine").innerHTML = `
+        <span class="metaLine">
+          <span class="kv"><span class="k">Shown</span><b class="v">${shownText}</b></span>
+          <span class="kv"><span class="k">Total</span><b class="v">${totalText}</b></span>
+        </span>
+      `;
+
+      $("dealerHole").textContent = hideBoard
+        ? "-"
+        : (state.dealer.holeKnown ? "hole open" : "hole hidden");
+
+
+      const dWrap = $("dealerCards");
+      let rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
+
+      // --- Dealer Animation Logic ---
+      const targetCount = rawDealerCards.length;
+      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
+      //const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
+
+      if (!isRoundOver) {
+        // Not in round over, show all cards immediately (sync)
+        if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        dealerShowCount = targetCount;
+      } else {
+        // In round over, check if we need to animate
+        if (dealerShowCount === 0 && targetCount > 0 && !dealerAnimTimer) {
+             // Initial load in roundOver? fast forward
+             dealerShowCount = targetCount;
+        } else if (dealerShowCount < targetCount) {
+             // Need to animate
+             if (!dealerAnimTimer) {
+                 dealerAnimTimer = setTimeout(() => {
+                     dealerShowCount++;
+                     dealerAnimTimer = null;
+                     render(); // Re-trigger render to show next card
+                 }, 600);
+             }
+        } else {
+            // Animation done
+             if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        }
+      }
+      
+      const isDealerAnimating = (dealerShowCount < targetCount);
+      // Slice cards based on show count
+      const dealerCards = rawDealerCards.slice(0, dealerShowCount);
+
+      // Cache check for Dealer
+
+      const dealerJson = JSON.stringify({
+         cards: dealerCards,
+         holeKnown: state.dealer.holeKnown,
+         scoreShown: state.dealer.scoreShown,
+         score: state.dealer.score
+      });
+      
+      if (dealerJson !== prevDealerJson) {
+        dWrap.innerHTML = "";
+        dealerCards.forEach((c, idx)=>{
+
+        const el = document.createElement("div");
+        const prev = prevDealerCards[idx];
+
+        if (c === "?"){
+          el.className = "cardBack";
+        } else {
+          el.className = "cardFace";
+          el.textContent = c;
+        }
+
+        const isNew = idx >= prevDealerCards.length;
+        const reveal = (prev === "?" && c !== "?");
+        if (isNew) el.classList.add("dealIn");
+        if (reveal) el.classList.add("flipIn");
+
+        dWrap.appendChild(el);
+        dWrap.appendChild(el);
+      });
+      } // End of dealerJson check
+      prevDealerCards = dealerCards.slice();
+
+      prevDealerJson = dealerJson; // Cache dealer state
+
+
+      // Player hands
+      const ph = $("playerHands");
+      const hands =
+        (!hideBoard && state.player && state.player.hands)
+          ? state.player.hands
+          : [];
+
+
+      
+      const playerJson = JSON.stringify(hands.map(h => ({
+        cards: h.cards,
+        score: h.score,
+        bet: h.bet,
+        flags: h.flags,
+        active: (hands.indexOf(h) === state.player.activeHandIndex)
+      })));
+
+      if (playerJson !== prevPlayerJson) {
+        ph.innerHTML = "";
+        hands.forEach((h, i)=>{
+
+        const box = document.createElement("div");
+        box.className = "handBox" + (i === state.player.activeHandIndex ? " active" : "");
+
+        const flags = [];
+        if (h.flags.blackjack) flags.push("BJ");
+        if (h.flags.bust) flags.push("BUST");
+        if (h.flags.doubled) flags.push("DBL");
+        if (h.flags.surrendered) flags.push("SUR");
+        if (h.flags.fromSplit) flags.push("SPLIT");
+        if (h.flags.splitAces) flags.push("A-SPLIT");
+
+        const badgeClass =
+          h.flags.blackjack ? "good" :
+          (h.flags.bust || h.flags.surrendered) ? "bad" : "";
+
+        const header = document.createElement("div");
+        header.className = "row";
+        header.style.justifyContent = "space-between";
+header.innerHTML = `
+  <div>
+    <b>Player ${hands.length > 1 ? `Hand ${i + 1}` : ""}</b>
+    <div class="metaLine" style="margin-top:6px;">
+      <span class="kv"><span class="k">Score</span><b class="v">${h.score}</b></span>
+      <span class="kv"><span class="k">Bet</span><b class="v">${h.bet}</b></span>
+    </div>
+  </div>
+  <div class="badge ${badgeClass}">${flags.length ? flags.join(" • ") : "playing"}</div>
+`;
+
+        box.appendChild(header);
+
+        const cards = document.createElement("div");
+        cards.className = "cards";
+        const prevLen = prevPlayerLens[i] ?? 0;
+
+        (h.cards||[]).forEach((cc, idx)=>{
+          const ce = document.createElement("div");
+          ce.className = "cardFace";
+          ce.textContent = cc;
+          if (idx >= prevLen) ce.classList.add("dealIn"); // ④A slide
+          cards.appendChild(ce);
+        });
+
+        box.appendChild(cards);
+        ph.appendChild(box);
+
+        prevPlayerLens[i] = (h.cards||[]).length;
+        prevPlayerLens[i] = (h.cards||[]).length;
+      });
+      } // End of playerJson check
+      prevPlayerJson = playerJson; // Cache player state
+
+
+
+
+      // Controls enable/disable from state.can
+// Controls enable/disable from state.can
+const can = state.can || {};
+const insMode = (state.phase === "offerInsurance");
+
+// === Dock main buttons ===
+if (insMode) {
+  // Insurance 中は DOCK = YES / NO 専用
+  setDis("btnDeal", true);                 // DEAL は封印
+  setDis("btnHit", !can.insurance);        // YES
+  setDis("btnStand", !can.insurance);      // NO
+  setDis("btnDouble", true);
+  setDis("btnSplit", true);
+  setDis("btnSurrender", true);
+} else {
+  // 通常時は C++ の can.* をそのまま使う
+  // ただし、Bet > Bank の場合でも自動調整できるように、BettingフェーズかつBank>0ならDEALを押せるようにする
+  const forceEnableDeal = ((state.phase === "betting" || state.phase === "roundOver") && state.bank > 0);
+  setDis("btnDeal", !can.deal && !forceEnableDeal);
+
+
+  setDis("btnHit", !can.hit);
+
+  setDis("btnStand", !can.stand);
+  setDis("btnDouble", !can.double);
+  setDis("btnSplit", !can.split);
+  setDis("btnSurrender", !can.surrender);
+}
+
+// === 右パネル側も同様 ===
+if (insMode) {
+  setDis("btnDoubleSide", true);
+  setDis("btnSplitSide", true);
+  setDis("btnSurrenderSide", true);
+  // Even Money は insMode のときだけ意味があるのでここで制御
+  setDis("btnEvenMoneySide", !can.evenMoney);
+} else {
+  setDis("btnDoubleSide", !can.double);
+  setDis("btnSplitSide", !can.split);
+  setDis("btnSurrenderSide", !can.surrender);
+  setDis("btnEvenMoneySide", !can.evenMoney);
+}
+
+       // const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
+      // ラウンドが終わった瞬間だけ履歴に追加
+      pushHistoryEntry(state);
+      finalizeSessionRanking(state);
+      if (state.phase === "sessionOver") beginSessionOverFlow(state);
+
+      $("roundBanner").style.display = (isRoundOver && !isDealerAnimating) ? "flex" : "none";
+
+      // Win Effect Trigger
+      if (isRoundOver) {
+         if (!isDealerAnimating) {
+            const net = state.roundResult.netProfit;
+            if (!winEffectDone && net > 0) {
+                window.triggerWinEffect && window.triggerWinEffect();
+                winEffectDone = true;
+            }
+         }
+      } else {
+         winEffectDone = false;
+      }
+
+
+      const net = state.roundResult.netProfit|0;
+      const msgEl = $("roundMsg");
+      const metaEl = $("roundMeta");
+      if (isRoundOver){
+        if (state.phase === "sessionOver"){
+          msgEl.textContent = "SESSION OVER";
+          msgEl.className = "msg neutral";
+        } else if (net > 0){
+          msgEl.textContent = `WIN +${net}`;
+          msgEl.className = "msg win";
+        } else if (net < 0){
+          msgEl.textContent = `LOSE ${net}`;
+          msgEl.className = "msg lose";
+        } else {
+          msgEl.textContent = "PUSH ±0";
+          msgEl.className = "msg neutral";
+        }
+        metaEl.textContent = `streak ${state.roundResult.streak} / bonus ${state.roundResult.bonusPercent}% (+${state.roundResult.bonusApplied})`;
+      }
+
+      $("debugLine").innerHTML = `
+        err=${state.lastErrorCode} "${state.lastError||""}"<br>
+        can: D=${can.double?"o":"x"} S=${can.split?"o":"x"}<br>
+        Rules: D=${state.rules.allowDouble?"on":"off"} S=${state.rules.allowSplit?"on":"off"}<br>
+        bank=${state.bank} bet=${state.player?.hands?.[state.player.activeHandIndex]?.bet||0}
+      `;
+
+      const v = floorEven($("betInput").value);
+      $("betHint").textContent = `入力=${$("betInput").value} → 偶数化=${v}`;
+
+
+      // ===== Bet lock/unlock =====
+// BETを編集できるのは「配る前」or「勝敗確定後」だけ
+  const betEditable = (state.phase === "betting" || state.phase === "roundOver" || state.phase === "sessionOver");
+// 入力欄とSETボタン
+setDis("betInGame", !betEditable);
+setDis("btnSetBet", !betEditable);
+
+// +10 +50 ... のチップボタンも全部
+document.querySelectorAll("[data-add2]").forEach((b) => {
+  b.disabled = !betEditable;
+});
+// ===== Insurance DOCK + Side panel =====
+//const insMode = (state.phase === "offerInsurance");
+document.querySelector(".dock").classList.toggle("insMode", insMode);
+
+// DOCKラベルを切り替え
+function setDockLabel(id, label, key){
+  const el = $(id);
+  if (!el) return;
+  el.innerHTML = `${label} <span class="k">${key}</span>`;
+}
+
+
+
+if (insMode){
+  setDockLabel("btnHit", "YES", "Y");
+  setDockLabel("btnStand", "NO", "N");
+
+  // ボタンの enable/disable は上の setDis ブロックに任せる
+
+  // 右側：金額入力表示
+  $("insSideBox").style.display = "block";
+  $("insAmountSide").disabled = false;
+
+  const mx = state.insurance.max|0;
+  $("insHintSide").textContent = `max ${mx} (bet/2)`;
+  const a = $("insAmountSide");
+  a.max = mx;
+  a.step = 2;
+
+  if (prevPhase !== "offerInsurance"){
+    a.value = mx;
+  } else {
+    a.value = Math.min(floorEven(a.value), mx);
+  }
+
+  $("btnEvenMoneyIns").style.display = (can.evenMoney ? "block" : "none");
+  $("btnEvenMoneyIns").disabled = !can.evenMoney;
+
+} else {
+  setDockLabel("btnHit", "HIT", "H");
+  setDockLabel("btnStand", "STAND", "S");
+
+  $("insSideBox").style.display = "none";
+  $("insAmountSide").disabled = true;
+
+  // HIT/STAND の disable は setDis に任せる
+}
+
+
+// render() の最後に
+prevPhase = state.phase;
+
+//       // ラウンドが終わった瞬間だけ履歴を追加
+// if (prevPhase !== "roundOver" && prevPhase !== "sessionOver"
+//     && (state.phase === "roundOver" || state.phase === "sessionOver")) {
+//   pushHistoryEntry(state);
+// }
+
+prevPhase = state.phase;
+
+
+      console.log("render ok", state.phase);
+
+    }
+
+
+if (state && (state.phase === "betting" || state.phase === "roundOver")) {
+    prevDealerCards = [];
+    prevDealerJson = "";
+    prevPlayerLens = [];
+    prevPlayerJson = "";
+}
+
+
+    // ========= UI events =========
+    document.querySelectorAll('[data-add]').forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const cur = Number($("betInput").value||0);
+        $("betInput").value = cur + Number(btn.dataset.add);
+      });
+    });
+
+    document.querySelectorAll('[data-add2]').forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const cur = Number($("betInGame").value||0);
+        $("betInGame").value = cur + Number(btn.dataset.add2);
+      });
+    });
+
+    $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
+    $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
+    $("btnHowPause").onclick = ()=> $("overlayHow").classList.add("show");
+    //$("btnOpenHow").onclick = ()=> $("overlayHow").classList.add("show");
+    $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
+
+        // History overlay
+    $("btnHistory").onclick = ()=>{
+      renderHistoryOverlay();
+      $("overlayHistory").classList.add("show");
+    };
+    $("btnCloseHistory").onclick = ()=> $("overlayHistory").classList.remove("show");
+
+// ========= Ranking (localStorage) =========
+const RANK_KEY = "bjRanking_v1";
+const NAME_KEY = "bjPlayerName_v1";
+
+let currentSessionId = null;
+let sessionStartBank = 0;
+let sessionFinalized = false;
+
+function loadRanking(){
+  try{
+    const raw = localStorage.getItem(RANK_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch(e){
+    console.warn("ranking load failed", e);
+    return [];
+  }
+}
+function saveRanking(list){
+  try{
+    localStorage.setItem(RANK_KEY, JSON.stringify(list));
+  } catch(e){
+    console.warn("ranking save failed", e);
+  }
+}
+function fmtDur(ms){
+  ms = Math.max(0, ms|0);
+  const s = Math.floor(ms/1000);
+  const m = Math.floor(s/60);
+  const r = s%60;
+  return `${m}:${String(r).padStart(2,"0")}`;
+}
+
+function getPlayerName(){
+  const inp = $("nameInput");
+  const v = (inp ? inp.value : "").trim().slice(0,12);
+  const name = v || (localStorage.getItem(NAME_KEY) || "YOU");
+  localStorage.setItem(NAME_KEY, name);
+  return name;
+}
+
+function addRankingRecord(rec){
+  const list = loadRanking();
+  list.unshift(rec);
+  if (list.length > 50) list.length = 50;
+
+  // Profit desc → finalBank desc → duration asc
+  list.sort((a,b)=>{
+    const pa = (a.profit|0), pb = (b.profit|0);
+    if (pb !== pa) return pb - pa;
+    const ba = (a.finalBank|0), bb = (b.finalBank|0);
+    if (bb !== ba) return bb - ba;
+    return (a.durationMs|0) - (b.durationMs|0);
+  });
+
+  saveRanking(list);
+}
+
+function renderRankingOverlay(){
+  const box = $("rankingList");
+  if (!box) return;
+
+  const list = loadRanking();
+  if (!list.length){
+    box.innerHTML = '<div class="small muted">まだランキングがありません。</div>';
+    return;
+  }
+
+  let html = '<table class="small" style="width:100%; border-collapse:collapse;">';
+  html += '<thead><tr>';
+  html += '<th style="text-align:left;padding:4px 8px;">#</th>';
+  html += '<th style="text-align:left;padding:4px 8px;">Name</th>';
+  html += '<th style="text-align:right;padding:4px 8px;">Profit</th>';
+  html += '<th style="text-align:right;padding:4px 8px;">Final</th>';
+  html += '<th style="text-align:right;padding:4px 8px;">Streak</th>';
+  html += '<th style="text-align:right;padding:4px 8px;">Time</th>';
+  html += '<th style="text-align:left;padding:4px 8px;">When</th>';
+  html += '</tr></thead><tbody>';
+
+  list.slice(0, 30).forEach((e, i)=>{
+    const profit = e.profit|0;
+    const pStyle = profit>0 ? ' style="color:#37d67a;"'
+                 : profit<0 ? ' style="color:#ff4d4d;"' : '';
+    html += '<tr>';
+    html += `<td style="padding:4px 8px;">${i+1}</td>`;
+    html += `<td style="padding:4px 8px;">${(e.name||"YOU")}</td>`;
+    html += `<td style="padding:4px 8px;text-align:right;"${pStyle}>${profit>=0?`+${profit}`:profit}</td>`;
+    html += `<td style="padding:4px 8px;text-align:right;">${e.finalBank|0}</td>`;
+    html += `<td style="padding:4px 8px;text-align:right;">${e.maxStreak|0}</td>`;
+    html += `<td style="padding:4px 8px;text-align:right;">${fmtDur(e.durationMs|0)}</td>`;
+    html += `<td style="padding:4px 8px;">${formatHistoryTime(e.ts)}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  box.innerHTML = html;
+}
+
+// セッション終了時に1回だけ呼ぶ
+function finalizeSessionRanking(st){
+  if (sessionFinalized) return;
+  if (!st || st.phase !== "sessionOver") return;
+  if (!currentSessionId) return;
+
+  sessionFinalized = true;
+
+  // このセッションのラウンド履歴だけ集める（sessionIdが無い旧データは無視される）
+  const hist = loadHistory().filter(e => e.sessionId === currentSessionId);
+
+  const totalNet = hist.reduce((a,e)=> a + (e.net|0), 0);
+  const maxStreak = hist.reduce((a,e)=> Math.max(a, e.streak|0), 0);
+
+  const durationMs = Math.max(0, (performance.now() - startTickAt - pausedTotal));
+  const finalBank = st.bank|0;
+  const profit = finalBank - (sessionStartBank|0);
+
+  addRankingRecord({
+    ts: Date.now(),
+    name: getPlayerName(),
+    sessionId: currentSessionId,
+    profit,
+    finalBank,
+    totalNet,
+    maxStreak,
+    rounds: st.session?.round|0,
+    durationMs,
+  });
+
+  // 表示して気持ちよくする（任意）
+  toast(`Saved Ranking: ${profit>=0?`+${profit}`:profit}`);
+}
+
+
+$("btnPause").onclick = ()=>{
+  if (state.phase === "paused") return;
+  //if (!state) return toast("ゲーム中に使えます");
+  //if (!$("screenGame").classList.contains("active")) return toast("ゲーム中に使えます");
+
+  callAction("set_paused", 1);
+  pausedAt = performance.now();
+  setPause(true);
+};
+
+$("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
+  if (pausedAt){
+    pausedTotal += performance.now() - pausedAt;
+    pausedAt = 0;
+  }
+  callAction("set_paused", 0);
+  setPause(false);
+};
+
+$("btnQuit").onclick = ()=> doResetToTitle();
+$("btnSORevive").onclick = doRevive;
+
+    $("btnInsMaxSide").onclick = ()=> {
+  if (!state || state.phase !== "offerInsurance") return;
+  $("insAmountSide").value = state.insurance.max|0;
+};
+$("btnInsZeroSide").onclick = ()=> {
+  if (!state || state.phase !== "offerInsurance") return;
+  $("insAmountSide").value = 0;
+};
+$("btnEvenMoneyIns").onclick = ()=> callAction("take_even_money");
+
+$("btnDeal").onclick = ()=> {
+  $("btnHit").disabled = true;
+  $("btnStand").disabled = true;
+
+  // Auto-cap bet before deal
+  if (state && (state.phase === "betting" || state.phase === "roundOver")) {
+    let bet = floorEven($("betInGame").value);
+    if (state.bank < bet) {
+
+      bet = floorEven(state.bank);
+      $("betInGame").value = bet;
+      callAction("set_bet", bet);
+      toast("Bet adjusted to Bank");
+    }
+  }
+
+  setTimeout(()=>{ 
+    callAction("deal"); 
+  }, 50);
+};
+
+
+
+    $("btnReset").addEventListener("click", ()=>{
+      if (!resetArmed) armResetOnce();
+    });
+
+    $("btnReset").addEventListener("pointerdown", ()=>{
+      if (!resetArmed) return;
+      holdStart = performance.now();
+      const btn = $("btnReset");
+      btn.textContent = "Holding…";
+      const wrap = document.createElement("div");
+      wrap.className = "prog";
+      const bar = document.createElement("div");
+      wrap.appendChild(bar);
+      btn.appendChild(wrap);
+
+      holdTimer = setInterval(()=>{
+        const t = performance.now() - holdStart;
+        const pct = Math.min(100, (t / 2000) * 100);
+        bar.style.width = pct + "%";
+        if (t >= 2000){
+          clearInterval(holdTimer); holdTimer=null;
+          doResetToTitle();
+        }
+      }, 30);
+    });
+
+    function cancelHold(){
+      if (holdTimer){ clearInterval(holdTimer); holdTimer = null; }
+      if (resetArmed){
+        $("btnReset").textContent = "Hold to reset";
+        $("btnReset").classList.add("danger");
+      }
+    }
+    $("btnReset").addEventListener("pointerup", cancelHold);
+    $("btnReset").addEventListener("pointerleave", cancelHold);
+    $("btnReset").addEventListener("pointercancel", cancelHold);
+
+    // Start session (engine ready guard)
+    $("btnStart").onclick = () => {
+      try{ soHideOverlay(); }catch(e){}
+
+      sessionEndAdDone = false; // セッション終了広告フラグリセット
+      if (!apiReady()){
+        toast("engine not ready");
+        return;
+      }
+
+      const {lo,hi} = seed64();
+      const mask = rulesMaskFromUI();
+      const sessionSeconds = 300;
+      const roundLimit = 12;
+
+      callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
+
+      // ===== Ranking session begin =====
+currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+sessionStartBank = Number(state?.bank || 0);   // start_session直後のbank
+sessionFinalized = false;
+
+      const savedName = localStorage.getItem(NAME_KEY);
+if (savedName && $("nameInput")) $("nameInput").value = savedName;
+
+      // Bet cap for start
+      let bet = floorEven($("betInput").value);
+      if (bet > 5000) bet = 5000; // Cap at initial bank
+      $("betInput").value = bet;
+
+      $("betInGame").value = bet;
+      callAction("set_bet", bet);
+
+
+      // clear animation caches
+       prevDealerCards = [];
+       prevPlayerLens = [];
+       prevBank = null;
+       hideBoardAfterSet = false;   // ← 追加：SET 後に盤面を隠す用
+      goScreen("game");
+      startTick();
+      toast("Good luck!");
+    };
+
+$("btnSetBet").onclick = ()=>{
+  if (!state) return;
+  const phase = state.phase;
+  let v = floorEven($("betInGame").value);
+  if (state.bank < v) v = floorEven(state.bank); // Cap at current bank
+  $("betInGame").value = v;
+
+  // BETTING / roundOver 中は今まで通りエンジンに bet を送る
+  if (phase === "betting" || phase === "roundOver") {
+    callAction("set_bet", v);
+
+    // roundOver 中に SET したら盤面を消して「次ラウンド待ち」の見た目にする
+    if (phase === "roundOver") {
+      hideBoardAfterSet = true;
+      render();
+    }
+    return;
+  }
+
+  // ★ sessionOver 中に SET を押した場合 → 盤面だけ消す
+  if (phase === "sessionOver") {
+    // hideBoardAfterSet = true; //// boardHidden = true で空に描く
+    render();      // エンジンには触らず、見た目だけ更新
+    return;
+  }
+};
+
+
+    // Main actions (Dock)
+$("btnHit").onclick = ()=> {
+  if (!state) return;
+
+  if (state.phase === "offerInsurance") {
+    const mx = state.insurance?.max ?? 0;
+    let v = floorEven($("insAmountSide").value);
+    v = Math.max(0, Math.min(v, mx));
+    $("insAmountSide").value = v;
+    return callAction("buy_insurance", v); // YES
+  }
+
+  return callAction("hit");
+};
+
+$("btnStand").onclick = ()=> {
+  if (!state) return;
+  if (state.phase === "offerInsurance"){
+    $("insAmountSide").value = 0;
+    return callAction("buy_insurance", 0);   // NO
+  }
+  return callAction("stand");
+};
+
+// ★ Missing Event Listeners Added ★
+$("btnDoubleSide").onclick = ()=> callAction("double_down");
+$("btnSplitSide").onclick = ()=> callAction("split");
+$("btnSurrenderSide").onclick = ()=> callAction("surrender");
+$("btnEvenMoneySide").onclick = ()=> callAction("take_even_money");
+
+// Session Over buttons
+$("btnSOTitle").onclick = ()=> doResetToTitle();
+$("btnSORetry").onclick = ()=> {
+  doResetToTitle();
+  setTimeout(()=> $("btnStart").click(), 200);
+};
+
+
+$("btnRanking").onclick = ()=> {
+  renderRankingOverlay();
+  $("overlayRanking").classList.add("show");
+};
+$("btnCloseRanking").onclick = ()=> $("overlayRanking").classList.remove("show");
+
+//このコメントアウトはランキング削除機能を無効化するためのものです
+// $("btnClearRanking").onclick = ()=> {
+//   saveRanking([]);
+//   renderRankingOverlay();
+//   toast("Ranking cleared");
+// };
+
+$("nameInput")?.addEventListener("input", ()=>{
+  const v = $("nameInput").value.trim().slice(0,12) || "YOU";
+  localStorage.setItem(NAME_KEY, v);
+});
+
+    // keyboard shortcuts
+    window.addEventListener("keydown", (e)=>{
+      if (!apiReady() || !$("screenGame").classList.contains("active")) return;
+      const k = e.key.toLowerCase();
+      if (k === "d") $("btnDeal").click();
+      if (k === "h") $("btnHit").click();
+      if (k === "s") $("btnStand").click();
+      if (k === "escape"){
+        if ($("overlayHow").classList.contains("show")) {
+            $("overlayHow").classList.remove("show");
+        } else if ($("overlayPause").classList.contains("show")) {
+            $("btnClosePause").click();
+        }
+  }
+      if (state && state.phase === "offerInsurance"){
+      if (k === "y") $("btnHit").click();
+      if (k === "n") $("btnStand").click();
+      if (k === "m") {
+        const btn = $("btnDockMore");
+        if (btn) btn.click();
+      }
+      return;
+    }
+
+    });
+
+    // bet hint pre-engine
+    function updateBetHintPreEngine(){
+      const v = floorEven($("betInput").value);
+      $("betHint").textContent = `入力=${$("betInput").value} → 偶数化=${v}`;
+    }
+    $("betInput").addEventListener("input", updateBetHintPreEngine);
+    updateBetHintPreEngine();
+
+    // kick engine sync loop
+    syncEngine();
+  
+  </script>
+
+
+
+<!-- Last Build Scripts -->
+<script src="blackjack.js"></script>
+<script src="blackjack_ui.js"></script>
+
+<style>
+  #fxCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+</style>
+<script>
+  // Particle System
+  const fxCanvas = document.createElement("canvas");
+  fxCanvas.id = "fxCanvas";
+  document.body.appendChild(fxCanvas);
+  const fxCtx = fxCanvas.getContext("2d");
+  let particles = [];
+
+  function resizeFx(){
+    fxCanvas.width = window.innerWidth;
+    fxCanvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeFx);
+  resizeFx();
+
+  class Particle {
+    constructor(x, y, color){
+      this.x = x; this.y = y;
+      const ang = Math.random() * Math.PI * 2;
+      const spd = Math.random() * 6 + 2;
+      this.vx = Math.cos(ang) * spd;
+      this.vy = Math.sin(ang) * spd - 3; 
+      this.color = color;
+      this.life = 1.0;
+      this.decay = Math.random() * 0.01 + 0.015;
+      this.grav = 0.15;
+    }
+    update(){
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy += this.grav;
+      this.vx *= 0.96;
+      this.life -= this.decay;
+    }
+    draw(ctx){
+      ctx.globalAlpha = Math.max(0, this.life);
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+    }
+  }
+
+  function spawnConfetti(x, y){
+    const colors = ["#d8b15a", "#ffdf8a", "#ffffff", "#37d67a"];
+    for(let i=0; i<40; i++){
+      particles.push(new Particle(x, y, colors[Math.floor(Math.random()*colors.length)]));
+    }
+  }
+
+  function loopFx(){
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+    for(let i=particles.length-1; i>=0; i--){
+      const p = particles[i];
+      p.update();
+      if(p.life <= 0) particles.splice(i, 1);
+      else p.draw(fxCtx);
+    }
+    requestAnimationFrame(loopFx);
+  }
+  loopFx();
+  
+  window.triggerWinEffect = () => {
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    spawnConfetti(cx, cy);
+    spawnConfetti(cx - 100, cy - 50);
+    spawnConfetti(cx + 100, cy - 50);
+  };
+</script>
+</body>
+</html>
