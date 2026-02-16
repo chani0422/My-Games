@@ -73,6 +73,7 @@ const RESOURCES = {
     "so.to_title": "To Title",
     "so.retry": "EARN 5000 & RETRY",
     "so.revive": "📺 Watch Ad to Revive (+500)",
+    "so.delay": "Add Delay Before Session Over",
     
     "pause.title": "PAUSED",
     "pause.close": "Close",
@@ -217,6 +218,7 @@ const RESOURCES = {
     "so.to_title": "タイトルへ",
     "so.retry": "EARN 5000 & RETRY",
     "so.revive": "📺 広告を見て復活 (+500)",
+    "so.delay": "セッション終了まで少しお待ちください",
     
     "pause.title": "PAUSED",
     "pause.close": "閉じる",
@@ -282,7 +284,7 @@ const RESOURCES = {
     "dyn.max": "max",
     
     // JS dynamic
-    "js.result_showing": "結果表示中…",
+    "js.result_showing": "読み込み中…",
     "js.ad_waiting": "広告の終了を待っています…",
     "js.selectable": "選択できます",
 

@@ -2067,31 +2067,36 @@ function soUpdateLock(){
 function beginSessionOverFlow(st){
   if (window.SO.active) return;
   window.SO.active = true;
-  window.SO.adDone = false;
-  window.SO.bannerShown = false;
-  window.SO.sessionCount = (window.SO.sessionCount || 0) + 1; // Increment counter
-  soClearTimers();
+
+  // Add 4 seconds delay before showing the overlay so user can see the result
+  toast(t("so.delay"));
+  setTimeout(() => {
+    window.SO.adDone = false;
+    window.SO.bannerShown = false;
+    window.SO.sessionCount = (window.SO.sessionCount || 0) + 1; // Increment counter
+    soClearTimers();
 
 
-  const ov = document.getElementById("overlaySessionOver");
-  if (ov) ov.classList.add("show");
-  soSetButtonsEnabled(false);
-  soSetView("splash");
-
-  window.CG?.gameplayStop?.();
-
-  window.SO.splashTimer = setTimeout(()=>{
-    soSetView("results");
-    soFillStats(st);
-
-    window.SO.lockUntil = performance.now() + 5000;
+    const ov = document.getElementById("overlaySessionOver");
+    if (ov) ov.classList.add("show");
     soSetButtonsEnabled(false);
-    soUpdateLock();
+    soSetView("splash");
 
-    soRequestBanner();
-    soRequestMidgame();
+    window.CG?.gameplayStop?.();
 
-    window.SO.unlockTimer = setInterval(soUpdateLock, 100);
+    window.SO.splashTimer = setTimeout(()=>{
+      soSetView("results");
+      soFillStats(st);
+
+      window.SO.lockUntil = performance.now() + 5000;
+      soSetButtonsEnabled(false);
+      soUpdateLock();
+
+      soRequestBanner();
+      soRequestMidgame();
+
+      window.SO.unlockTimer = setInterval(soUpdateLock, 100);
+    }, 2000);
   }, 2000);
 }
 
@@ -2384,10 +2389,13 @@ if (insMode) {
       const msgEl = $("roundMsg");
       const metaEl = $("roundMeta");
       if (isRoundOver){
+        /*
+        // Allow the "WIN +100" etc to remain visible during the 2s delay
         if (state.phase === "sessionOver"){
           msgEl.textContent = t("so.session_over");
           msgEl.className = "msg neutral";
-        } else if (net > 0){
+        } else */
+        if (net > 0){
           msgEl.textContent = `${t("dyn.win")} +${net}`;
           msgEl.className = "msg win";
         } else if (net < 0){
