@@ -14,7 +14,6 @@ const RESOURCES = {
     "stats.time": "Time",
     "menu.menu": "MENU",
     "menu.history": "History",
-    "menu.reset": "Reset",
     "menu.ranking": "Ranking",
     
     // Titles & Home
@@ -25,7 +24,7 @@ const RESOURCES = {
     "title.how": "How to Play",
     "title.bet_hint": "Bet (Even number recommended to avoid fractional insurance)",
     "title.options": "Options (Toggle ON/OFF)",
-    "title.tips": "Tips: Reset is executed by 'Tap once to arm → Hold 2s'",
+
     "title.marking": "Markings/Controls",
     
     // Options
@@ -83,15 +82,30 @@ const RESOURCES = {
     
     "how.title": "HOW TO PLAY",
     "how.close": "Close",
-    "how.goal": "Goal: Get close to 21 (Over 21 is Bust)",
-    "how.cards": "10/J/Q/K are all 10, A is 1 or 11",
-    "how.deal": "DEAL to start (Next round during RoundOver)",
-    "how.double": "Double: Add equal bet -> Force Stand after 1 Hit",
-    "how.split": "Split: Same 'value' OK. Ace split ends after 1 card",
-    "how.surrender": "Surrender: First 2 cards only. Half bet returned (Late/after peek)",
-    "how.insurance": "Insurance: Only when Dealer shows A. Max bet/2",
-    "how.even_money": "Even Money: Offered on Player BJ",
-    "how.note": "※State.can is truth. Buttons disable automatically.",
+    
+    "how.goal_title": "GOAL",
+    "how.goal_text": "Beat the dealer's hand without going over 21.",
+    
+    "how.val_title": "CARD VALUES",
+    "how.val_text": "<b>2-10</b> = Face Value<br><b>J, Q, K</b> = 10<br><b>Ace</b> = 1 or 11",
+    
+    "how.act_title": "ACTIONS",
+    "how.act_hit": "<b>HIT</b>: Take another card.",
+    "how.act_stand": "<b>STAND</b>: End turn.",
+    "how.act_double": "<b>DOUBLE</b>: Double bet, take exactly 1 card.",
+    "how.act_split": "<b>SPLIT</b>: Split pair into two hands (bet x2).",
+    "how.act_surrender": "<b>SURRENDER</b>: Give up half bet (Late).",
+    "how.act_insurance": "<b>INSURANCE</b>: Bet half if Dealer shows Ace.",
+    
+    "how.dlr_title": "DEALER RULES",
+    "how.dlr_text": "Dealer must draw to 16 and stand on 17.",
+    
+    "how.pay_title": "PAYOUTS",
+    "how.pay_bj": "Blackjack: 3 to 2",
+    "how.pay_win": "Win: 1 to 1",
+    "how.pay_ins": "Insurance: 2 to 1",
+    
+    "how.note": "※Buttons disable automatically when actions are not available.",
     
     "hist.title": "HISTORY",
     "hist.close": "Close",
@@ -108,9 +122,6 @@ const RESOURCES = {
     // Debug/Toasts
     "toast.good_luck": "Good luck!",
     "toast.bet_adjusted": "Bet adjusted to Bank",
-    "toast.reset_hold": "Hold 2s to reset",
-    "toast.holding": "Holding…",
-    "toast.reset_done": "Reset!",
     "toast.ranking_cleared": "Ranking cleared",
     
     // Dynamic parts
@@ -130,7 +141,7 @@ const RESOURCES = {
     "js.result_showing": "Showing results…",
     "js.ad_waiting": "Waiting for ad…",
     "js.selectable": "Selectable",
-    "js.holding": "Holding…",
+
   },
   
   ja: {
@@ -147,7 +158,6 @@ const RESOURCES = {
     "stats.time": "Time",
     "menu.menu": "MENU",
     "menu.history": "履歴",
-    "menu.reset": "Reset",
     "menu.ranking": "Rank",
     
     // Titles & Home
@@ -158,7 +168,7 @@ const RESOURCES = {
     "title.how": "遊び方",
     "title.bet_hint": "Bet（偶数推奨：Insurance = bet/2 で端数回避）",
     "title.options": "Options（タイトルでON/OFF）",
-    "title.tips": "Tips：Reset は「1回タップで武装 → 2秒長押し」で実行",
+
     "title.marking": "マーキング/操作",
     
     // Options
@@ -216,15 +226,30 @@ const RESOURCES = {
     
     "how.title": "遊び方",
     "how.close": "閉じる",
-    "how.goal": "目標：<b>21に近づける</b>（21超えはBust）",
-    "how.cards": "10/J/Q/Kは<b>全部10扱い</b>、Aは<b>1 or 11</b>",
-    "how.deal": "<b>DEAL</b>で開始（RoundOver中は次ラウンドに進む）",
-    "how.double": "<b>Double</b>：同額追加→1回Hitで強制終了",
-    "how.split": "<b>Split</b>：同“点数”ならOK。Aスプリットは1枚で終了",
-    "how.surrender": "<b>Surrender</b>：最初の2枚のみ。掛け金の半分が返る（Late／peek後）",
-    "how.insurance": "<b>Insurance</b>：ディーラー表がAの時のみ。最大 bet/2",
-    "how.even_money": "<b>Even Money</b>：プレイヤーBJ時に提示",
-    "how.note": "※操作可否はC++が返す <b>state.can</b> が真実。ボタンは自動で無効化されます。",
+    
+    "how.goal_title": "目標",
+    "how.goal_text": "ディーラーより21に近づけること（21を超えたら負け）。",
+    
+    "how.val_title": "カードの点数",
+    "how.val_text": "<b>2-10</b> = そのまま<br><b>J, Q, K</b> = 10<br><b>Ace</b> = 1 または 11",
+    
+    "how.act_title": "アクション",
+    "how.act_hit": "<b>HIT</b>：カードをもう1枚引く",
+    "how.act_stand": "<b>STAND</b>：現在の点数で勝負する",
+    "how.act_double": "<b>DOUBLE</b>：賭け金を倍にして、残り1枚だけ引く",
+    "how.act_split": "<b>SPLIT</b>：ペアを分割して2つの手にする（賭け金倍）",
+    "how.act_surrender": "<b>SURRENDER</b>：勝てる見込みがない時に降りる（半額返金）",
+    "how.act_insurance": "<b>INSURANCE</b>：ディーラーのAに対して保険をかける（最大bet半額）",
+    
+    "how.dlr_title": "ディーラーのルール",
+    "how.dlr_text": "ディーラーは16以下なら引き続け、17以上で止まります。",
+    
+    "how.pay_title": "配当",
+    "how.pay_bj": "Blackjack: 3 to 2 (1.5倍)",
+    "how.pay_win": "Win: 1 to 1 (等倍)",
+    "how.pay_ins": "Insurance: 2 to 1 (2倍)",
+    
+    "how.note": "※ボタンはルール上可能な場合のみ押せるようになります。",
     
     "hist.title": "HISTORY",
     "hist.close": "閉じる",
@@ -241,9 +266,6 @@ const RESOURCES = {
     // Debug/Toasts
     "toast.good_luck": "Good luck!",
     "toast.bet_adjusted": "Bet adjusted to Bank",
-    "toast.reset_hold": "2秒長押しでリセット",
-    "toast.holding": "Holding…",
-    "toast.reset_done": "Reset!",
     "toast.ranking_cleared": "Ranking cleared",
     
     // Dynamic parts
@@ -263,7 +285,7 @@ const RESOURCES = {
     "js.result_showing": "結果表示中…",
     "js.ad_waiting": "広告の終了を待っています…",
     "js.selectable": "選択できます",
-    "js.holding": "Holding…",
+
   }
 };
 

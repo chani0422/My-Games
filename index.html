@@ -244,14 +244,13 @@
 
     /* ===== Layout ===== */
     .grid{
-      display:grid;
-      grid-template-columns: 1.25fr .75fr;
+      display:flex;
+      flex-direction:column;
       gap:16px;
       margin-top:16px;
-    }
-    @media (max-width: 900px){
-      .grid{ grid-template-columns: 1fr; }
-      .pill{ min-width:auto; }
+      max-width: 800px; /* Prevent too wide table on desktop */
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .card{
@@ -495,7 +494,7 @@
     /* Zones on table */
     .dealerZone{
       position:absolute;
-      top: 38px;
+      top: 70px; /* Shifted down */
       left: 50%;
       transform: translateX(-50%);
       width: min(720px, 92%);
@@ -503,7 +502,7 @@
     .playerZone{
       position:absolute;
       left: 50%;
-      bottom: 46px;
+      bottom: 110px; /* Shifted up significantly */
       transform: translateX(-50%);
       width: min(860px, 94%);
     }
@@ -654,22 +653,59 @@
     }
     .dock .btn{
       height:100%;
-      border-radius: 18px;
+      border-radius: 14px;
       font-size: 13px;
       display:flex;
+      flex-direction:column; /* Stack text and key hint */
       align-items:center;
       justify-content:center;
-      gap:10px;
-      padding:0 12px;
+      gap:2px;
+      padding:0 4px;
+      line-height:1.1;
     }
     .dock .btn .k{
-      font-size: 12px;
-      color: rgba(255,255,255,.75);
-      letter-spacing:.12em;
-      padding: 3px 8px;
-      border-radius:999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.14);
+      font-size: 10px;
+      padding: 2px 6px;
+      margin-top:2px;
+    }
+    /* Compact grid for 6 buttons -> Dynamic Flex */
+    .dock.full{
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-content: stretch !important;
+      height: auto !important;
+      min-height: 90px;
+      /* Allow growing up to a limit */
+      max-height: 40vh;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      gap: 12px;
+    }
+    .dock .btn {
+      flex: 1 1 45%; /* Default: 2 per row. Use 45% to allow gap */
+      min-height: 72px;
+      font-size: 18px !important; /* Larger text */
+      font-weight: 800;
+      /* Ensure hidden if disabled per user request */
+    }
+    .dock .btn:disabled {
+      display: none !important;
+    }
+    
+    @media (min-width: 600px) {
+      .dock.full{
+        /* Desktop: keep showing all? Or follow same logic? 
+           User said "This case" referencing mobile. 
+           But consistency is good. Let's apply dynamic button sizing to desktop too
+           or keep row of 6? 
+           If desktop has plenty of width, 6 buttons in 1 row is fine.
+           But "Selectable only" is a strong request.
+        */
+        height: 100px;
+      }
+      .dock .btn {
+        flex: 1 1 auto; /* Fit content on desktop */
+        max-width: 300px;
+      }
     }
 
     /* === Insurance dock mode === */
@@ -710,7 +746,18 @@
       display:flex; justify-content:space-between; align-items:center;
       background: rgba(0,0,0,.16);
     }
-    .modal .bd{ padding:14px; }
+    .modal .bd{ padding:20px; overflow-y:auto; max-height:80vh; }
+    
+    .modal.wide { width: min(800px, 96%); }
+    .rule-sec { margin-bottom: 24px; font-size:14px; line-height:1.6; }
+    .rule-sec:last-child { margin-bottom:0; }
+    .rule-sec > b { color: #8ad; display:block; margin-bottom:8px; font-size:15px; letter-spacing:.05em; }
+    
+    .rule-list { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .rule-item { background:rgba(255,255,255,.05); padding:10px; border-radius:8px; font-size:13px; border:1px solid rgba(255,255,255,.05); }
+    .rule-item-title { font-weight:bold; color:#e0e0e0; display:block; margin-bottom:2px; }
+    
+    @media (max-width: 600px) { .rule-list { grid-template-columns: 1fr; } }
     .actionsGrid{
       display:grid;
       grid-template-columns: repeat(2, 1fr);
@@ -784,29 +831,53 @@ body{
 }
 
 /* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める */
+/* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める -> CANCELLED */
 .tableSurface{
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  gap: 18px !important;
-
-  /* 枠内に収めるための“安全地帯” */
-  padding: 64px 44px 120px !important;
-
-  /* 丸枠に合わせて中身が切れないように */
+  display: block !important; /* Back to block for absolute children */
+  /* flex-direction: column !important; */
+  /* justify-content: space-between !important; */
   overflow: hidden;
+  position: relative !important;
 }
 
+@media (max-width: 600px) {
+  .tableSurface {
+    /* padding is less relevant for absolute children but keeps frame size */
+    padding: 0 !important; 
+    height: 520px !important; /* Ensure height */
+  }
+}
+    
+    @media (max-width: 600px) {
+      .tableSurface {
+        padding: 40px 12px 180px !important; /* Increased bottom padding for multi-row dock */
+      }
+      .dealerZone, .playerZone {
+        max-width: 100% !important;
+      }
+    }
+
 /* absolute を解除してセンターに収める */
+/* absolute を解除してセンターに収める -> CANCELLED to restore absolute positioning */
+/* 
 .dealerZone, .playerZone{
   position: relative !important;
   top: auto !important; bottom: auto !important; left: auto !important;
-  transform: none !important;              /* translateX(-50%)を解除 */
+  transform: none !important;
   width: 100% !important;
   margin: 0 auto !important;
 }
-.dealerZone{ max-width: 760px !important; }
-.playerZone{ max-width: 920px !important; }
+*/
+/* Instead, use absolute but constraint width */
+.dealerZone, .playerZone{
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 86% !important; /* Allow some margin */
+  max-width: 600px !important;
+}
+.dealerZone{ top: 110px !important; } /* Lowered from 70px */
+.playerZone{ bottom: 90px !important; }
 
 /* テーブルの曲率が強すぎると見切れやすい → 少し緩める */
 .tableFrame{
@@ -1047,7 +1118,7 @@ window.CG.p = new Promise((resolve) => {
 
     <button class="btn ghost" id="btnPause" title="Menu" data-i18n="menu.menu">MENU</button>
     <button class="btn ghost" id="btnHistory" title="History" data-i18n="menu.history">History</button>
-    <button class="btn danger" id="btnReset" title="Hold to reset" data-i18n="menu.reset">Reset</button>
+
     <button class="btn ghost" id="btnRanking" title="Leaderboard" data-i18n="menu.ranking">Ranking</button>
   </div>
 </div>
@@ -1104,7 +1175,7 @@ window.CG.p = new Promise((resolve) => {
           <div class="divider"></div>
 
           <div class="row" style="justify-content:space-between">
-            <div class="small" data-i18n="title.tips">Tips：Reset は「1回タップで武装 → 2秒長押し」で実行</div>
+
             <button class="btn" id="btnHowTitle2" data-i18n="title.marking">マーキング/操作</button>
           </div>
         </div>
@@ -1120,6 +1191,69 @@ window.CG.p = new Promise((resolve) => {
             <div class="badge" id="phaseBadge">-</div>
           </div>
           <div class="bd">
+        <!-- Bet / Info Card (Moved Top) -->
+        <div class="card">
+          <div class="hd">
+            <h2 data-i18n="game.bet_info">BET / INFO</h2>
+            <div class="badge" id="rulesMini">-</div>
+          </div>
+          <div class="bd">
+            <div class="row">
+              <div class="muted" data-i18n="game.bet">Bet</div>
+              <select id="betSelect" style="
+                  padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
+                  background:rgba(0,0,0,.22); color:#fff; font-weight:bold; width:140px;
+                  font-size:16px; outline:none;">
+                <option value="10">10</option>
+                <option value="50">50</option>
+                <option value="100" selected>100</option>
+                <option value="200">200</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+                <option value="9999999">MAX</option>
+              </select>
+              <input id="betInput" type="number" value="100" step="10" style="display:none">
+              <button class="btn" id="btnSetBet" data-i18n="game.set" style="display:none">SET</button>
+            </div>
+            
+            <div class="row chips" style="display:none; margin-top:10px;">
+              <button class="chipbtn" data-add2="10">+10</button>
+              <button class="chipbtn" data-add2="50">+50</button>
+              <button class="chipbtn" data-add2="100">+100</button>
+              <button class="chipbtn" data-add2="200">+200</button>
+            </div>
+
+            <div class="divider"></div>
+            <!-- More Panel removed -->
+            <div class="divider"></div>
+<div class="handBox" id="insSideBox" style="display:none; margin-top:12px;">
+  <div class="row" style="justify-content:space-between;">
+    <b data-i18n="ins.insurance">Insurance</b>
+    <span class="muted" id="insHintSide">-</span>
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <input id="insAmountSide" type="number" value="0" step="2" min="0">
+    <button class="btn" id="btnInsMaxSide" data-i18n="ins.max">MAX</button>
+    <button class="btn ghost" id="btnInsZeroSide">0</button>
+  </div>
+
+  <div class="muted small" style="margin-top:8px;" data-i18n="ins.dock_hint">
+    下のDOCKで <b>YES / NO</b> を選択
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <button class="btn" id="btnEvenMoneyIns" data-i18n="cmd.even_money">Even Money</button>
+  </div>
+</div>
+
+            <div class="small" id="debugLine">-</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div style="flex:1">
+            <!-- Table (Moved Bottom) -->
             <div class="tableStage">
               <div class="tableTilt">
                 <div class="tableFrame">
@@ -1181,79 +1315,20 @@ window.CG.p = new Promise((resolve) => {
           </div>
         </div>
 
-        <div class="card">
-          <div class="hd">
-            <h2 data-i18n="game.bet_info">BET / INFO</h2>
-            <div class="badge" id="rulesMini">-</div>
-          </div>
-          <div class="bd">
-            <div class="row">
-              <div class="muted" data-i18n="game.bet">Bet</div>
-              <input id="betInGame" type="number" value="100" step="10">
-              <button class="btn" id="btnSetBet" data-i18n="game.set">SET</button>
-            </div>
-
-            <div class="row chips" style="margin-top:10px;">
-              <button class="chipbtn" data-add2="10">+10</button>
-              <button class="chipbtn" data-add2="50">+50</button>
-              <button class="chipbtn" data-add2="100">+100</button>
-              <button class="chipbtn" data-add2="200">+200</button>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="row" style="justify-content:space-between;">
-              <div class="muted" data-i18n="game.dock_hint">Main actions are in DOCK</div>
-              <button class="btn ghost" id="btnMore" disabled data-i18n="game.more">MORE</button>
-              <div id="morePanel" class="morePanel">
-  <div class="moreHd" data-i18n="game.more_title">More actions</div>
-  <div class="moreGrid">
-    <button class="btn" id="btnDoubleSide" data-i18n="cmd.double">Double</button>
-    <button class="btn" id="btnSplitSide" data-i18n="cmd.split">Split</button>
-    <button class="btn danger" id="btnSurrenderSide" data-i18n="cmd.surrender">Surrender</button>
-    <button class="btn" id="btnEvenMoneySide" data-i18n="cmd.even_money">Even Money</button>
-  </div>
-  <div class="muted small" style="margin-top:8px;" data-i18n="game.more_hint">
-    ※押せる場合に限り機能します。
-  </div>
-</div>
-
-            </div>
-
-            <div class="divider"></div>
-<div class="handBox" id="insSideBox" style="display:none; margin-top:12px;">
-  <div class="row" style="justify-content:space-between;">
-    <b data-i18n="ins.insurance">Insurance</b>
-    <span class="muted" id="insHintSide">-</span>
-  </div>
-
-  <div class="row" style="margin-top:10px;">
-    <input id="insAmountSide" type="number" value="0" step="2" min="0">
-    <button class="btn" id="btnInsMaxSide" data-i18n="ins.max">MAX</button>
-    <button class="btn ghost" id="btnInsZeroSide">0</button>
-  </div>
-
-  <div class="muted small" style="margin-top:8px;" data-i18n="ins.dock_hint">
-    下のDOCKで <b>YES / NO</b> を選択
-  </div>
-
-  <div class="row" style="margin-top:10px;">
-    <button class="btn" id="btnEvenMoneyIns" data-i18n="cmd.even_money">Even Money</button>
-  </div>
-</div>
-
-            <div class="small" id="debugLine">-</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Bottom Dock -->
-  <nav class="dock" aria-label="main controls">
-    <button class="btn primary" id="btnDeal" disabled><span data-i18n="dock.deal">DEAL</span> <span class="k">D</span></button>
-    <button class="btn" id="btnHit" disabled><span data-i18n="dock.hit">HIT</span> <span class="k">H</span></button>
-    <button class="btn" id="btnStand" disabled><span data-i18n="dock.stand">STAND</span> <span class="k">S</span></button>
+  <!-- Bottom Dock -->
+  <nav class="dock full" aria-label="main controls">
+    <!-- Row 1 (Mobile) / Left (Desktop) -->
+    <button class="btn primary" id="btnDeal" disabled><span data-i18n="dock.deal">DEAL</span></button>
+    <button class="btn" id="btnHit" disabled><span data-i18n="dock.hit">HIT</span></button>
+    <button class="btn" id="btnStand" disabled><span data-i18n="dock.stand">STAND</span></button>
+    
+    <!-- Row 2 (Mobile) / Right (Desktop) -->
+    <button class="btn" id="btnDouble" disabled><span data-i18n="cmd.double">DBL</span></button>
+    <button class="btn" id="btnSplit" disabled><span data-i18n="cmd.split">SPLIT</span></button>
+    
+    <button class="btn danger" id="btnSurrender" disabled><span data-i18n="cmd.surrender">SURR</span></button>
+    <button class="btn" id="btnEvenMoney" disabled style="display:none;"><span data-i18n="cmd.even_money">EVEN</span></button>
   </nav>
 
   <!-- OVERLAYS -->
@@ -1318,25 +1393,55 @@ window.CG.p = new Promise((resolve) => {
   </div>
 <!-- How to play -->
 <div class="overlay" id="overlayHow">
-  <div class="modal">
+  <div class="modal wide">
     <div class="hd">
       <b data-i18n="how.title">HOW TO PLAY</b>
       <button class="btn ghost" id="btnCloseHow" data-i18n="how.close">Close</button>
     </div>
     <div class="bd">
-      <div class="muted">
-        <ul>
-          <li data-i18n="how.goal">目標：<b>21に近づける</b>（21超えはBust）</li>
-          <li data-i18n="how.cards">10/J/Q/Kは<b>全部10扱い</b>、Aは<b>1 or 11</b></li>
-          <li data-i18n="how.deal"><b>DEAL</b>で開始（RoundOver中は次ラウンドに進む）</li>
-          <li data-i18n="how.double"><b>Double</b>：同額追加→1回Hitで強制終了</li>
-          <li data-i18n="how.split"><b>Split</b>：同“点数”ならOK。Aスプリットは1枚で終了</li>
-          <li data-i18n="how.surrender"><b>Surrender</b>：最初の2枚のみ。掛け金の半分が返る（Late／peek後）</li>
-          <li data-i18n="how.insurance"><b>Insurance</b>：ディーラー表がAの時のみ。最大 bet/2</li>
-          <li data-i18n="how.even_money"><b>Even Money</b>：プレイヤーBJ時に提示</li>
-        </ul>
-        <p data-i18n="how.note">※操作可否はC++が返す <b>state.can</b> が真実。ボタンは自動で無効化されます。</p>
+      
+      <div class="rule-sec">
+        <b data-i18n="how.goal_title">GOAL</b>
+        <div data-i18n="how.goal_text">Beat the dealer...</div>
       </div>
+
+      <div class="rule-sec">
+        <b data-i18n="how.val_title">CARD VALUES</b>
+        <div data-i18n="how.val_text">2-10...</div>
+      </div>
+
+      <div class="rule-sec">
+        <b data-i18n="how.act_title">ACTIONS</b>
+        <div class="rule-list">
+          <div class="rule-item" data-i18n="how.act_hit">HIT</div>
+          <div class="rule-item" data-i18n="how.act_stand">STAND</div>
+          <div class="rule-item" data-i18n="how.act_double">DOUBLE</div>
+          <div class="rule-item" data-i18n="how.act_split">SPLIT</div>
+          <div class="rule-item" data-i18n="how.act_surrender">SURRENDER</div>
+          <div class="rule-item" data-i18n="how.act_insurance">INSURANCE</div>
+        </div>
+      </div>
+
+      <div class="row" style="align-items:flex-start; gap:24px; flex-wrap:wrap;">
+        <div class="rule-sec" style="flex:1; min-width:240px;">
+          <b data-i18n="how.dlr_title">DEALER RULES</b>
+          <div data-i18n="how.dlr_text">Dealer must draw...</div>
+        </div>
+
+        <div class="rule-sec" style="flex:1; min-width:240px;">
+          <b data-i18n="how.pay_title">PAYOUTS</b>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; font-size:13px; font-weight:bold;">
+            <span class="pill" style="background:rgba(255,215,0,.15); color:#ffd700; padding:6px 10px;" data-i18n="how.pay_bj">BJ 3:2</span>
+            <span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" data-i18n="how.pay_win">Win 1:1</span>
+            <span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" data-i18n="how.pay_ins">Ins 2:1</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="muted small" style="margin-top:16px; border-top:1px solid rgba(255,255,255,.1); padding-top:10px;">
+        <span data-i18n="how.note">Note...</span>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1698,24 +1803,10 @@ function setPause(paused) {
     let holdTimer = null;
     let holdStart = 0;
 
-    function disarmReset(){
-      resetArmed = false;
-      $("btnReset").textContent = "Reset";
-      $("btnReset").classList.remove("danger");
-      if (holdTimer){ clearInterval(holdTimer); holdTimer = null; }
-    }
 
-    function armResetOnce(){
-      resetArmed = true;
-      $("btnReset").textContent = "Hold to reset";
-      $("btnReset").classList.add("danger");
-      toast(t("toast.reset_hold"));
-      setTimeout(()=>{ if (resetArmed) disarmReset(); }, 5000);
-    }
-    
     function doResetToTitle(){
       stopTick();
-      disarmReset();
+      stopTick();
       callAction("reset_session");
       $("overlayPause").classList.remove("show");
       $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
@@ -2227,40 +2318,45 @@ const insMode = (state.phase === "offerInsurance");
 // === Dock main buttons ===
 if (insMode) {
   // Insurance 中は DOCK = YES / NO 専用
-  setDis("btnDeal", true);                 // DEAL は封印
-  setDis("btnHit", !can.insurance);        // YES
-  setDis("btnStand", !can.insurance);      // NO
+  setDis("btnDeal", true);
+  setDis("btnHit", !can.insurance);
+  setDis("btnStand", !can.insurance);
   setDis("btnDouble", true);
   setDis("btnSplit", true);
   setDis("btnSurrender", true);
 } else {
-  // 通常時は C++ の can.* をそのまま使う
-  // ただし、Bet > Bank の場合でも自動調整できるように、BettingフェーズかつBank>0ならDEALを押せるようにする
+  // Betting phase logic
   const forceEnableDeal = ((state.phase === "betting" || state.phase === "roundOver") && state.bank > 0);
-  setDis("btnDeal", !can.deal && !forceEnableDeal);
+  setDis("btnDeal", (!can.deal && !forceEnableDeal) || uiLocked);
 
-
-  setDis("btnHit", !can.hit);
-
-  setDis("btnStand", !can.stand);
+  setDis("btnHit", !can.hit || uiLocked);
+  setDis("btnStand", !can.stand || uiLocked); // Stand also locked to prevent race? User said "Deal/Hit".
+  // But usually Stand leads to Dealer play, so locking is safe.
+  // Double/Split -> User said "Exception", so do NOT add uiLocked
   setDis("btnDouble", !can.double);
   setDis("btnSplit", !can.split);
   setDis("btnSurrender", !can.surrender);
 }
 
+// Ensure select is synced with internal bet state (if needed)
+// setDis("betSelect", !(state.phase === "betting" || state.phase === "roundOver"));
+
 // === 右パネル側も同様 ===
 if (insMode) {
-  setDis("btnDoubleSide", true);
-  setDis("btnSplitSide", true);
-  setDis("btnSurrenderSide", true);
-  // Even Money は insMode のときだけ意味があるのでここで制御
-  setDis("btnEvenMoneySide", !can.evenMoney);
-} else {
-  setDis("btnDoubleSide", !can.double);
-  setDis("btnSplitSide", !can.split);
-  setDis("btnSurrenderSide", !can.surrender);
-  setDis("btnEvenMoneySide", !can.evenMoney);
+  // Even Money logic: Swap Surrender button if available
+  const showEven = !!can.evenMoney;
+  const btnSur = $("btnSurrender");
+  const btnEven = $("btnEvenMoney");
+  
+  if (showEven) {
+      if(btnSur) btnSur.style.display = "none";
+      if(btnEven) { btnEven.style.display = "flex"; btnEven.disabled = false; }
+  } else {
+      if(btnSur) { btnSur.style.display = "flex"; btnSur.disabled = !can.surrender; }
+      if(btnEven) btnEven.style.display = "none";
+  }
 }
+// Removed Side Panel Logic
 
        // const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
       // ラウンドが終わった瞬間だけ履歴に追加
@@ -2566,6 +2662,19 @@ function finalizeSessionRanking(st){
   toast(`${t("rank.saved")}${profit>=0?`+${profit}`:profit}`);
 }
 
+// === Action Throttling ===
+let uiLocked = false;
+let uiLockTimer = null;
+function lockUI(ms){
+  uiLocked = true;
+  render(); // update buttons
+  if(uiLockTimer) clearTimeout(uiLockTimer);
+  uiLockTimer = setTimeout(()=>{
+    uiLocked = false;
+    render();
+  }, ms);
+}
+
 
 $("btnPause").onclick = ()=>{
   if (state.phase === "paused") return;
@@ -2605,59 +2714,29 @@ $("btnDeal").onclick = ()=> {
 
   // Auto-cap bet before deal
   if (state && (state.phase === "betting" || state.phase === "roundOver")) {
-    let bet = floorEven($("betInGame").value);
+    let bet = floorEven($("betInput").value); // Changed from betInGame
     if (state.bank < bet) {
 
       bet = floorEven(state.bank);
-      $("betInGame").value = bet;
+      $("betInput").value = bet;
+      // Sync select if possible
+      const sel = $("betSelect");
+      if(sel) sel.value = bet;
+      
       callAction("set_bet", bet);
       toast(t("toast.bet_adjusted"));
     }
   }
 
   setTimeout(()=>{ 
+    lockUI(1500); // Deal animation is long
     callAction("deal"); 
   }, 50);
 };
 
 
 
-    $("btnReset").addEventListener("click", ()=>{
-      if (!resetArmed) armResetOnce();
-    });
 
-    $("btnReset").addEventListener("pointerdown", ()=>{
-      if (!resetArmed) return;
-      holdStart = performance.now();
-      const btn = $("btnReset");
-      btn.textContent = t("js.holding");
-      const wrap = document.createElement("div");
-      wrap.className = "prog";
-      const bar = document.createElement("div");
-      wrap.appendChild(bar);
-      btn.appendChild(wrap);
-
-      holdTimer = setInterval(()=>{
-        const t = performance.now() - holdStart;
-        const pct = Math.min(100, (t / 2000) * 100);
-        bar.style.width = pct + "%";
-        if (t >= 2000){
-          clearInterval(holdTimer); holdTimer=null;
-          doResetToTitle();
-        }
-      }, 30);
-    });
-
-    function cancelHold(){
-      if (holdTimer){ clearInterval(holdTimer); holdTimer = null; }
-      if (resetArmed){
-        $("btnReset").textContent = t("menu.reset"); // or toast.reset_hold?
-        $("btnReset").classList.add("danger");
-      }
-    }
-    $("btnReset").addEventListener("pointerup", cancelHold);
-    $("btnReset").addEventListener("pointerleave", cancelHold);
-    $("btnReset").addEventListener("pointercancel", cancelHold);
 
     // Start session (engine ready guard)
     $("btnStart").onclick = () => {
@@ -2689,7 +2768,15 @@ if (savedName && $("nameInput")) $("nameInput").value = savedName;
       if (bet > 5000) bet = 5000; // Cap at initial bank
       $("betInput").value = bet;
 
-      $("betInGame").value = bet;
+      $("betInput").value = bet;
+      
+      $("betInput").value = bet;
+      
+      // Sync select if possible
+      const sel = $("betSelect");
+      if(sel) sel.value = bet;
+
+      lockUI(800); // Wait for potential deal animation/profit update visual
       callAction("set_bet", bet);
 
 
@@ -2706,9 +2793,9 @@ if (savedName && $("nameInput")) $("nameInput").value = savedName;
 $("btnSetBet").onclick = ()=>{
   if (!state) return;
   const phase = state.phase;
-  let v = floorEven($("betInGame").value);
+  let v = floorEven($("betInput").value);
   if (state.bank < v) v = floorEven(state.bank); // Cap at current bank
-  $("betInGame").value = v;
+  $("betInput").value = v;
 
   // BETTING / roundOver 中は今まで通りエンジンに bet を送る
   if (phase === "betting" || phase === "roundOver") {
@@ -2734,6 +2821,7 @@ $("btnSetBet").onclick = ()=>{
     // Main actions (Dock)
 $("btnHit").onclick = ()=> {
   if (!state) return;
+  if (uiLocked) return; // Ignore spam
 
   if (state.phase === "offerInsurance") {
     const mx = state.insurance?.max ?? 0;
@@ -2743,23 +2831,46 @@ $("btnHit").onclick = ()=> {
     return callAction("buy_insurance", v); // YES
   }
 
+  lockUI(600); // Card animation ~420ms + margin
   return callAction("hit");
 };
 
 $("btnStand").onclick = ()=> {
   if (!state) return;
+  if (uiLocked && state.phase !== "offerInsurance") return; // Allow answering insurance? No, standard lock rules.
+
   if (state.phase === "offerInsurance"){
     $("insAmountSide").value = 0;
     return callAction("buy_insurance", 0);   // NO
   }
+  lockUI(1000); // Waiting for dealer turn start
   return callAction("stand");
 };
 
-// ★ Missing Event Listeners Added ★
-$("btnDoubleSide").onclick = ()=> callAction("double_down");
-$("btnSplitSide").onclick = ()=> callAction("split");
-$("btnSurrenderSide").onclick = ()=> callAction("surrender");
-$("btnEvenMoneySide").onclick = ()=> callAction("take_even_money");
+// New Dock Action Listeners
+$("btnDouble").onclick = ()=> callAction("double_down");
+$("btnSplit").onclick = ()=> callAction("split");
+$("btnSurrender").onclick = ()=> callAction("surrender");
+$("btnEvenMoney").onclick = ()=> callAction("take_even_money");
+
+// Bet Select Listener
+$("betSelect").onchange = (e) => {
+  if (!state) return;
+  const val = Number(e.target.value); // already int from value="100"
+  
+  // Sync hidden inputs for compatibility
+  $("betInput").value = val;
+  $("betInGame").value = val;
+
+  // If in valid betting phase, send action immediately
+  if (state.phase === "betting" || state.phase === "roundOver") {
+     callAction("set_bet", val);
+     if (state.phase === "roundOver") {
+        hideBoardAfterSet = true;
+        render();
+     }
+  }
+};
 
 // Session Over buttons
 $("btnSOTitle").onclick = ()=> doResetToTitle();
