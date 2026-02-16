@@ -688,7 +688,10 @@
       /* Ensure hidden if disabled per user request */
     }
     .dock .btn:disabled {
-      display: none !important;
+      /* display: none !important; */
+      opacity: 0.3 !important;
+      pointer-events: none !important;
+      filter: grayscale(1) !important;
     }
     
     @media (min-width: 600px) {
@@ -2505,19 +2508,62 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
 
 
     // ========= UI events =========
+    // ========= UI events (Chips) =========
+    function updateBet(addVal) {
+      if (!state) return;
+      // Use betInput as primary
+      let cur = Number($("betInput").value || 0);
+      let next = cur + addVal;
+      if (next < 0) next = 0;
+      if (state.bank < next) next = floorEven(state.bank); // Cap at bank
+      
+      $("betInput").value = next;
+      // Sync other inputs
+      if ($("betInGame")) $("betInGame").value = next;
+      if ($("betSelect")) $("betSelect").value = next;
+
+      // If in valid betting phase, send action immediately
+      if (state.phase === "betting" || state.phase === "roundOver") {
+         callAction("set_bet", next);
+         // If roundOver, hide board to show "Next Round" state
+         if (state.phase === "roundOver") {
+            hideBoardAfterSet = true;
+         }
+      }
+    }
+
     document.querySelectorAll('[data-add]').forEach(btn=>{
       btn.addEventListener("click", ()=>{
-        const cur = Number($("betInput").value||0);
-        $("betInput").value = cur + Number(btn.dataset.add);
+        updateBet(Number(btn.dataset.add));
       });
     });
 
     document.querySelectorAll('[data-add2]').forEach(btn=>{
       btn.addEventListener("click", ()=>{
-        const cur = Number($("betInGame").value||0);
-        $("betInGame").value = cur + Number(btn.dataset.add2);
+        updateBet(Number(btn.dataset.add2));
       });
     });
+
+    // Direct input change
+    function onBetInputChange(e) {
+      if (!state) return;
+      let val = floorEven(e.target.value);
+      if (val < 0) val = 0;
+      if (state.bank < val) val = floorEven(state.bank);
+
+      // Sync inputs
+      $("betInput").value = val;
+      if ($("betInGame")) $("betInGame").value = val;
+      if ($("betSelect")) $("betSelect").value = val;
+
+      if (state.phase === "betting" || state.phase === "roundOver") {
+         callAction("set_bet", val);
+         if (state.phase === "roundOver") hideBoardAfterSet = true;
+      }
+    }
+
+    if ($("betInput")) $("betInput").onchange = onBetInputChange;
+    if ($("betInGame")) $("betInGame").onchange = onBetInputChange;
 
     $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
@@ -2737,7 +2783,7 @@ $("btnDeal").onclick = ()=> {
   }
 
   setTimeout(()=>{ 
-    lockUI(1500); // Deal animation is long
+    lockUI(800); // Deal animation is long
     callAction("deal"); 
   }, 50);
 };
