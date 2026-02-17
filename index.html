@@ -1411,6 +1411,10 @@ window.CG.p = new Promise((resolve) => {
     <button class="btn danger" id="btnSurrender" disabled><span data-i18n="cmd.surrender">SURR</span></button>
     <button class="btn" id="btnEvenMoney" disabled style="display:none;"><span data-i18n="cmd.even_money">EVEN</span></button>
   </nav>
+          </div><!-- /bd (CASINO TABLE) -->
+        </div><!-- /card (CASINO TABLE) -->
+      </div><!-- /grid -->
+    </div><!-- /screenGame -->
 
   <!-- OVERLAYS -->
 
@@ -2640,18 +2644,10 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
       if (state.bank < next) next = floorEven(state.bank); // Cap at bank
       
       $("betInput").value = next;
-      // Sync other inputs
-      if ($("betInGame")) $("betInGame").value = next;
       if ($("betSelect")) $("betSelect").value = next;
-
-      // If in valid betting phase, send action immediately
-      if (state.phase === "betting" || state.phase === "roundOver") {
-         callAction("set_bet", next);
-         // If roundOver, hide board to show "Next Round" state
-         if (state.phase === "roundOver") {
-            hideBoardAfterSet = true;
-         }
-      }
+      
+      // Send update
+      callAction("set_bet", next);
     }
 
     document.querySelectorAll('[data-add]').forEach(btn=>{
@@ -2853,12 +2849,15 @@ function lockUI(ms){
 
 
 $("btnPause").onclick = ()=>{
-  if (state.phase === "paused") return;
+  if (state && state.phase === "paused") return;
   //if (!state) return toast("ゲーム中に使えます");
   //if (!$("screenGame").classList.contains("active")) return toast("ゲーム中に使えます");
 
-  callAction("set_paused", 1);
-  pausedAt = performance.now();
+  // Call engine pause if possible
+  if(state) {
+    callAction("set_paused", 1);
+    pausedAt = performance.now();
+  }
   setPause(true);
 };
 
@@ -3058,11 +3057,11 @@ $("btnInsMaxOverlay").onclick = () => {
 // Bet Select Listener
 $("betSelect").onchange = (e) => {
   if (!state) return;
-  const val = Number(e.target.value); // already int from value="100"
+  const val = Number(e.target.value); 
   
-  // Sync hidden inputs for compatibility
-  $("betInput").value = val;
-  $("betInGame").value = val;
+  // Sync input
+  if($("betInput")) $("betInput").value = val;
+  if($("betInGame")) $("betInGame").value = val;
 
   // If in valid betting phase, send action immediately
   if (state.phase === "betting" || state.phase === "roundOver") {
