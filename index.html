@@ -42,6 +42,12 @@
 
     body{
       margin:0;
+      /* Safe Area & Touch Action */
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      touch-action: manipulation;
+      
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
       color:var(--text);
       overflow-x:hidden;
@@ -235,6 +241,7 @@
       box-shadow: 0 14px 35px rgba(0,0,0,.25);
       font-weight: 900;
       letter-spacing:.06em;
+      touch-action: manipulation;
     }
     .btn:hover{ box-shadow: 0 22px 60px rgba(0,0,0,.32); filter: brightness(1.06); }
     .btn:active{ transform: translateY(1px) scale(.99); }
@@ -805,9 +812,17 @@
       left:50%; transform:translateX(-50%);
       bottom: calc(var(--dockH) + 18px + env(safe-area-inset-bottom, 0px));
       display:flex; flex-direction:column; gap:8px;
+      /* Mobile safe area adjustments */
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      padding-left: calc(12px + env(safe-area-inset-left));
+      padding-right: calc(12px + env(safe-area-inset-right));
       z-index:99;
       pointer-events:none;
     }
+    /* Touch Targets */
+    .toastWrap .btn, .toastWrap .chipbtn { min-height:44px; min-width:44px; }
+    .toastWrap .opt { min-height:44px; }
+    .toastWrap .opt label { padding:8px 0; }
     .toast{
       pointer-events:none;
       padding:10px 12px;
@@ -1205,6 +1220,7 @@ window.CG.p = new Promise((resolve) => {
             <div class="opt"><label><input type="checkbox" id="optDAS" checked> <span data-i18n="opt.das">DAS</span></label></div>
             <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> <span data-i18n="opt.split_bj">Split BJ as BJ</span></label></div>
             <div class="opt"><label><input type="checkbox" id="optH17" checked> <span data-i18n="opt.h17">Dealer hits Soft 17</span></label></div>
+            <div class="opt"><label><input type="checkbox" id="optHaptic" checked> <span data-i18n="opt.haptic">Vibration (Haptics)</span></label></div>
           </div>
 
           <div class="divider"></div>
@@ -1606,6 +1622,22 @@ window.CG.p = new Promise((resolve) => {
       const m = Math.floor(s/60);
       const r = s%60;
       return `${m}:${String(r).padStart(2,"0")}`;
+    }
+
+    document.querySelectorAll("button").forEach(b=>{
+      b.addEventListener("click", ()=>{ vibrate(8); });
+    });
+    // Chips are already covered by "button" selector if they are <button>
+    // But let's ensure specific ones feel good
+    document.querySelectorAll(".chipbtn").forEach(b=>{
+       b.addEventListener("touchstart", ()=>{ vibrate(12); }, {passive:true});
+    });
+
+    // ========= Haptics =========
+    function vibrate(ms){
+      if (!$("optHaptic") || !$("optHaptic").checked) return;
+      if (typeof navigator.vibrate !== "function") return;
+      try{ navigator.vibrate(ms); } catch(e){}
     }
 
     function setEngineBadge(text, kind){
