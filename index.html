@@ -523,6 +523,8 @@
       fill:none;
     }
 
+    #screenTitle #debugPhase { display:none; }
+
     /* Zones on table */
     .dealerZone{
       position:absolute;
@@ -1222,7 +1224,7 @@ window.CG.p = new Promise((resolve) => {
             <div>
               <div class="muted" data-i18n="title.bet_hint">Bet（偶数推奨：Insurance = bet/2 で端数回避）</div>
               <div class="row" style="margin-top:8px;">
-                <input id="betInput" type="number" value="100" step="10" min="10">
+                <input id="betInputTitle" type="number" value="100" step="10" min="10">
                 <div class="chips">
                   <button class="chipbtn" data-add="10">+10</button>
                   <button class="chipbtn" data-add="50">+50</button>
@@ -1268,40 +1270,53 @@ window.CG.p = new Promise((resolve) => {
         <div class="card">
           <div class="hd">
             <h2 data-i18n="game.garage">CASINO TABLE</h2>
-            <div class="badge" id="phaseBadge">-</div>
+            <div class="pill" id="debugPhase" style="display:none; color:#888;"></div>
           </div>
           <div class="bd">
-        <!-- Bet / Info Card (Moved Top) -->
-        <div class="card">
-          <div class="hd">
-            <h2 data-i18n="game.bet_info">BET / INFO</h2>
-            <div class="badge" id="rulesMini">-</div>
-          </div>
-          <div class="bd">
-            <div class="row">
-              <div class="muted" data-i18n="game.bet">Bet</div>
-              <select id="betSelect" style="
-                  padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
-                  background:rgba(0,0,0,.22); color:#fff; font-weight:bold; width:140px;
-                  font-size:16px; outline:none;">
-                <option value="10">10</option>
-                <option value="50">50</option>
-                <option value="100" selected>100</option>
-                <option value="200">200</option>
-                <option value="500">500</option>
-                <option value="1000">1000</option>
-                <option value="9999999">MAX</option>
-              </select>
-              <input id="betInput" type="number" value="100" step="10" style="display:none">
-              <button class="btn" id="btnSetBet" data-i18n="game.set" style="display:none">SET</button>
-            </div>
-            
-            <div class="row chips" style="display:none; margin-top:10px;">
-              <button class="chipbtn" data-add2="10">+10</button>
-              <button class="chipbtn" data-add2="50">+50</button>
-              <button class="chipbtn" data-add2="100">+100</button>
-              <button class="chipbtn" data-add2="200">+200</button>
-            </div>
+            <!-- Bet / Info Card (Moved Top) -->
+            <div class="card">
+              <div class="hd">
+                <h2 data-i18n="game.bet_info">BET / INFO</h2>
+                <div class="badge" id="rulesMini">-</div>
+              </div>
+              <div class="bd">
+                <div class="row">
+                  <div class="muted" data-i18n="game.bet">Bet</div>
+                  
+                  <!-- Bet Display -->
+                  <div style="display:flex; justify-content:center; margin-bottom:8px; width:100%;">
+                     <input id="betInput" type="number" readonly value="100" style="
+                         padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
+                         background:rgba(0,0,0,.4); color:#fff; font-weight:bold; width:100%;
+                         font-size:20px; text-align:center; outline:none;">
+                  </div>
+
+                  <!-- Bet Buttons -->
+                  <style>
+                    .bet-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; width:100%; }
+                    .btn-bet { 
+                       padding:8px 2px; border-radius:8px; border:none; 
+                       background:#444; color:#fff; font-weight:bold; cursor:pointer;
+                       font-size:12px;
+                    }
+                    .btn-bet:active { background:#666; transform:scale(0.95); }
+                    .btn-bet:disabled { opacity:0.5; transform:none; }
+                    .btn-bet.plus { background: #2e7d32; }
+                    .btn-bet.minus { background: #c62828; }
+                  </style>
+                  <div class="bet-grid">
+                      <!-- 上段: プラス -->
+                      <button class="btn-bet plus" onclick="updateBet(10)">+10</button>
+                      <button class="btn-bet plus" onclick="updateBet(100)">+100</button>
+                      <button class="btn-bet plus" onclick="updateBet(1000)">+1k</button>
+                      <button class="btn-bet plus" onclick="updateBet(10000)">+10k</button>
+                      <!-- 下段: マイナス -->
+                      <button class="btn-bet minus" onclick="updateBet(-10)">-10</button>
+                      <button class="btn-bet minus" onclick="updateBet(-100)">-100</button>
+                      <button class="btn-bet minus" onclick="updateBet(-1000)">-1k</button>
+                      <button class="btn-bet minus" onclick="updateBet(-10000)">-10k</button>
+                  </div>
+                </div>
 
             <div class="divider"></div>
             <!-- More Panel removed -->
@@ -2258,7 +2273,15 @@ function beginSessionOverFlow(st){
       }
       const hideBoard =
         hideBoardAfterSet && (phase === "roundOver" || phase === "sessionOver");
-      $("subLine").textContent = `phase: ${state.phase}`;
+      
+      if($("debugPhase")) {
+          $("debugPhase").style.display = "flex"; 
+          $("debugPhase").textContent = "phase: " + state.phase;
+      }
+      
+      if($("subLine") && $("screenGame") && $("screenGame").classList.contains("active")) {
+          $("subLine").textContent = `phase: ${state.phase}`;
+      }
 
       // Bank anim
       const bankEl = $("bank");
@@ -2275,7 +2298,7 @@ function beginSessionOverFlow(st){
       $("round").textContent = `${state.session.round}/${state.session.roundLimit}`;
       $("time").textContent = fmtTime(state.session.timeLeftMs);
 
-      $("phaseBadge").textContent = state.phase;
+      if ($("phaseBadge")) $("phaseBadge").textContent = state.phase;
       $("rulesMini").textContent = [
         state.rules.allowDouble ? "Dbl" : "",
         state.rules.allowSplit ? "Spl" : "",
@@ -2620,6 +2643,7 @@ prevPhase = state.phase;
 prevPhase = state.phase;
 
 
+      updateBettingControls(); // Enable/Disable bet buttons
       console.log("render ok", state.phase);
 
     }
@@ -2634,33 +2658,37 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
 
 
     // ========= UI events =========
-    // ========= UI events (Chips) =========
-    function updateBet(addVal) {
+    // ========= UI events (Buttons) =========
+    // Exposed to global scope for onclick attributes
+    window.updateBet = function(addVal) {
       if (!state) return;
-      // Use betInput as primary
       let cur = Number($("betInput").value || 0);
       let next = cur + addVal;
       if (next < 0) next = 0;
       if (state.bank < next) next = floorEven(state.bank); // Cap at bank
       
       $("betInput").value = next;
-      if ($("betSelect")) $("betSelect").value = next;
+      // if ($("betSelect")) $("betSelect").value = next; // Removed
       
       // Send update
       callAction("set_bet", next);
+    };
+
+    // UI Update Logic for Disable
+    function updateBettingControls() {
+        if (!state) return;
+        const canBet = (state.phase === "betting" || state.phase === "roundOver");
+        
+        // Disable buttons
+        const btns = document.querySelectorAll(".btn-bet");
+        btns.forEach(b => b.disabled = !canBet);
+        
+        if (!canBet) {
+            $("betInput").style.opacity = "0.5";
+        } else {
+            $("betInput").style.opacity = "1";
+        }
     }
-
-    document.querySelectorAll('[data-add]').forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        updateBet(Number(btn.dataset.add));
-      });
-    });
-
-    document.querySelectorAll('[data-add2]').forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        updateBet(Number(btn.dataset.add2));
-      });
-    });
 
     // Direct input change
     function onBetInputChange(e) {
@@ -2873,15 +2901,22 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 $("btnQuit").onclick = ()=> doResetToTitle();
 $("btnSORevive").onclick = doRevive;
 
-    $("btnInsMaxSide").onclick = ()=> {
-  if (!state || state.phase !== "offerInsurance") return;
-  $("insAmountSide").value = state.insurance.max|0;
-};
-$("btnInsZeroSide").onclick = ()=> {
-  if (!state || state.phase !== "offerInsurance") return;
-  $("insAmountSide").value = 0;
-};
-$("btnEvenMoneyIns").onclick = ()=> callAction("take_even_money");
+    // ========= UI events (Insurance) =========
+    if ($("btnInsMaxSide")) {
+        $("btnInsMaxSide").onclick = () => {
+          if(!state) return;
+          $("insAmountSide").value = state.insurance.max;
+        };
+    }
+    if ($("btnInsZeroSide")) {
+        $("btnInsZeroSide").onclick = () => {
+          if(!state) return;
+          $("insAmountSide").value = 0;
+        };
+    }
+    
+    $("btnEvenMoneyIns").onclick = () => {callAction("take_even_money");};
+
 
 $("btnDebugAce").onclick = () => {
   $("btnDeal").disabled = true;
@@ -2927,55 +2962,52 @@ $("btnDeal").onclick = ()=> {
     $("btnStart").onclick = () => {
       try{ soHideOverlay(); }catch(e){}
 
-      sessionEndAdDone = false; // セッション終了広告フラグリセット
+      sessionEndAdDone = false; 
       if (!apiReady()){
         toast(t("ui.engine_not_ready"));
         return;
       }
+
+      // タイトル画面のベット入力から値を取得
+      let bet = 100;
+      if ($("betInputTitle")) bet = Number($("betInputTitle").value);
+      if (!bet || bet < 10) bet = 10;
+      bet = floorEven(bet);
+      if (bet > 5000) bet = 5000; // 初期bankでキャップ
 
       const {lo,hi} = seed64();
       const mask = rulesMaskFromUI();
       const sessionSeconds = 300;
       const roundLimit = 12;
 
+      // セッション開始
       callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
 
-      // ===== Ranking session begin =====
-currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-sessionStartBank = Number(state?.bank || 0);   // start_session直後のbank
-sessionFinalized = false;
+      // ===== ランキング用セッション初期化 =====
+      currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      sessionStartBank = Number(state?.bank || 0);
+      sessionFinalized = false;
 
       const savedName = localStorage.getItem(NAME_KEY);
-if (savedName && $("nameInput")) $("nameInput").value = savedName;
+      if (savedName && $("nameInput")) $("nameInput").value = savedName;
 
-      // Bet cap for start
-      let bet = floorEven($("betInput").value);
-      if (bet > 5000) bet = 5000; // Cap at initial bank
-      $("betInput").value = bet;
-
-      $("betInput").value = bet;
-      
-      $("betInput").value = bet;
-      
-      // Sync select if possible
-      const sel = $("betSelect");
-      if(sel) sel.value = bet;
-
-      lockUI(800); // Wait for potential deal animation/profit update visual
+      // ベット設定・同期
+      if ($("betInput")) $("betInput").value = bet;
       callAction("set_bet", bet);
 
+      // アニメーションキャッシュクリア
+      prevDealerCards = [];
+      prevPlayerLens = [];
+      prevBank = null;
+      hideBoardAfterSet = false;
 
-      // clear animation caches
-       prevDealerCards = [];
-       prevPlayerLens = [];
-       prevBank = null;
-       hideBoardAfterSet = false;   // ← 追加：SET 後に盤面を隠す用
+      lockUI(800);
       goScreen("game");
       startTick();
       toast(t("toast.good_luck"));
     };
 
-$("btnSetBet").onclick = ()=>{
+if ($("btnSetBet")) $("btnSetBet").onclick = ()=>{
   if (!state) return;
   const phase = state.phase;
   let v = floorEven($("betInput").value);
@@ -3055,7 +3087,7 @@ $("btnInsMaxOverlay").onclick = () => {
 };
 
 // Bet Select Listener
-$("betSelect").onchange = (e) => {
+if ($("betSelect")) $("betSelect").onchange = (e) => {
   if (!state) return;
   const val = Number(e.target.value); 
   
@@ -3125,12 +3157,15 @@ $("nameInput")?.addEventListener("input", ()=>{
 
     });
 
-    // bet hint pre-engine
+    // bet hint pre-engine（タイトル画面用）
     function updateBetHintPreEngine(){
-      const v = floorEven($("betInput").value);
-      $("betHint").textContent = `入力=${$("betInput").value} → 偶数化=${v}`;
+      const el = $("betInputTitle") || $("betInput");
+      if (!el) return;
+      const v = floorEven(el.value);
+      if ($("betHint")) $("betHint").textContent = `入力=${el.value} → 偶数化=${v}`;
     }
-    $("betInput").addEventListener("input", updateBetHintPreEngine);
+    if ($("betInputTitle")) $("betInputTitle").addEventListener("input", updateBetHintPreEngine);
+    else if ($("betInput")) $("betInput").addEventListener("input", updateBetHintPreEngine);
     updateBetHintPreEngine();
 
     // kick engine sync loop
