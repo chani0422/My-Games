@@ -42,6 +42,7 @@ Module().then(mod => {
     revive: Engine.cwrap('revive', 'number', ['number']),
     add_funds: Engine.cwrap('add_funds', 'number', ['number']),
     debug_set_shoe: Engine.cwrap('debug_set_shoe', 'number', ['string']),
+    debug_deal_ace: Engine.cwrap('debug_deal_ace', 'number', []),
   };
 
 globalThis.Engine = Engine;

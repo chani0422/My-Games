@@ -144,6 +144,27 @@
       text-overflow:ellipsis;
       text-shadow: 0 18px 40px rgba(0,0,0,.45);
       font-family: var(--font-serif);
+      transition: opacity 0.3s;
+    }
+    .topbar.in-game .brandTxt h1 { display:none; }
+    
+    /* Stats Layout */
+    .stats-container {
+      display:flex; flex-direction:column; align-items:flex-end; gap:2px;
+    }
+    .stats-row {
+      display:flex; gap:6px; align-items:center;
+    }
+    .stats-row.bottom {
+      margin-top:2px;
+    }
+    /* Mobile tweaks for 2-rows */
+    @media(max-width:600px){
+      .stats-container { gap:1px; }
+      .pill { min-width:auto; padding:6px 8px; }
+      .pill span { font-size:10px; }
+      .pill b { font-size:11px; }
+      .btn.ghost { padding:6px 8px; font-size:11px; }
     }
     .sub{
       font-size:12px;
@@ -732,7 +753,16 @@
       z-index:60;
       backdrop-filter: blur(10px);
     }
+    .overlay.no-blur{
+      backdrop-filter: none !important;
+      background: rgba(0,0,0,0.20);
+    }
     .overlay.show{ display:flex }
+    .overlay.no-blur .modal {
+      background: rgba(0,0,0,0.80);
+      /* Use a simpler background to ensure 80% opacity is perceivable */
+      box-shadow: 0 30px 90px rgba(0,0,0,.65);
+    }
     .modal{
       width:min(620px, 100%);
       border-radius: 18px;
@@ -1114,15 +1144,17 @@ window.CG.p = new Promise((resolve) => {
     </div>
   </div>
 
-  <div class="stats">
-    <div class="pill"><span data-i18n="stats.bank">Bank</span><b id="bank">-</b></div>
-    <div class="pill"><span data-i18n="stats.round">Round</span><b id="round">-</b></div>
-    <div class="pill"><span data-i18n="stats.time">Time</span><b id="time">-</b></div>
-
-    <button class="btn ghost" id="btnPause" title="Menu" data-i18n="menu.menu">MENU</button>
-    <button class="btn ghost" id="btnHistory" title="History" data-i18n="menu.history">History</button>
-
-    <button class="btn ghost" id="btnRanking" title="Leaderboard" data-i18n="menu.ranking">Ranking</button>
+  <div class="stats-container">
+    <div class="stats-row top">
+      <div class="pill"><span data-i18n="stats.bank">Bank</span><b id="bank">-</b></div>
+      <div class="pill"><span data-i18n="stats.round">Round</span><b id="round">-</b></div>
+      <div class="pill"><span data-i18n="stats.time">Time</span><b id="time">-</b></div>
+    </div>
+    <div class="stats-row bottom">
+      <button class="btn ghost" id="btnPause" title="Menu" data-i18n="menu.menu">MENU</button>
+      <button class="btn ghost" id="btnHistory" title="History" data-i18n="menu.history">History</button>
+      <button class="btn ghost" id="btnRanking" title="Leaderboard" data-i18n="menu.ranking">Ranking</button>
+    </div>
   </div>
 </div>
 
@@ -1250,7 +1282,7 @@ window.CG.p = new Promise((resolve) => {
   </div>
 </div>
 
-            <div class="small" id="debugLine">-</div>
+
           </div>
         </div>
 
@@ -1323,6 +1355,7 @@ window.CG.p = new Promise((resolve) => {
   <nav class="dock full" aria-label="main controls">
     <!-- Row 1 (Mobile) / Left (Desktop) -->
     <button class="btn primary" id="btnDeal" disabled><span data-i18n="dock.deal">DEAL</span></button>
+    <button class="btn secondary small" id="btnDebugAce" disabled style="margin-left:4px; font-size:10px; padding:0 8px;">ACE</button>
     <button class="btn" id="btnHit" disabled><span data-i18n="dock.hit">HIT</span></button>
     <button class="btn" id="btnStand" disabled><span data-i18n="dock.stand">STAND</span></button>
     
@@ -1497,6 +1530,42 @@ window.CG.p = new Promise((resolve) => {
   </div>
 </div>
 
+
+
+<!-- Insurance (No Blur) -->
+<div class="overlay no-blur" id="overlayInsurance">
+  <div class="modal">
+    <div class="hd">
+      <b data-i18n="ins.title">INSURANCE?</b>
+    </div>
+    <div class="bd">
+      <div style="text-align:center; padding:20px 0;">
+        <div class="soBig" style="font-size:32px; margin-bottom:10px;">DEALER ACE</div>
+        
+        <p class="muted" style="margin-bottom:20px;">
+          インシュランスに賭けますか？
+        </p>
+
+        <!-- Buttons Row: Yes(Left), No(Right) -->
+        <div class="row" style="justify-content:center; gap:24px; margin-bottom: 20px;">
+          <button class="btn primary big" id="btnInsYes" style="min-width:140px;" data-i18n="ins.yes">YES</button>
+          <button class="btn danger big" id="btnInsNo" style="min-width:140px;" data-i18n="ins.no">NO</button>
+        </div>
+
+        <!-- Input Row -->
+        <div class="row" style="justify-content:center; gap:10px; margin-bottom:8px;">
+            <input id="insAmountOverlay" type="number" value="0" step="10" 
+                   style="width:100px; padding:8px; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.2); color:#fff; border-radius:8px; font-size:16px; text-align:center;">
+            <button class="btn ghost" id="btnInsMaxOverlay">MAX</button>
+        </div>
+        
+        <!-- Hint -->
+        <div class="muted small" id="insHintOverlay" style="opacity:0.8;">-</div>
+
+      </div>
+    </div>
+  </div>
+</div>
 
   <div class="toastWrap" id="toastWrap"></div>
 
@@ -1689,7 +1758,7 @@ function apiReady(){
         setEngineBadge("READY", "good");
         $("subLine").textContent = "ready.";
         $("btnStart").disabled = false;
-        $("btnMore").disabled = false;
+
 
         toast("Engine ready!");
         return;
@@ -1784,6 +1853,9 @@ function goScreen(name){
 
   $("screenTitle").classList.toggle("active", name==="title");
   $("screenGame").classList.toggle("active", willGame);
+  
+  // Hide title text in game
+  document.querySelector(".topbar").classList.toggle("in-game", willGame);
 
   // CrazyGames: gameplay on/off
   if (willGame && !wasGame) window.CG?.gameplayStart?.();
@@ -2327,6 +2399,7 @@ const insMode = (state.phase === "offerInsurance");
 if (insMode) {
   // Insurance 中は DOCK = YES / NO 専用
   setDis("btnDeal", true);
+  setDis("btnDebugAce", true);
   setDis("btnHit", !can.insurance);
   setDis("btnStand", !can.insurance);
   setDis("btnDouble", true);
@@ -2336,6 +2409,7 @@ if (insMode) {
   // Betting phase logic
   const forceEnableDeal = ((state.phase === "betting" || state.phase === "roundOver") && state.bank > 0);
   setDis("btnDeal", (!can.deal && !forceEnableDeal) || uiLocked);
+  setDis("btnDebugAce", (!can.deal && !forceEnableDeal) || uiLocked);
 
   setDis("btnHit", !can.hit || uiLocked);
   setDis("btnStand", !can.stand || uiLocked); // Stand also locked to prevent race? User said "Deal/Hit".
@@ -2411,12 +2485,7 @@ if (insMode) {
         metaEl.textContent = `${t("dyn.streak")} ${state.roundResult.streak} / ${t("dyn.bonus")} ${state.roundResult.bonusPercent}% (+${state.roundResult.bonusApplied})`;
       }
 
-      $("debugLine").innerHTML = `
-        err=${state.lastErrorCode} "${state.lastError||""}"<br>
-        can: D=${can.double?"o":"x"} S=${can.split?"o":"x"}<br>
-        Rules: D=${state.rules.allowDouble?"on":"off"} S=${state.rules.allowSplit?"on":"off"}<br>
-        bank=${state.bank} bet=${state.player?.hands?.[state.player.activeHandIndex]?.bet||0}
-      `;
+
 
       const v = floorEven($("betInput").value);
       $("betHint").textContent = `${t("dyn.input")}=${$("betInput").value} → ${t("dyn.even")}=${v}`;
@@ -2447,38 +2516,30 @@ function setDockLabel(id, label, key){
 
 
 if (insMode){
-  setDockLabel("btnHit", t("ins.yes"), "Y");
-  setDockLabel("btnStand", t("ins.no"), "N");
-
-  // ボタンの enable/disable は上の setDis ブロックに任せる
-
-  // 右側：金額入力表示
-  $("insSideBox").style.display = "block";
-  $("insAmountSide").disabled = false;
-
+  // Show new overlay
+  $("overlayInsurance").classList.add("show");
+  
   const mx = state.insurance.max|0;
-  $("insHintSide").textContent = `${t("dyn.max")} ${mx} (bet/2)`;
-  const a = $("insAmountSide");
+  $("insHintOverlay").textContent = `${t("dyn.max")} ${mx} (bet/2)`;
+  
+  const a = $("insAmountOverlay");
   a.max = mx;
-  a.step = 2;
-
+  a.step = 10;
+  
+  // Set default value only if just entering phase
   if (prevPhase !== "offerInsurance"){
     a.value = mx;
   } else {
-    a.value = Math.min(floorEven(a.value), mx);
+    // Keep user input but clamp
+    a.value = Math.min(a.value, mx); // Simple clamp
   }
 
-  $("btnEvenMoneyIns").style.display = (can.evenMoney ? "block" : "none");
-  $("btnEvenMoneyIns").disabled = !can.evenMoney;
+  // Update YES button state if amount is 0 (optional, but good UX)
+  // $("btnInsYes").disabled = (Number(a.value) <= 0);
 
 } else {
-  setDockLabel("btnHit", t("dock.hit"), "H");
-  setDockLabel("btnStand", t("dock.stand"), "S");
-
-  $("insSideBox").style.display = "none";
-  $("insAmountSide").disabled = true;
-
-  // HIT/STAND の disable は setDis に任せる
+  // Hide overlay
+  $("overlayInsurance").classList.remove("show");
 }
 
 
@@ -2762,6 +2823,16 @@ $("btnInsZeroSide").onclick = ()=> {
 };
 $("btnEvenMoneyIns").onclick = ()=> callAction("take_even_money");
 
+$("btnDebugAce").onclick = () => {
+  $("btnDeal").disabled = true;
+  $("btnDebugAce").disabled = true;
+  // Auto-cap bet logic skipped for brevity on debug button, assuming valid bet
+  setTimeout(()=>{ 
+    lockUI(800); 
+    callAction("debug_deal_ace"); 
+  }, 50);
+};
+
 $("btnDeal").onclick = ()=> {
   $("btnHit").disabled = true;
   $("btnStand").disabled = true;
@@ -2907,6 +2978,22 @@ $("btnSplit").onclick = ()=> callAction("split");
 $("btnSurrender").onclick = ()=> callAction("surrender");
 $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
 
+// Insurance (New)
+$("btnInsNo").onclick = () => {
+  callAction("buy_insurance", 0);
+  $("overlayInsurance").classList.remove("show");
+};
+$("btnInsYes").onclick = () => {
+  const val = Number($("insAmountOverlay").value);
+  callAction("buy_insurance", val);
+  $("overlayInsurance").classList.remove("show");
+};
+$("btnInsMaxOverlay").onclick = () => {
+  if(!state) return;
+  const mx = state.insurance.max|0;
+  $("insAmountOverlay").value = mx;
+};
+
 // Bet Select Listener
 $("betSelect").onchange = (e) => {
   if (!state) return;
@@ -3014,6 +3101,8 @@ $("nameInput")?.addEventListener("input", ()=>{
   }
   window.addEventListener("resize", resizeFx);
   resizeFx();
+
+
 
   class Particle {
     constructor(x, y, color){
