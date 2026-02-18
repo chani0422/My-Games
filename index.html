@@ -154,6 +154,12 @@
     }
     .topbar.in-game .brandTxt h1 { display:none; }
     
+    /* Title screen: hide Round/Time */
+    .topbar:not(.in-game) .stat-round,
+    .topbar:not(.in-game) .stat-time {
+      display: none;
+    }
+    
     /* Stats Layout */
     .stats-container {
       display:flex; flex-direction:column; align-items:flex-end; gap:2px;
@@ -168,7 +174,7 @@
     @media(max-width:600px){
       .stats-container { gap:1px; }
       /* モバイルで過剰なmin-widthを削除 */
-      .pill { min-width:0; width:auto; flex:1 1 auto; padding:4px 6px; justify-content:center; }
+      .pill { min-width:0; width:auto; flex:0 0 auto; padding:4px 6px; justify-content:center; }
       .pill span { font-size:10px; }
       .pill b { font-size:11px; }
       
@@ -216,7 +222,7 @@
       border:1px solid var(--border);
       border-radius:999px;
       background: rgba(0,0,0,.20);
-      min-width: 140px;
+      min-width: 100px;
       box-shadow: 0 18px 40px rgba(0,0,0,.22);
     }
     .pill span{font-size:12px;color:var(--muted)}
@@ -1206,8 +1212,8 @@ window.CG.p = new Promise((resolve) => {
   <div class="stats-container">
     <div class="stats-row top">
       <div class="pill"><span data-i18n="stats.bank">Bank</span><b id="bank">-</b></div>
-      <div class="pill"><span data-i18n="stats.round">Round</span><b id="round">-</b></div>
-      <div class="pill"><span data-i18n="stats.time">Time</span><b id="time">-</b></div>
+      <div class="pill stat-round"><span data-i18n="stats.round">Round</span><b id="round">-</b></div>
+      <div class="pill stat-time"><span data-i18n="stats.time">Time</span><b id="time">-</b></div>
     </div>
     <div class="stats-row bottom">
       <button class="btn ghost" id="btnPause" title="Menu" data-i18n="menu.menu">MENU</button>
