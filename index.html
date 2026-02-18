@@ -1986,7 +1986,7 @@ function setPause(paused) {
 
     function doResetToTitle(){
       stopTick();
-      stopTick();
+      // stopTick();
       callAction("reset_session");
       $("overlayPause").classList.remove("show");
       $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
@@ -2419,7 +2419,7 @@ function beginSessionOverFlow(st){
         if (reveal) el.classList.add("flipIn");
 
         dWrap.appendChild(el);
-        dWrap.appendChild(el);
+        // dWrap.appendChild(el); //重複
       });
       } // DealerJson チェック終了
       prevDealerCards = dealerCards.slice();
@@ -2495,7 +2495,7 @@ header.innerHTML = `
         ph.appendChild(box);
 
         prevPlayerLens[i] = (h.cards||[]).length;
-        prevPlayerLens[i] = (h.cards||[]).length;
+        // prevPlayerLens[i] = (h.cards||[]).length;
       });
       } // playerJson チェック終了
       prevPlayerJson = playerJson; // プレイヤー状態をキャッシュ

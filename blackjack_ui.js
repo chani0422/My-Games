@@ -40,7 +40,7 @@ Module().then(mod => {
     
       next_round: Engine.cwrap('next_round', 'number', []),
     revive: Engine.cwrap('revive', 'number', ['number']),
-    revive: Engine.cwrap('revive', 'number', ['number']),
+    // revive: Engine.cwrap('revive', 'number', ['number']),
     add_funds: Engine.cwrap('add_funds', 'number', ['number']),
     // debug_set_shoe: Engine.cwrap('debug_set_shoe', 'number', ['string']),
     // debug_deal_ace: Engine.cwrap('debug_deal_ace', 'number', []),
