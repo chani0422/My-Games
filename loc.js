@@ -361,14 +361,18 @@ function setLanguage(lang){
   }
   currentLang = lang;
   localStorage.setItem('bj_lang', lang);
-  
-  // Set html lang attribute
-  document.documentElement.lang = lang;
-  
-  updateDOM();
-  
-  // Trigger custom event if needed
-  window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+
+  const apply = () => {
+    document.documentElement.lang = lang;
+    updateDOM();
+    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", apply, { once: true });
+  } else {
+    apply();
+  }
 }
 
 // Auto init
