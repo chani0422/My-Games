@@ -1233,8 +1233,16 @@ window.CG.p = new Promise((resolve) => {
           <p data-i18n="title.sub">ランキングで自己ベスト更新を目指せ！！</p>
 
           <div class="ctaRow">
-            <button class="btn primary ctaBig" id="btnStart" disabled data-i18n="title.deal_start">DEAL / START</button>
-            <button class="btn ghost" id="btnHowTitle" data-i18n="title.how">遊び方</button>
+            <!-- 既存のStartボタンを廃止し、2つのモードボタンを設置 -->
+            <button class="btn primary ctaBig" id="btnStartChallenge" disabled>
+              Challenge<br><span style="font-size:12px;font-weight:normal">Bank 5000</span>
+            </button>
+            <button class="btn primary ctaBig" id="btnStartNormal" disabled>
+              Normal<br><span style="font-size:12px;font-weight:normal">Save Bank</span>
+            </button>
+          </div>
+          <div class="ctaRow" style="margin-top:12px; justify-content:center;">
+             <button class="btn ghost" id="btnHowTitle" data-i18n="title.how">遊び方</button>
           </div>
         </div>
 
@@ -1451,6 +1459,33 @@ window.CG.p = new Promise((resolve) => {
     </div><!-- /screenGame -->
 
   <!-- オーバーレイ -->
+
+  <!-- 破産オーバーレイ -->
+  <div class="overlay" id="overlayBankruptcy">
+    <div class="modal">
+      <div class="hd">
+        <b>BANKRUPTCY</b>
+        <span class="badge bad">LOSE</span>
+      </div>
+      <div class="bd">
+        <div style="text-align:center; padding:20px 0;">
+          <div class="soBig" style="color:#ff4d4d;" data-i18n="bank.bankruptcy">YOU ARE BANKRUPT</div>
+          <div class="soSub" style="margin-top:10px;" data-i18n="bank.revive_hint">チップがなくなりました。<br>広告を見て復活しますか？</div>
+          
+          <div id="adErrorMsg" style="color:#ff4d4d; font-size:12px; margin-top:10px; display:none;" data-i18n="ad.load_fail">
+            広告の読み込みに失敗しました。もう一度お試しください。
+          </div>
+        </div>
+        
+        <div class="soBtns">
+          <button class="btn ghost" id="btnBankruptTitle" data-i18n="cmd.title">TITLE</button>
+          <button class="btn primary ctaBig" id="btnBankruptAd">
+            <span style="font-size:14px">WATCH AD</span><br>+5000
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- セッション終了フロー -->
   <div class="overlay" id="overlaySessionOver">
@@ -1855,7 +1890,8 @@ function apiReady(){
         window.CG?.loadingStop?.();
         
         $("subLine").textContent = "ready.";
-        $("btnStart").disabled = false;
+        if($("btnStartChallenge")) $("btnStartChallenge").disabled = false;
+        if($("btnStartNormal")) $("btnStartNormal").disabled = false;
 
         toast("Engine ready!");
         return;
@@ -1872,6 +1908,20 @@ function apiReady(){
     window.addEventListener("DOMContentLoaded", ()=>{
        if(apiReady()) syncEngine();
     });
+
+// ... (skipping unchanged lines) ...
+
+// セッション終了ボタン
+$("btnSOTitle").onclick = ()=> doResetToTitle();
+$("btnSORetry").onclick = ()=> {
+  doResetToTitle();
+  // Restart with same mode
+  setTimeout(()=> {
+      if (typeof window.startSession === "function" && currentMode) {
+          window.startSession(currentMode);
+      }
+  }, 200);
+};
 
     // ========= タイマー =========
     let sessionMs = 300000;
@@ -2553,13 +2603,35 @@ if (insMode) {
 }
 // サイドパネルロジック削除済
 
-       // const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
       // ラウンドが終わった瞬間だけ履歴に追加
       pushHistoryEntry(state);
+      
+      // NormalモードならBANK保存
+      if (currentMode === "normal" && state.phase === "roundOver") {
+          // 念のため少し遅延させて、最終的なbankが確定していることを期待するが
+          // state.bank は既に支払い後の値のはず
+          const b = Number(state.bank);
+          if (Number.isFinite(b)) {
+              localStorage.setItem(BANK_KEY_NORMAL, String(b));
+          }
+      }
+      
       finalizeSessionRanking(state);
       if (state.phase === "sessionOver") beginSessionOverFlow(state);
 
       $("roundBanner").style.display = (isRoundOver && !isDealerAnimating) ? "flex" : "none";
+
+      // 破産判定 (Normalモードのみ)
+      if (currentMode === "normal" && isRoundOver && !isDealerAnimating) {
+          const b = Number(state.bank);
+          if (b <= 0) {
+              // 破産オーバーレイ表示
+              // 少し待ってから表示（演出が終わるのを待つ）
+              setTimeout(()=>{
+                  if($("overlayBankruptcy")) $("overlayBankruptcy").classList.add("show");
+              }, 1500);
+          }
+      }
 
       // 勝利エフェクトのトリガー
       if (isRoundOver) {
@@ -2983,8 +3055,49 @@ $("btnDeal").onclick = ()=> {
 
 
 
+
+    // ========= モード管理 =========
+    const MODE_KEY = "bj_mode";
+    const BANK_KEY_NORMAL = "bj_bank_normal";
+    const HISTORY_KEY_CHALLENGE = "bj_history_challenge";
+    const HISTORY_KEY_NORMAL = "bj_history_normal";
+    // ランキングキーなども必要に応じて分離（今回は履歴キーを例示）
+
+    let currentMode = "challenge"; // "challenge" | "normal"
+
+    // 起動時にモード復元（任意）
+    const savedMode = localStorage.getItem(MODE_KEY);
+    if (savedMode === "normal" || savedMode === "challenge") {
+        currentMode = savedMode;
+    }
+
+    // ヒストリーロード関数の修正
+    function loadHistory(){
+        try{
+            const key = (currentMode === "normal") ? HISTORY_KEY_NORMAL : HISTORY_KEY_CHALLENGE;
+            const raw = localStorage.getItem(key);
+            if (!raw) return [];
+            const arr = JSON.parse(raw);
+            if (!Array.isArray(arr)) return [];
+            return arr;
+        } catch(e){
+            console.warn("history load failed", e);
+            return [];
+        }
+    }
+
+    function saveHistory(list){
+        try{
+            const key = (currentMode === "normal") ? HISTORY_KEY_NORMAL : HISTORY_KEY_CHALLENGE;
+            localStorage.setItem(key, JSON.stringify(list));
+        } catch(e){
+            console.warn("history save failed", e);
+        }
+    }
+
     // セッション開始（エンジン準備完了ガード）
-    $("btnStart").onclick = () => {
+    // mode: "challenge" | "normal"
+    window.startSession = (mode) => {
       try{ soHideOverlay(); }catch(e){}
 
       sessionEndAdDone = false; 
@@ -2993,24 +3106,43 @@ $("btnDeal").onclick = ()=> {
         return;
       }
 
+      currentMode = mode;
+      localStorage.setItem(MODE_KEY, mode);
+
       // タイトル画面のベット入力から値を取得
       let bet = 100;
       if ($("betInputTitle")) bet = Number($("betInputTitle").value);
       if (!bet || bet < 10) bet = 10;
       bet = floorEven(bet);
-      if (bet > 5000) bet = 5000; // 初期bankでキャップ
+      
+      // 初期所持金の決定
+      let initialBank = 5000;
+      if (mode === "normal") {
+          const savedBank = localStorage.getItem(BANK_KEY_NORMAL);
+          if (savedBank) {
+              initialBank = Number(savedBank);
+              if (!Number.isFinite(initialBank) || initialBank <= 0) {
+                  // 破産状態? 本来なら広告へ誘導だが、ここではセーフティとして5000
+                  initialBank = 5000; 
+              }
+          }
+      }
+      
+      // ベットが所持金を超えないようにキャップ
+      if (bet > initialBank) bet = initialBank;
+      if (bet > 5000 && mode === "challenge") bet = 5000; // Challengeキャップ
 
       const {lo,hi} = seed64();
       const mask = rulesMaskFromUI();
       const sessionSeconds = 300;
       const roundLimit = 12;
 
-      // セッション開始
-      callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
+      // セッション開始 (initialBankを渡す)
+      callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit, initialBank);
 
       // ===== ランキング用セッション初期化 =====
       currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      sessionStartBank = Number(state?.bank || 0);
+      sessionStartBank = Number(initialBank); // state.bank はまだ来ていないので initialBank を使う
       sessionFinalized = false;
 
       const savedName = localStorage.getItem(NAME_KEY);
@@ -3026,11 +3158,80 @@ $("btnDeal").onclick = ()=> {
       prevBank = null;
       hideBoardAfterSet = false;
 
-      lockUI(800);
-      goScreen("game");
-      startTick();
-      toast(t("toast.good_luck"));
+    // ========= 破産オーバーレイ制御 =========
+    let isAdRequesting = false;
+    
+    $("btnBankruptTitle").onclick = () => {
+        $("overlayBankruptcy").classList.remove("show");
+        doResetToTitle();
     };
+    
+    $("btnBankruptAd").onclick = async () => {
+        if (isAdRequesting) return;
+        isAdRequesting = true;
+        $("btnBankruptAd").disabled = true;
+        $("adErrorMsg").style.display = "none";
+        
+        // CrazyGames Rewarded Ad
+        const callbacks = {
+            adFinished: () => {
+                // 成功：+5000して復帰
+                isAdRequesting = false;
+                $("btnBankruptAd").disabled = false;
+                $("overlayBankruptcy").classList.remove("show");
+                
+                // C++側に資金追加
+                callAction("add_funds", 5000);
+                
+                // Normalモードなら保存
+                if (currentMode === "normal") {
+                    // state更新待ちが必要かもだが、add_fundsは即時反映されるはず
+                    // 少し待ってから保存するか、次のupdateで保存される
+                    setTimeout(()=>{
+                        if (state && state.bank) localStorage.setItem(BANK_KEY_NORMAL, String(state.bank));
+                    }, 500);
+                }
+                
+                toast(t("toast.revived"));
+                
+                // 完了後、BETフェーズに戻すために new round 相当の処理が必要？
+                // 現状、bankruptになるのは roundOver 後なので、次は "Next Round" ボタンを押す流れになるはず
+                // ただし roundOver 状態で bank>0 になればフローは継続できる
+            },
+            adError: (error) => {
+                console.warn("Ad error:", error);
+                isAdRequesting = false;
+                $("btnBankruptAd").disabled = false;
+                $("adErrorMsg").style.display = "block";
+            },
+            adStarted: () => {
+                console.log("Ad started");
+            }
+        };
+        
+        try {
+            if (window.CG && window.CG.ready) {
+                window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+            } else {
+                // SDKなし（ローカルデバッグ等）：成功扱い
+                console.log("Mock Ad Success");
+                setTimeout(callbacks.adFinished, 1000);
+            }
+        } catch(e) {
+            callbacks.adError(e);
+        }
+    };
+
+    lockUI(800);
+    goScreen("game");
+      startTick();
+      toast(mode === "normal" ? "Normal Mode Start!" : t("toast.good_luck"));
+    };
+
+    // ボタンイベント紐づけ
+    $("btnStartChallenge").onclick = () => window.startSession("challenge");
+    $("btnStartNormal").onclick = () => window.startSession("normal");
+
 
 if ($("btnSetBet")) $("btnSetBet").onclick = ()=>{
   if (!state) return;
@@ -3134,7 +3335,12 @@ if ($("betSelect")) $("betSelect").onchange = (e) => {
 $("btnSOTitle").onclick = ()=> doResetToTitle();
 $("btnSORetry").onclick = ()=> {
   doResetToTitle();
-  setTimeout(()=> $("btnStart").click(), 200);
+  // Restart with same mode
+  setTimeout(()=> {
+      if (typeof window.startSession === "function" && currentMode) {
+          window.startSession(currentMode);
+      }
+  }, 200);
 };
 
 

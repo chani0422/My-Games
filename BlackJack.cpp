@@ -485,8 +485,13 @@ struct Engine {
   // ===== アクション =====
 
   int start_session(uint64_t seed, uint32_t rulesMask, int sessionSeconds,
-                    int roundLimit_) {
-    reset_round_state();
+                    int roundLimit_, int initialBank) {
+    if (phase != Phase::MENU && phase != Phase::SESSION_OVER) {
+      // 既に実行中ならエラー（ただし reset 済みなら MENU になるはず）
+    }
+
+    // ルール適用
+    rules = Rules(); // default
     apply_rules_mask(rulesMask);
 
     round = 0;
@@ -495,11 +500,12 @@ struct Engine {
     sessionMs = (sessionSeconds > 0 ? sessionSeconds * 1000 : 300000);
     timeLeftMs = sessionMs;
 
-    bank = 5000;
+    // bank初期化 (0以下なら5000)
+    bank = (initialBank > 0) ? initialBank : 5000;
+
     baseBet = minBet;
 
     shoe.init(seed, 6, 78); // 正規設定
-    // shoe.init(seed, 2, 26); // ★変更しない -> 削除
 
     rr.streak = 0;
     bankAtRoundStart = bank;
@@ -1312,9 +1318,10 @@ extern "C" {
 
 EMSCRIPTEN_KEEPALIVE
 int start_session(uint32_t seedLo, uint32_t seedHi, uint32_t rulesMask,
-                  int sessionSeconds, int roundLimit) {
+                  int sessionSeconds, int roundLimit, int initialBank) {
   uint64_t seed = (uint64_t(seedHi) << 32) | uint64_t(seedLo);
-  return bj::g.start_session(seed, rulesMask, sessionSeconds, roundLimit);
+  return bj::g.start_session(seed, rulesMask, sessionSeconds, roundLimit,
+                             initialBank);
 }
 
 EMSCRIPTEN_KEEPALIVE

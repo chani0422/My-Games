@@ -22,7 +22,7 @@ Module().then(mod => {
   engineReady = true;
 
   bjApi = {
-    start_session: Engine.cwrap('start_session', 'number', ['number','number','number','number','number']),
+    start_session: Engine.cwrap('start_session', 'number', ['number','number','number','number','number','number']),
     reset_session: Engine.cwrap('reset_session', 'number', []),
     set_time_left_ms: Engine.cwrap('set_time_left_ms', 'number', ['number']),
     set_paused: Engine.cwrap('set_paused', 'number', ['number']),

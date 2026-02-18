@@ -138,7 +138,12 @@ const RESOURCES = {
     "dyn.playing": "playing",
     "dyn.max": "max",
     
-    // JS動的メッセージ
+    // 銀行・破産
+    "bank.bankruptcy": "YOU ARE BANKRUPT",
+    "bank.revive_hint": "Chips are gone.<br>Watch Ad to Revive?",
+    "ad.load_fail": "Ad failed to load. Please try again.",
+    
+    // JS dynamic
     "js.result_showing": "Showing results…",
     "js.ad_waiting": "Waiting for ad…",
     "js.selectable": "Selectable",
@@ -283,6 +288,11 @@ const RESOURCES = {
     "dyn.playing": "playing",
     "dyn.max": "max",
     
+    // 銀行・破産
+    "bank.bankruptcy": "破産しました",
+    "bank.revive_hint": "チップがなくなりました。<br>広告を見て復活しますか？",
+    "ad.load_fail": "広告の読み込みに失敗しました。もう一度お試しください。",
+
     // JS dynamic
     "js.result_showing": "読み込み中…",
     "js.ad_waiting": "広告の終了を待っています…",
