@@ -2,4 +2,6 @@ emsdk/
 
 # local toolchain
 emsdk/
+blackjack_v2.wasm
+blackjack_v2.js
 

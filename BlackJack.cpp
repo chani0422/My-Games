@@ -297,7 +297,9 @@ struct Engine {
   }
 
   bool session_over() const {
-    return (timeLeftMs <= 0) || (round >= roundLimit);
+    bool timeUp = (sessionMs > 0 && timeLeftMs <= 0);
+    bool roundUp = (roundLimit > 0 && round >= roundLimit);
+    return timeUp || roundUp;
   }
 
   void set_phase(Phase p) { phase = p; }
@@ -495,10 +497,10 @@ struct Engine {
     apply_rules_mask(rulesMask);
 
     round = 0;
-    roundLimit = (roundLimit_ > 0 ? roundLimit_ : 12);
+    roundLimit = roundLimit_; // 0なら無制限
 
-    sessionMs = (sessionSeconds > 0 ? sessionSeconds * 1000 : 300000);
-    timeLeftMs = sessionMs;
+    sessionMs = (sessionSeconds > 0 ? sessionSeconds * 1000 : 0); // 0なら無制限
+    timeLeftMs = (sessionMs > 0 ? sessionMs : 0);
 
     // bank初期化 (0以下なら5000)
     bank = (initialBank > 0) ? initialBank : 5000;

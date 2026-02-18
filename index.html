@@ -833,7 +833,13 @@
       left:50%; transform:translateX(-50%);
       bottom: calc(var(--dockH) + 18px + env(safe-area-inset-bottom, 0px));
       display:flex; flex-direction:column; gap:8px;
-      /* Mobile safe area adjustments */
+      /* Normal Mode Enhancements */
+    body[data-mode="normal"] .stat-round,
+    body[data-mode="normal"] .stat-time {
+      display: none !important;
+    }
+    
+    /* Responsive Adjustments */
       padding-bottom: calc(12px + env(safe-area-inset-bottom));
       padding-left: calc(12px + env(safe-area-inset-left));
       padding-right: calc(12px + env(safe-area-inset-right));
@@ -1247,21 +1253,7 @@ window.CG.p = new Promise((resolve) => {
         </div>
 
         <div class="bd">
-          <div class="row" style="justify-content:space-between; align-items:flex-end;">
-            <div>
-              <div class="muted" data-i18n="title.bet_hint">Bet（偶数推奨：Insurance = bet/2 で端数回避）</div>
-              <div class="row" style="margin-top:8px;">
-                <input id="betInputTitle" type="number" value="100" step="10" min="10">
-                <div class="chips">
-                  <button class="chipbtn" data-add="10">+10</button>
-                  <button class="chipbtn" data-add="50">+50</button>
-                  <button class="chipbtn" data-add="100">+100</button>
-                  <button class="chipbtn" data-add="200">+200</button>
-                </div>
-              </div>
-              <div class="muted" id="betHint" style="margin-top:6px;"></div>
-            </div>
-          </div>
+            <!-- Bet Input Removed -->
 
           <div class="divider"></div>
 
@@ -1297,6 +1289,7 @@ window.CG.p = new Promise((resolve) => {
         <div class="card">
           <div class="hd">
             <h2 data-i18n="game.garage">CASINO TABLE</h2>
+            <span id="modeBadge" class="badge neutral" style="margin-left:8px; font-size:10px; padding:2px 6px;">-</span>
             <div class="pill" id="debugPhase" style="display:none; color:#888;"></div>
           </div>
           <div class="bd">
@@ -2687,7 +2680,7 @@ if (insMode) {
 
 
       const v = floorEven($("betInput").value);
-      $("betHint").textContent = `${t("dyn.input")}=${$("betInput").value} → ${t("dyn.even")}=${v}`;
+      if($("betHint")) $("betHint").textContent = `${t("dyn.input")}=${$("betInput").value} → ${t("dyn.even")}=${v}`;
 
 
       // ===== ベットのロック/アンロック =====
@@ -3112,9 +3105,11 @@ $("btnDeal").onclick = ()=> {
       currentMode = mode;
       localStorage.setItem(MODE_KEY, mode);
 
-      // タイトル画面のベット入力から値を取得
+      localStorage.setItem(MODE_KEY, mode);
+
+      // タイトル画面のベット入力は削除されたため、固定値 or ゲーム画面入力値を採用
       let bet = 100;
-      if ($("betInputTitle")) bet = Number($("betInputTitle").value);
+      if ($("betInput")) bet = Number($("betInput").value);
       if (!bet || bet < 10) bet = 10;
       bet = floorEven(bet);
       
@@ -3137,8 +3132,23 @@ $("btnDeal").onclick = ()=> {
 
       const {lo,hi} = seed64();
       const mask = rulesMaskFromUI();
-      const sessionSeconds = 300;
-      const roundLimit = 12;
+
+      // モードに応じた設定
+      let sessionSeconds = 300;
+      let roundLimit = 12;
+      
+      document.body.dataset.mode = mode;
+      
+      const badge = $("modeBadge");
+      if (badge) {
+          badge.textContent = (mode === "normal") ? t("mode.normal") : t("mode.challenge");
+          // badge.className = "badge " + (mode === "normal" ? "neutral" : "primary"); // 色変えたいなら
+      }
+
+      if (mode === "normal") {
+          sessionSeconds = 0; // 無制限
+          roundLimit = 0;     // 無制限
+      }
 
       // セッション開始 (initialBankを渡す)
       callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit, initialBank);
@@ -3227,7 +3237,14 @@ $("btnDeal").onclick = ()=> {
 
     lockUI(800);
     goScreen("game");
-      startTick();
+      
+      if (mode === "normal") {
+          // タイマー停止 (念のため一度呼んでから止めないほうがいいかもだが)
+          // startTick() を呼ばない
+      } else {
+          startTick();
+      }
+      
       toast(mode === "normal" ? "Normal Mode Start!" : t("toast.good_luck"));
     };
 
@@ -3459,6 +3476,7 @@ $("nameInput")?.addEventListener("input", ()=>{
 
 
 <!-- Last Build Scripts -->
+<script src="loc.js"></script>
 <script src="blackjack.js"></script>
 <script src="blackjack_ui.js"></script>
 

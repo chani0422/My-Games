@@ -148,6 +148,9 @@ const RESOURCES = {
     "js.ad_waiting": "Waiting for ad…",
     "js.selectable": "Selectable",
 
+    "mode.challenge": "CHALLENGE",
+    "mode.normal": "NORMAL",
+
     "dev.add_chips": "DEV +1000",
   },
   
@@ -298,6 +301,9 @@ const RESOURCES = {
     "js.result_showing": "読み込み中…",
     "js.ad_waiting": "広告の終了を待っています…",
     "js.selectable": "選択できます",
+
+    "mode.challenge": "チャレンジ",
+    "mode.normal": "ノーマル",
 
     "dev.add_chips": "デバッグ +1000",
   }
