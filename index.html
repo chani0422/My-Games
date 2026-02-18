@@ -1848,18 +1848,24 @@ function apiReady(){
         setEngineBadge("READY", "good");
         window.CG?.loadingStop?.();
         
-        setEngineBadge("READY", "good");
         $("subLine").textContent = "ready.";
         $("btnStart").disabled = false;
-
 
         toast("Engine ready!");
         return;
       }
+      // まだ準備できていない場合（通常ここには来ないはずだが念のため）
       setEngineBadge("LOADING", null);
       $("subLine").textContent = "loading engine…";
-      requestAnimationFrame(syncEngine);
     }
+
+    // イベントリスナで初期化検知
+    window.addEventListener("bj-engine-ready", syncEngine);
+
+    // 既にロード済みの場合のバックアップ
+    window.addEventListener("DOMContentLoaded", ()=>{
+       if(apiReady()) syncEngine();
+    });
 
     // ========= タイマー =========
     let sessionMs = 300000;

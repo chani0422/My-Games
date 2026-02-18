@@ -354,14 +354,14 @@ function setLanguage(lang){
 }
 
 // Auto init
-window.addEventListener('DOMContentLoaded', () => {
     // If not set/valid, default to english (or user logic)
-    /*
     const saved = localStorage.getItem('bj_lang');
     if (!saved) {
-      const navLang = (navigator.language || navigator.userLanguage || "en").slice(0,2);
-      if (RESOURCES[navLang]) currentLang = navLang;
+      const navLang = (navigator.language || navigator.userLanguage || "en").toLowerCase();
+      if (navLang.startsWith("ja")) {
+        currentLang = "ja";
+      } else if (RESOURCES[navLang.slice(0,2)]) {
+        currentLang = navLang.slice(0,2);
+      }
     }
-    */
     setLanguage(currentLang);
-});
