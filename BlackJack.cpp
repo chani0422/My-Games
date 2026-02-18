@@ -15,7 +15,7 @@ using std::vector;
 
 namespace bj {
 
-// ===== Error codes =====
+// ===== エラーコード =====
 enum Err : int {
   OK = 0,
   INVALID_STATE = 1,
@@ -25,7 +25,7 @@ enum Err : int {
   INTERNAL_ERROR = 5,
 };
 
-// ===== Phase =====
+// ===== フェーズ =====
 enum class Phase : int {
   MENU,
   BETTING,
@@ -57,7 +57,7 @@ static const char *phase_str(Phase p) {
   }
 }
 
-// ===== Rules mask bits =====
+// ===== ルールマスクビット =====
 enum RuleBits : uint32_t {
   RB_ALLOW_DOUBLE = 1u << 0,
   RB_ALLOW_SPLIT = 1u << 1,
@@ -66,7 +66,7 @@ enum RuleBits : uint32_t {
   RB_ALLOW_EVEN_MONEY = 1u << 4,
   RB_ALLOW_DAS = 1u << 5,
   RB_SPLIT_BJ_AS_BJ = 1u << 6,
-  RB_DEALER_HIT_S17 = 1u << 7, // H17 (soft17 hit)
+  RB_DEALER_HIT_S17 = 1u << 7, // H17 (ソフト17でヒット)
 };
 
 struct Rules {
@@ -424,7 +424,7 @@ struct Engine {
 
     for (auto &h : hands) {
       if (h.flags.surrendered) {
-        continue; // surrender時に返金済み（ここで二重処理しない）
+        continue; // サレンダー時に返金済み（ここで二重処理しない）
       }
       if (h.flags.bust)
         continue;
@@ -462,7 +462,7 @@ struct Engine {
     if (session_over())
       set_phase(Phase::SESSION_OVER);
     else if (bank <= 0)
-      set_phase(Phase::SESSION_OVER); // Bankrupt -> Session Over
+      set_phase(Phase::SESSION_OVER); // 破産 -> セッション終了
   }
 
   // ★ここも skipDealerDraw をデフォルト false で受けて、最後に伝搬
@@ -482,7 +482,7 @@ struct Engine {
     settle_all_hands_and_finish_round(skipDealerDraw);
   }
 
-  // ===== Actions =====
+  // ===== アクション =====
 
   int start_session(uint64_t seed, uint32_t rulesMask, int sessionSeconds,
                     int roundLimit_) {
@@ -1235,31 +1235,31 @@ struct Engine {
     return OK;
   }
 
-  // ★ Force next deal to have Dealer Ace
+  // ★次のディールでディーラーにエースを強制する
   int debug_deal_ace() {
-    // 1. Basic checks same as deal() (simplified)
+    // 1. 基本チェック（deal()と同様、簡略化）
     if (phase == Phase::PAUSED)
       return set_error(INVALID_STATE, "Paused");
     if (!(phase == Phase::BETTING || phase == Phase::ROUND_OVER)) {
       return set_error(INVALID_STATE, "Not ready to deal");
     }
 
-    // 2. Ensure shoe capacity
+    // 2. シューの残数確保
     if (shoe.size() <= shoe.cutSize + 10) {
       shoe.rebuild_and_shuffle();
     }
 
-    // 3. Force the 2nd drawn card (Dealer's first) to be Ace
-    // The shoe draws from the back.
-    // 1st draw (Player): back()
-    // 2nd draw (Dealer): back()-1
-    // So shoe.cards[size-2] needs to be Ace.
+    // 3. 2枚目に引くカード（ディーラーの1枚目）をエースに強制する
+    // シューは末尾(back)から引く仕様。
+    // 1枚目 (プレイヤー): back()
+    // 2枚目 (ディーラー): back()-1
+    // つまり shoe.cards[size-2] をエースにする必要がある。
     size_t sz = shoe.cards.size();
     if (sz >= 2) {
       shoe.cards[sz - 2] = Card{1, 0}; // Rank 1 (Ace), Suit 0 (Spade)
     }
 
-    // 4. Call normal deal
+    // 4. 通常のディールを呼ぶ
     return deal();
   }
 

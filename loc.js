@@ -1,14 +1,14 @@
 
 const RESOURCES = {
   en: {
-    // Top bar
+    // トップバー
     "ui.booting": "booting…",
     "ui.loading": "LOADING",
     "ui.ready": "ready.",
     "ui.engine_ready": "Engine ready!",
     "ui.engine_not_ready": "engine not ready",
     
-    // Stats & Menu
+    // 統計 & メニュー
     "stats.bank": "Bank",
     "stats.round": "Round",
     "stats.time": "Time",
@@ -16,7 +16,7 @@ const RESOURCES = {
     "menu.history": "History",
     "menu.ranking": "Ranking",
     
-    // Titles & Home
+    // タイトル & ホーム
     "title.payout": "🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1",
     "title.main": "Blackjack",
     "title.sub": "Aim for a personal best in the ranking!!",
@@ -27,7 +27,7 @@ const RESOURCES = {
 
     "title.marking": "Markings/Controls",
     
-    // Options
+    // オプション
     "opt.double": "Double Down",
     "opt.split": "Split",
     "opt.surrender": "Surrender (Late)",
@@ -37,7 +37,7 @@ const RESOURCES = {
     "opt.split_bj": "Split BJ as BJ",
     "opt.h17": "Dealer hits Soft 17",
     
-    // Game Screen
+    // ゲーム画面
     "game.garage": "CASINO TABLE",
     "game.bet_info": "BET / INFO",
     "game.bet": "Bet",
@@ -47,25 +47,25 @@ const RESOURCES = {
     "game.more_title": "More actions",
     "game.more_hint": "※Functions only when available.",
     
-    // Side Panel commands
+    // サイドパネルコマンド
     "cmd.double": "Double",
     "cmd.split": "Split",
     "cmd.surrender": "Surrender",
     "cmd.even_money": "Even Money",
     
-    // Insurance Side
+    // インシュランス (サイド)
     "ins.insurance": "Insurance",
     "ins.max": "MAX",
     "ins.dock_hint": "Select YES / NO in DOCK below",
     "ins.yes": "YES",
     "ins.no": "NO",
     
-    // DOCK
+    // ドック (DOCK)
     "dock.deal": "DEAL",
     "dock.hit": "HIT",
     "dock.stand": "STAND",
     
-    // Overlays
+    // オーバーレイ
     "so.session_over": "SESSION OVER",
     "so.calculating": "Calculating…",
     "so.wait": "Please wait…",
@@ -120,12 +120,12 @@ const RESOURCES = {
     "rank.none": "No ranking yet.",
     "rank.saved": "Saved Ranking: ",
     
-    // Debug/Toasts
+    // デバッグ/トースト
     "toast.good_luck": "Good luck!",
     "toast.bet_adjusted": "Bet adjusted to Bank",
     "toast.ranking_cleared": "Ranking cleared",
     
-    // Dynamic parts
+    // 動的パーツ
     "dyn.win": "WIN",
     "dyn.lose": "LOSE",
     "dyn.push": "PUSH",
@@ -138,7 +138,7 @@ const RESOURCES = {
     "dyn.playing": "playing",
     "dyn.max": "max",
     
-    // JS dynamic
+    // JS動的メッセージ
     "js.result_showing": "Showing results…",
     "js.ad_waiting": "Waiting for ad…",
     "js.selectable": "Selectable",

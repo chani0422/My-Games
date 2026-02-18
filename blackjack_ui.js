@@ -1,6 +1,6 @@
 //blackjack_ui.js
 
-// ========= Global =========
+// ========= グローバル変数 =========
 // let Engine = null;
 // let bjApi = null;
 // let state = null;
@@ -8,7 +8,7 @@
 
 //const $ = (id)=>document.getElementById(id);
 
-// ========= Load WASM =========
+// ========= WASM読み込み =========
 // blackjack_v2.js exports Module() (async)
 
 // engineReady が別ファイル定義でも落ちないように保険

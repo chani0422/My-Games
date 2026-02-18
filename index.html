@@ -52,7 +52,7 @@
       color:var(--text);
       overflow-x:hidden;
 
-      /* casino ambience */
+      /* カジノの雰囲気 */
       background:
         radial-gradient(1400px 920px at 50% -25%, rgba(255,223,138,.22), transparent 62%),
         radial-gradient(980px 760px at 15% 10%, rgba(55,214,122,.12), transparent 62%),
@@ -164,15 +164,15 @@
     .stats-row.bottom {
       margin-top:2px;
     }
-    /* Mobile tweaks for 2-rows */
+    /* モバイル用2行調整 */
     @media(max-width:600px){
       .stats-container { gap:1px; }
-      /* Remove excessive min-width and flex-grow on mobile */
+      /* モバイルで過剰なmin-widthを削除 */
       .pill { min-width:0; width:auto; flex:1 1 auto; padding:4px 6px; justify-content:center; }
       .pill span { font-size:10px; }
       .pill b { font-size:11px; }
       
-      /* Compact Menu buttons */
+      /* コンパクトメニューボタン */
       .btn.ghost { padding:4px 6px; font-size:10px; flex:1 1 auto; min-width:0; }
       .stats-row { width:100%; justify-content:flex-end; }
     }
@@ -327,7 +327,7 @@
       letter-spacing:.02em;
     }
 
-    /* chips = aligned (③A) */
+    /* チップ整列 (③A) */
     .chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-start }
     .chipbtn{
       border:1px solid rgba(216,177,90,.35);
@@ -346,7 +346,7 @@
     .chipbtn:hover{ filter: brightness(1.06) }
     .chipbtn:active{ transform: translateY(1px) scale(.99) }
 
-    /* ===== Screens ===== */
+    /* ===== スクリーン ===== */
     .screen{ display:none; animation: fadeIn .20s ease; }
     .screen.active{ display:block; }
     @keyframes fadeIn{
@@ -354,7 +354,7 @@
       to{ opacity:1; transform:none }
     }
 
-    /* ===== Title hero ===== */
+    /* ===== タイトルヒーロー ===== */
     .titleHero{
       padding:22px 16px;
       text-align:center;
@@ -396,7 +396,7 @@
       letter-spacing:.14em;
     }
 
-    /* ===== Options ===== */
+    /* ===== オプション ===== */
     .optGrid{
       display:grid;
       grid-template-columns: repeat(2, 1fr);
@@ -414,9 +414,9 @@
     .opt label{display:flex; gap:10px; align-items:center; cursor:pointer; width:100%}
     .opt input{ transform: scale(1.1) }
 
-    /* ===== Casino Table (★ここが見た目の本体) ===== */
+    /* ===== カジノテーブル (★ここが見た目の本体) ===== */
     .tableStage{
-      perspective: 900px; /* ①B: moderate */
+      perspective: 900px; /* ①B: 控えめに */
     }
     .tableTilt{
       transform: rotateX(12deg); /* ①B */
@@ -425,7 +425,7 @@
 
     .tableFrame{
       padding:14px;
-      border-radius: 28px 28px 380px 380px; /* ②A: half-ish */
+      border-radius: 28px 28px 380px 380px; /* ②A: 半分くらい */
       background:
         radial-gradient(1200px 500px at 50% 0%, rgba(255,223,138,.08), transparent 70%),
         linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.20));
@@ -435,7 +435,7 @@
       overflow:hidden;
     }
 
-    /* matte black rail */
+    /* マットブラックのレール */
     .tableFrame::before{
       content:"";
       position:absolute; inset:0;
@@ -457,7 +457,7 @@
       pointer-events:none;
     }
     .tableFrame::after{
-      /* subtle stitched highlight */
+      /* 微妙なステッチハイライト */
       content:"";
       position:absolute;
       inset:10px 10px 18px 10px;
@@ -481,7 +481,7 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,.30) inset;
     }
 
-    /* felt grain */
+    /* フェルトの質感 */
     .tableSurface::before{
       content:"";
       position:absolute; inset:0;
@@ -493,7 +493,7 @@
       pointer-events:none;
     }
 
-    /* Markings: ②C (B + small rule text) but keep moderate overall (⑤B) */
+    /* マーキング: ②C (B + 小さいルールテキスト) だが全体的に控えめに (⑤B) */
     .markings{
       position:absolute;
       inset:0;
@@ -525,10 +525,10 @@
 
     #screenTitle #debugPhase { display:none; }
 
-    /* Zones on table */
+    /* テーブル上のゾーン */
     .dealerZone{
       position:absolute;
-      top: 70px; /* Shifted down */
+      top: 70px; /* 下にずらす */
       left: 50%;
       transform: translateX(-50%);
       width: min(720px, 92%);
@@ -536,12 +536,12 @@
     .playerZone{
       position:absolute;
       left: 50%;
-      bottom: 110px; /* Shifted up significantly */
+      bottom: 110px; /* 大幅に上にずらす */
       transform: translateX(-50%);
       width: min(860px, 94%);
     }
 
-    /* boxes */
+    /* ボックス */
     .handBox{
       border:1px solid rgba(255,255,255,.12);
       border-radius:16px;
@@ -552,15 +552,24 @@
       backdrop-filter: blur(2px);
     }
     .handBox.active{
-      border-color: rgba(55,214,122,.55);
+      /* border-color: rgba(55,214,122,.55); ディーラーに合わせるため削除 */
+      border-color: rgba(255,255,255,.35); /* 緑の代わりに微妙な白ハイライト */
       box-shadow:
-        0 0 0 2px rgba(55,214,122,.12) inset,
+        0 0 0 1px rgba(255,255,255,.10) inset,
         0 26px 70px rgba(0,0,0,.25);
       transform: translateY(-1px);
-      filter: brightness(1.03);
+      /* filter: brightness(1.10); ディーラー色と完全に一致させるため削除 */
     }
 
-    .handArea{ display:flex; flex-direction:column; gap:12px }
+    .handArea{
+      display:flex;
+      flex-direction:row; /* Split時に横に並べる */
+      gap:12px;
+      justify-content: center;
+      align-items: flex-end; /* 底揃え */
+      flex-wrap: wrap; /* 画面が狭い場合は折り返す */
+    }
+
 
     .cards{
       display:flex;
@@ -569,7 +578,7 @@
       margin-top:10px;
     }
 
-    /* card look: ⑧A (photo-ish) */
+    /* カードの見た目: ⑧A (写真風) */
     .cardFace, .cardBack{
       width: 48px;
       height: 68px;
@@ -611,7 +620,7 @@
       border-color: rgba(216,177,90,.28);
     }
     .cardBack::before{
-      /* back pattern */
+      /* 裏面パターン */
       content:"";
       position:absolute; inset:10px;
       border-radius: 10px;
@@ -622,7 +631,7 @@
       opacity:.85;
     }
 
-    /* ④A: slide deal + flip (no extra spin/glow) */
+    /* ④A: スライドディール + フリップ (余分な回転/発光なし) */
     .dealIn{
       animation: dealIn .42s cubic-bezier(.2,.8,.2,1) both;
     }
@@ -667,7 +676,7 @@
     .banner .msg.lose{ color:#ffd1d1 }
     .banner .msg.neutral{ color:#fff1cc }
 
-    /* ===== Dock (⑩A) ===== */
+    /* ===== ドック (⑩A) ===== */
     .dock{
       position:fixed;
       left: 12px;
@@ -690,7 +699,7 @@
       border-radius: 14px;
       font-size: 13px;
       display:flex;
-      flex-direction:column; /* Stack text and key hint */
+      flex-direction:column; /* テキストとキーヒントをスタック */
       align-items:center;
       justify-content:center;
       gap:2px;
@@ -702,24 +711,24 @@
       padding: 2px 6px;
       margin-top:2px;
     }
-    /* Compact grid for 6 buttons -> Dynamic Flex */
+    /* 6ボタン用のコンパクトグリッド -> ダイナミックフレックス */
     .dock.full{
       display: flex !important;
       flex-wrap: wrap !important;
       align-content: stretch !important;
       height: auto !important;
       min-height: 90px;
-      /* Allow growing up to a limit */
+      /* 上限まで拡大許可 */
       max-height: 40vh;
       bottom: calc(12px + env(safe-area-inset-bottom, 0px));
       gap: 12px;
     }
     .dock .btn {
-      flex: 1 1 45%; /* Default: 2 per row. Use 45% to allow gap */
+      flex: 1 1 45%; /* デフォルト: 行あたり2つ。ギャップを考慮して45%を使用 */
       min-height: 72px;
       font-size: 18px !important; /* Larger text */
       font-weight: 800;
-      /* Ensure hidden if disabled per user request */
+      /* ユーザー要望により無効時は非表示にする */
     }
     .dock .btn:disabled {
       /* display: none !important; */
@@ -730,22 +739,22 @@
     
     @media (min-width: 600px) {
       .dock.full{
-        /* Desktop: keep showing all? Or follow same logic? 
-           User said "This case" referencing mobile. 
-           But consistency is good. Let's apply dynamic button sizing to desktop too
-           or keep row of 6? 
-           If desktop has plenty of width, 6 buttons in 1 row is fine.
-           But "Selectable only" is a strong request.
+        /* デスクトップ：全て表示し続ける？それとも同じロジックに従う？
+           ユーザーはモバイルを参照して「このケース」と言った。
+           しかし一貫性は良いことだ。デスクトップにも動的ボタンサイズを適用しようか、
+           それとも6つ並びを維持するか？
+           デスクトップに十分な幅があれば、1行に6ボタンで問題ない。
+           しかし「選択可能のみ」は強い要望だ。
         */
         height: 100px;
       }
       .dock .btn {
-        flex: 1 1 auto; /* Fit content on desktop */
+        flex: 1 1 auto; /* デスクトップではコンテンツに合わせる */
         max-width: 300px;
       }
     }
 
-    /* === Insurance dock mode === */
+    /* === インシュランスドックモード === */
 .dock.insMode{
   grid-template-columns: 1fr 1fr;
 }
@@ -773,7 +782,7 @@
     .overlay.show{ display:flex }
     .overlay.no-blur .modal {
       background: rgba(0,0,0,0.80);
-      /* Use a simpler background to ensure 80% opacity is perceivable */
+      /* 80%の不透明度が認識できるようにシンプルな背景を使用 */
       box-shadow: 0 30px 90px rgba(0,0,0,.65);
     }
     .modal{
@@ -853,11 +862,11 @@
       background: linear-gradient(90deg, rgba(255,223,138,.95), rgba(55,214,122,.90));
     }
     /* =========================
-   VISIBILITY FIX PACK
-   - sharper text
-   - markings behind content
-   - content stays inside frame
-   ========================= */
+       視認性修正パック
+       - テキストをシャープに
+       - マーキングをコンテンツの背面に
+       - コンテンツをフレーム内に収める
+       ========================= */
 
 /* 文字の滲みを減らす（全体） */
 body{
@@ -885,9 +894,9 @@ body{
 }
 
 /* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める */
-/* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める -> CANCELLED */
+/* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める -> キャンセル */
 .tableSurface{
-  display: block !important; /* Back to block for absolute children */
+  display: block !important; /* absoluteの子要素のためにブロックに戻す */
   /* flex-direction: column !important; */
   /* justify-content: space-between !important; */
   overflow: hidden;
@@ -896,48 +905,52 @@ body{
 
 @media (max-width: 600px) {
   .tableSurface {
-    /* padding is less relevant for absolute children but keeps frame size */
+    /* absoluteの子要素にはpaddingはあまり関係ないが、フレームサイズを維持する */
     padding: 0 !important; 
-    height: 520px !important; /* Ensure height */
+    height: 520px !important; /* 高さを確保 */
   }
   
-  /* Compact Bet/Info */
+  /* コンパクト Bet/Info */
   .card .bd { padding: 8px !important; }
-  .card .hd { display:none; } /* Hide "BET/INFO" header */
-  .dealerZone { top: 40px !important; } /* Shift Dealer up */
-  .playerZone { bottom: 85px !important; } /* Shift Player down/fit */
+  .card .hd { display:none; } /* "BET/INFO" ヘッダーを隠す */
+  .dealerZone { top: 40px !important; } /* ディーラーを上にずらす */
+  .playerZone { bottom: 85px !important; } /* プレイヤーを下にずらす/合わせる */
   .divider { margin: 6px 0 !important; }
   
-  /* Compact Dock */
+  /* コンパクトドック */
   .dock.full {
     min-height: 60px !important;
     gap: 6px !important;
     padding: 6px !important;
     bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
-    --dockH: 60px; /* Update variable if needed for calcs */
+    --dockH: 60px; /* 計算に必要な場合は変数を更新 */
   }
   .dock .btn {
     min-height: 48px !important;
     font-size: 14px !important;
     border-radius: 10px !important;
   }
-  .dock .btn .k { display:none; } /* Hide key hints on mobile */
+  .dock .btn .k { display:none; } /* モバイルではキーヒントを隠す */
   
-  /* Adjust wrapper padding to match new dock height */
+  /* 新しいドックの高さに合わせてラッパーのパディングを調整 */
   .wrap { padding-bottom: calc(60px + 20px + env(safe-area-inset-bottom)) !important; }
 }
     
     @media (max-width: 600px) {
       .tableSurface {
-        padding: 40px 12px 180px !important; /* Increased bottom padding for multi-row dock */
+        padding: 40px 12px 180px !important; /* 複数行ドック用に下部パディングを増やす */
       }
       .dealerZone, .playerZone {
         max-width: 100% !important;
       }
+      /* モバイルでハンドが横に並びすぎると辛いので、微調整 */
+      .handArea {
+        gap: 6px;
+      }
     }
 
 /* absolute を解除してセンターに収める */
-/* absolute を解除してセンターに収める -> CANCELLED to restore absolute positioning */
+/* absolute を解除してセンターに収める -> absolute配置を復元するためにキャンセル */
 /* 
 .dealerZone, .playerZone{
   position: relative !important;
@@ -947,15 +960,15 @@ body{
   margin: 0 auto !important;
 }
 */
-/* Instead, use absolute but constraint width */
+/* 代わりにabsoluteを使用するが幅を制限する */
 .dealerZone, .playerZone{
   position: absolute !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  width: 86% !important; /* Allow some margin */
+  width: 86% !important; /* マージンを許可 */
   max-width: 600px !important;
 }
-.dealerZone{ top: 110px !important; } /* Lowered from 70px */
+.dealerZone{ top: 110px !important; } /* 70pxから下げた */
 .playerZone{ bottom: 90px !important; }
 
 /* テーブルの曲率が強すぎると見切れやすい → 少し緩める */
@@ -1026,7 +1039,7 @@ body{
 #btnMore{ display:none; }
 
   
-    /* ===== Session Over Flow ===== */
+    /* ===== セッション終了フロー ===== */
     .soSplash{
       display:flex;
       flex-direction:column;
@@ -1083,7 +1096,7 @@ body{
       background: rgba(0,0,0,.12);
       padding:10px;
     }
-    /* Must have non-null size for responsive banner */
+    /* レスポンシブバナー用にサイズが必要 */
     #cg-so-banner{
       width: min(520px, 100%);
       height: 90px;
@@ -1096,11 +1109,11 @@ body{
   </style>
 </head>
 
-<!-- CrazyGames SDK v3 (safe init) -->
+<!-- CrazyGames SDK v3 (安全な初期化) -->
 <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script>
-  // Safe wrapper so local development / non-CrazyGames domains won't crash.
-  // Config: Set to false for CrazyGames "Basic Launch" submission.
+  // ローカル開発やCrazyGames以外のドメインでクラッシュしないための安全なラッパー。
+  // 設定: CrazyGames "Basic Launch" 提出用にはfalseに設定。
   const ENABLE_ADS = false;
 
   window.CG = window.CG || {};
@@ -1118,7 +1131,7 @@ body{
       return false;
     }
   };
-// Init on DOMContentLoaded
+// DOMContentLoadedで初期化
 window.CG.p = new Promise((resolve) => {
   window.addEventListener("DOMContentLoaded", async () => {
     const ok = await window.CG.init();
@@ -1129,7 +1142,7 @@ window.CG.p = new Promise((resolve) => {
 </script>
 
 <script>
-  // ---- Idempotent event helpers ----
+  // ---- 冪等イベントヘルパー ----
   window.CG._loadingDepth = 0;
   window.CG._inGameplay = false;
 
@@ -1273,7 +1286,7 @@ window.CG.p = new Promise((resolve) => {
             <div class="pill" id="debugPhase" style="display:none; color:#888;"></div>
           </div>
           <div class="bd">
-            <!-- Bet / Info Card (Moved Top) -->
+            <!-- Bet / Info カード (上に移動) -->
             <div class="card">
               <div class="hd">
                 <h2 data-i18n="game.bet_info">BET / INFO</h2>
@@ -1283,7 +1296,7 @@ window.CG.p = new Promise((resolve) => {
                 <div class="row">
                   <div class="muted" data-i18n="game.bet">Bet</div>
                   
-                  <!-- Bet Display -->
+                  <!-- ベット表示 -->
                   <div style="display:flex; justify-content:center; margin-bottom:8px; width:100%;">
                      <input id="betInput" type="number" readonly value="100" style="
                          padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
@@ -1291,7 +1304,7 @@ window.CG.p = new Promise((resolve) => {
                          font-size:20px; text-align:center; outline:none;">
                   </div>
 
-                  <!-- Bet Buttons -->
+                  <!-- ベットボタン -->
                   <style>
                     .bet-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; width:100%; }
                     .btn-bet { 
@@ -1319,7 +1332,7 @@ window.CG.p = new Promise((resolve) => {
                 </div>
 
             <div class="divider"></div>
-            <!-- More Panel removed -->
+            <!-- Moreパネル削除 -->
             <div class="divider"></div>
 <div class="handBox" id="insSideBox" style="display:none; margin-top:12px;">
   <div class="row" style="justify-content:space-between;">
@@ -1348,13 +1361,13 @@ window.CG.p = new Promise((resolve) => {
 
         <div class="row">
           <div style="flex:1">
-            <!-- Table (Moved Bottom) -->
+            <!-- テーブル (下に移動) -->
             <div class="tableStage">
               <div class="tableTilt">
                 <div class="tableFrame">
                   <div class="tableSurface">
 
-                    <!-- Markings (②C) -->
+                    <!-- マーキング (②C) -->
                     <svg class="markings" viewBox="0 0 1000 650" preserveAspectRatio="none">
                       <path id="arcPayout" d="M140,510 C260,600 740,600 860,510" />
                       <path id="arcInner"  d="M210,475 C320,555 680,555 790,475" />
@@ -1373,13 +1386,13 @@ window.CG.p = new Promise((resolve) => {
                         </textPath>
                       </text>
 
-                      <!-- Small rules line -->
+                      <!-- 小さいルールの行 -->
                       <text x="500" y="100" text-anchor="middle" font-size="20" class="markSmall">
                         DEALER MUST DRAW TO 16 AND STAND ON 17 • 6 DECKS • HOUSE RULES APPLY
                       </text>
                     </svg>
 
-                    <!-- Dealer -->
+                    <!-- ディーラー -->
                     <div class="dealerZone">
                       <div class="handBox" id="dealerBox">
                         <div class="row" style="justify-content:space-between;">
@@ -1393,7 +1406,7 @@ window.CG.p = new Promise((resolve) => {
                       </div>
                     </div>
 
-                    <!-- Player -->
+                    <!-- プレイヤー -->
                     <div class="playerZone">
                       <div class="handArea" id="playerHands"></div>
 
@@ -1410,16 +1423,16 @@ window.CG.p = new Promise((resolve) => {
           </div>
         </div>
 
-  <!-- Bottom Dock -->
-  <!-- Bottom Dock -->
+  <!-- 下部ドック -->
+  <!-- 下部ドック -->
   <nav class="dock full" aria-label="main controls">
-    <!-- Row 1 (Mobile) / Left (Desktop) -->
+    <!-- 行1 (モバイル) / 左 (デスクトップ) -->
     <button class="btn primary" id="btnDeal" disabled><span data-i18n="dock.deal">DEAL</span></button>
     <button class="btn secondary small" id="btnDebugAce" disabled style="margin-left:4px; font-size:10px; padding:0 8px;">ACE</button>
     <button class="btn" id="btnHit" disabled><span data-i18n="dock.hit">HIT</span></button>
     <button class="btn" id="btnStand" disabled><span data-i18n="dock.stand">STAND</span></button>
     
-    <!-- Row 2 (Mobile) / Right (Desktop) -->
+    <!-- 行2 (モバイル) / 右 (デスクトップ) -->
     <button class="btn" id="btnDouble" disabled><span data-i18n="cmd.double">DBL</span></button>
     <button class="btn" id="btnSplit" disabled><span data-i18n="cmd.split">SPLIT</span></button>
     
@@ -1431,9 +1444,9 @@ window.CG.p = new Promise((resolve) => {
       </div><!-- /grid -->
     </div><!-- /screenGame -->
 
-  <!-- OVERLAYS -->
+  <!-- オーバーレイ -->
 
-  <!-- SESSION OVER FLOW -->
+  <!-- セッション終了フロー -->
   <div class="overlay" id="overlaySessionOver">
     <div class="modal">
       <div class="hd">
@@ -1491,7 +1504,7 @@ window.CG.p = new Promise((resolve) => {
       </div>
     </div>
   </div>
-<!-- How to play -->
+<!-- 遊び方 -->
 <div class="overlay" id="overlayHow">
   <div class="modal wide">
     <div class="hd">
@@ -1546,7 +1559,7 @@ window.CG.p = new Promise((resolve) => {
   </div>
 </div>
 
-<!-- History -->
+<!-- 履歴 -->
 <div class="overlay" id="overlayHistory">
   <div class="modal">
     <div class="hd">
@@ -1565,7 +1578,7 @@ window.CG.p = new Promise((resolve) => {
   </div>
 </div>
 
-<!-- Ranking -->
+<!-- ランキング -->
 <div class="overlay" id="overlayRanking">
   <div class="modal">
     <div class="hd">
@@ -1596,7 +1609,7 @@ window.CG.p = new Promise((resolve) => {
 
 
 
-<!-- Insurance (No Blur) -->
+<!-- インシュランス (ぼかし無し) -->
 <div class="overlay no-blur" id="overlayInsurance">
   <div class="modal">
     <div class="hd">
@@ -1610,20 +1623,20 @@ window.CG.p = new Promise((resolve) => {
           インシュランスに賭けますか？
         </p>
 
-        <!-- Buttons Row: Yes(Left), No(Right) -->
+        <!-- ボタン行: Yes(左), No(右) -->
         <div class="row" style="justify-content:center; gap:24px; margin-bottom: 20px;">
           <button class="btn primary big" id="btnInsYes" style="min-width:140px;" data-i18n="ins.yes">YES</button>
           <button class="btn danger big" id="btnInsNo" style="min-width:140px;" data-i18n="ins.no">NO</button>
         </div>
 
-        <!-- Input Row -->
+        <!-- 入力行 -->
         <div class="row" style="justify-content:center; gap:10px; margin-bottom:8px;">
             <input id="insAmountOverlay" type="number" value="0" step="10" 
                    style="width:100px; padding:8px; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.2); color:#fff; border-radius:8px; font-size:16px; text-align:center;">
             <button class="btn ghost" id="btnInsMaxOverlay">MAX</button>
         </div>
         
-        <!-- Hint -->
+        <!-- ヒント -->
         <div class="muted small" id="insHintOverlay" style="opacity:0.8;">-</div>
 
       </div>
@@ -1638,7 +1651,7 @@ window.CG.p = new Promise((resolve) => {
     let prevPhase = null;
     
 
-    // ========= Utilities =========
+    // ========= ユーティリティ =========
     const $ = (id)=>document.getElementById(id);
 
     function toast(msg){
@@ -1675,13 +1688,13 @@ window.CG.p = new Promise((resolve) => {
     document.querySelectorAll("button").forEach(b=>{
       b.addEventListener("click", ()=>{ vibrate(8); });
     });
-    // Chips are already covered by "button" selector if they are <button>
-    // But let's ensure specific ones feel good
+    // チップは <button> であれば既にカバーされているが
+    // 特定の要素で感触を良くするために追加
     document.querySelectorAll(".chipbtn").forEach(b=>{
        b.addEventListener("touchstart", ()=>{ vibrate(12); }, {passive:true});
     });
 
-    // ========= Haptics =========
+    // ========= ハプティクス =========
     function vibrate(ms){
       if (!$("optHaptic") || !$("optHaptic").checked) return;
       if (typeof navigator.vibrate !== "function") return;
@@ -1713,7 +1726,7 @@ window.CG.p = new Promise((resolve) => {
       requestAnimationFrame(step);
     }
 
-        // ========= History (localStorage) =========
+        // ========= 履歴 (localStorage) =========
     const HISTORY_KEY = "bjHistory_v1";
 
     function loadHistory(){
@@ -1817,7 +1830,7 @@ window.CG.p = new Promise((resolve) => {
       box.innerHTML = html;
     }
 
-    // ========= Engine bjApi =========
+    // ========= エンジン bjApi =========
     // blackjack_ui.js 側で Engine / engineReady / bjApi を用意している想定
     let Engine = null;
     let bjApi = null;
@@ -1848,7 +1861,7 @@ function apiReady(){
       requestAnimationFrame(syncEngine);
     }
 
-    // ========= timer =========
+    // ========= タイマー =========
     let sessionMs = 300000;
     let startTickAt = 0;
     let pausedAt = 0;
@@ -1937,7 +1950,7 @@ function goScreen(name){
   // Hide title text in game
   document.querySelector(".topbar").classList.toggle("in-game", willGame);
 
-  // CrazyGames: gameplay on/off
+  // CrazyGames: ゲームプレイのオン/オフ
   if (willGame && !wasGame) window.CG?.gameplayStart?.();
   if (!willGame && wasGame) window.CG?.gameplayStop?.();
 }
@@ -1953,7 +1966,7 @@ function setPause(paused) {
 }
 
 //a
-    // ========= Hold to reset =========
+    // ========= リセット =========
     let resetArmed = false;
     let holdTimer = null;
     let holdStart = 0;
@@ -1979,21 +1992,21 @@ function setPause(paused) {
       prevBank = null;
     }
 
-    // ========= Anim caches =========
+    // ========= アニメーションキャッシュ =========
     let prevBank = null;
     let prevDealerCards = [];
-    let prevDealerJson = ""; // Cache for Dealer
+    let prevDealerJson = ""; // ディーラー用キャッシュ
     let prevPlayerLens = [];
-    let prevPlayerJson = ""; // Cache for Player
+    let prevPlayerJson = ""; // プレイヤー用キャッシュ
     let hideBoardAfterSet = false;   // ← これを追加（グローバル）
 
-    // Dealer Draw Animation State
+    // ディーラー描画アニメーション状態
     let dealerShowCount = 0;
     let dealerAnimTimer = null;
 
 
 
-// ===== Session Over Flow =====
+// ===== セッション終了フロー =====
 // 仕様：sessionOverに入ったら
 //   1) 中央に "SESSION OVER!!" を 2秒表示
 //   2) リザルト表示に切替
@@ -2009,7 +2022,7 @@ window.SO = window.SO || {
   adFailSafe:null,
   bannerShown:false,
   bannerId:"cg-so-banner",
-  sessionCount:0, // Counter for sessions
+  sessionCount:0, // セッション回数カウンタ
 };
 
 function soSetView(stage){
@@ -2083,7 +2096,7 @@ function soFillStats(st){
     stats.appendChild(el);
   });
 
-  // Revive button logic
+  // 復活ボタンロジック
   const reviveRow = document.getElementById("soReviveRow");
   if (st.bank <= 0 && st.session.timeLeftMs > 0 && st.session.round < st.session.roundLimit) {
       if(reviveRow) reviveRow.style.display = "flex";
@@ -2094,7 +2107,7 @@ function soFillStats(st){
 
 async function soRequestBanner(){
   if (window.SO.bannerShown) return;
-  if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) return; // Ads disabled
+  if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) return; // 広告無効
 
   const wrap = document.getElementById("soBannerWrap");
   if (wrap) wrap.style.display = "none";
@@ -2114,18 +2127,18 @@ function soRequestMidgame(){
   const note = document.getElementById("soAdNote");
 
   if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) {
-     // Ads disabled: skip immediately
+     // 広告無効：即スキップ
     window.SO.adDone = true;
     if (note) note.textContent = "";
     soUpdateLock();
     return;
   }
 
-  // Show ad only every 2nd session (Satisfying user request: "every 2 sessions")
-  // sessionCount is incremented in beginSessionOverFlow.
-  // 1st session: 1 -> skip
-  // 2nd session: 2 -> show
-  // 3rd session: 3 -> skip
+  // 2セッションごとに広告を表示 (ユーザー要望: "every 2 sessions")
+  // sessionCount は beginSessionOverFlow でインクリメントされる
+  // 1回目: 1 -> スキップ
+  // 2回目: 2 -> 表示
+  // 3回目: 3 -> スキップ
   if (window.SO.sessionCount % 2 !== 0){
     console.log("Skip ad (session count: " + window.SO.sessionCount + ")");
     window.SO.adDone = true;
@@ -2223,12 +2236,12 @@ function beginSessionOverFlow(st){
   if (window.SO.active) return;
   window.SO.active = true;
 
-  // Add 4 seconds delay before showing the overlay so user can see the result
+  // 結果を見せるためにオーバーレイ表示前に4秒待機
   toast(t("so.delay"));
   setTimeout(() => {
     window.SO.adDone = false;
     window.SO.bannerShown = false;
-    window.SO.sessionCount = (window.SO.sessionCount || 0) + 1; // Increment counter
+    window.SO.sessionCount = (window.SO.sessionCount || 0) + 1; // カウンタをインクリメント
     soClearTimers();
 
 
@@ -2256,7 +2269,7 @@ function beginSessionOverFlow(st){
 }
 
 
-    // ========= Render =========
+    // ========= 描画処理 =========
     function render(){
 
       function setDis(id, disabled){
@@ -2283,7 +2296,7 @@ function beginSessionOverFlow(st){
           $("subLine").textContent = `phase: ${state.phase}`;
       }
 
-      // Bank anim
+      // 所持金アニメーション
       const bankEl = $("bank");
       const bankPill = bankEl.closest(".pill");
       const newBank = Number(state.bank);
@@ -2310,7 +2323,7 @@ function beginSessionOverFlow(st){
         state.rules.dealerHitSoft17 ? "H17" : "S17"
       ].filter(Boolean).join(" • ") || "-";
 
-      // Dealer
+      // ディーラー
       const totalText = hideBoard
         ? "-"
         : (state.dealer.holeKnown ? String(state.dealer.score) : "?");
@@ -2332,40 +2345,40 @@ function beginSessionOverFlow(st){
       const dWrap = $("dealerCards");
       let rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
 
-      // --- Dealer Animation Logic ---
+      // --- ディーラーアニメーションロジック ---
       const targetCount = rawDealerCards.length;
       const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
       //const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
 
       if (!isRoundOver) {
-        // Not in round over, show all cards immediately (sync)
+        // ラウンド終了以外は即座に全カード表示（同期）
         if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
         dealerShowCount = targetCount;
       } else {
-        // In round over, check if we need to animate
+        // ラウンド終了時はアニメーションが必要か確認
         if (dealerShowCount === 0 && targetCount > 0 && !dealerAnimTimer) {
-             // Initial load in roundOver? fast forward
+             // 初回ロードでいきなり roundOver だった場合などは早送り
              dealerShowCount = targetCount;
         } else if (dealerShowCount < targetCount) {
-             // Need to animate
+             // アニメーション必要
              if (!dealerAnimTimer) {
                  dealerAnimTimer = setTimeout(() => {
                      dealerShowCount++;
                      dealerAnimTimer = null;
-                     render(); // Re-trigger render to show next card
+                     render(); // 次のカードを表示するため再描画トリガー
                  }, 600);
              }
         } else {
-            // Animation done
+            // アニメーション完了
              if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
         }
       }
       
       const isDealerAnimating = (dealerShowCount < targetCount);
-      // Slice cards based on show count
+      // カウントに基づいてカードを切り出す
       const dealerCards = rawDealerCards.slice(0, dealerShowCount);
 
-      // Cache check for Dealer
+      // ディーラーのキャッシュチェック
 
       const dealerJson = JSON.stringify({
          cards: dealerCards,
@@ -2396,13 +2409,13 @@ function beginSessionOverFlow(st){
         dWrap.appendChild(el);
         dWrap.appendChild(el);
       });
-      } // End of dealerJson check
+      } // DealerJson チェック終了
       prevDealerCards = dealerCards.slice();
 
-      prevDealerJson = dealerJson; // Cache dealer state
+      prevDealerJson = dealerJson; // ディーラー状態をキャッシュ
 
 
-      // Player hands
+      // プレイヤーのハンド
       const ph = $("playerHands");
       const hands =
         (!hideBoard && state.player && state.player.hands)
@@ -2462,7 +2475,7 @@ header.innerHTML = `
           const ce = document.createElement("div");
           ce.className = "cardFace";
           ce.textContent = cc;
-          if (idx >= prevLen) ce.classList.add("dealIn"); // ④A slide
+          if (idx >= prevLen) ce.classList.add("dealIn"); // ④A スライド
           cards.appendChild(ce);
         });
 
@@ -2472,18 +2485,18 @@ header.innerHTML = `
         prevPlayerLens[i] = (h.cards||[]).length;
         prevPlayerLens[i] = (h.cards||[]).length;
       });
-      } // End of playerJson check
-      prevPlayerJson = playerJson; // Cache player state
+      } // playerJson チェック終了
+      prevPlayerJson = playerJson; // プレイヤー状態をキャッシュ
 
 
 
 
-      // Controls enable/disable from state.can
-// Controls enable/disable from state.can
+      // state.can に基づく操作の有効/無効化
+// state.can に基づく操作の有効/無効化
 const can = state.can || {};
 const insMode = (state.phase === "offerInsurance");
 
-// === Dock main buttons ===
+// === ドックのメインボタン ===
 if (insMode) {
   // Insurance 中は DOCK = YES / NO 専用
   setDis("btnDeal", true);
@@ -2494,26 +2507,26 @@ if (insMode) {
   setDis("btnSplit", true);
   setDis("btnSurrender", true);
 } else {
-  // Betting phase logic
+  // ベッティングフェーズのロジック
   const forceEnableDeal = ((state.phase === "betting" || state.phase === "roundOver") && state.bank > 0);
   setDis("btnDeal", (!can.deal && !forceEnableDeal) || uiLocked);
   setDis("btnDebugAce", (!can.deal && !forceEnableDeal) || uiLocked);
 
   setDis("btnHit", !can.hit || uiLocked);
-  setDis("btnStand", !can.stand || uiLocked); // Stand also locked to prevent race? User said "Deal/Hit".
-  // But usually Stand leads to Dealer play, so locking is safe.
-  // Double/Split -> User said "Exception", so do NOT add uiLocked
+  setDis("btnStand", !can.stand || uiLocked); // Stand もレースコンディション防止でロック？ ユーザーは既にDeal/Hitしてる。
+  // しかし通常 Stand はディーラープレイに繋がるのでロックは安全。
+  // Double/Split -> ユーザーは「例外」と言ったので、uiLocked は追加しない
   setDis("btnDouble", !can.double);
   setDis("btnSplit", !can.split);
   setDis("btnSurrender", !can.surrender);
 }
 
-// Ensure select is synced with internal bet state (if needed)
+// セレクトボックスを内部ベット状態と同期（必要な場合）
 // setDis("betSelect", !(state.phase === "betting" || state.phase === "roundOver"));
 
 // === 右パネル側も同様 ===
 if (insMode) {
-  // Even Money logic: Swap Surrender button if available
+  // イーブンマネーのロジック: 可能ならサレンダーボタンと入れ替え
   const showEven = !!can.evenMoney;
   const btnSur = $("btnSurrender");
   const btnEven = $("btnEvenMoney");
@@ -2526,7 +2539,7 @@ if (insMode) {
       if(btnEven) btnEven.style.display = "none";
   }
 }
-// Removed Side Panel Logic
+// サイドパネルロジック削除済
 
        // const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
       // ラウンドが終わった瞬間だけ履歴に追加
@@ -2536,7 +2549,7 @@ if (insMode) {
 
       $("roundBanner").style.display = (isRoundOver && !isDealerAnimating) ? "flex" : "none";
 
-      // Win Effect Trigger
+      // 勝利エフェクトのトリガー
       if (isRoundOver) {
          if (!isDealerAnimating) {
             const net = state.roundResult.netProfit;
@@ -2555,7 +2568,7 @@ if (insMode) {
       const metaEl = $("roundMeta");
       if (isRoundOver){
         /*
-        // Allow the "WIN +100" etc to remain visible during the 2s delay
+        // "WIN +100" 等を2秒の遅延中も表示したままにする
         if (state.phase === "sessionOver"){
           msgEl.textContent = t("so.session_over");
           msgEl.className = "msg neutral";
@@ -2579,7 +2592,7 @@ if (insMode) {
       $("betHint").textContent = `${t("dyn.input")}=${$("betInput").value} → ${t("dyn.even")}=${v}`;
 
 
-      // ===== Bet lock/unlock =====
+      // ===== ベットのロック/アンロック =====
 // BETを編集できるのは「配る前」or「勝敗確定後」だけ
   const betEditable = (state.phase === "betting" || state.phase === "roundOver" || state.phase === "sessionOver");
 // 入力欄とSETボタン
@@ -2590,7 +2603,7 @@ setDis("btnSetBet", !betEditable);
 document.querySelectorAll("[data-add2]").forEach((b) => {
   b.disabled = !betEditable;
 });
-// ===== Insurance DOCK + Side panel =====
+// ===== Insurance DOCK + サイドパネル =====
 //const insMode = (state.phase === "offerInsurance");
 document.querySelector(".dock").classList.toggle("insMode", insMode);
 
@@ -2604,7 +2617,7 @@ function setDockLabel(id, label, key){
 
 
 if (insMode){
-  // Show new overlay
+  // 新しいオーバーレイを表示
   $("overlayInsurance").classList.add("show");
   
   const mx = state.insurance.max|0;
@@ -2614,19 +2627,19 @@ if (insMode){
   a.max = mx;
   a.step = 10;
   
-  // Set default value only if just entering phase
+  // フェーズに入ったばかりの場合のみデフォルト値を設定
   if (prevPhase !== "offerInsurance"){
     a.value = mx;
   } else {
-    // Keep user input but clamp
-    a.value = Math.min(a.value, mx); // Simple clamp
+    // ユーザー入力を維持しつつクランプ
+    a.value = Math.min(a.value, mx); // 単純クランプ
   }
 
-  // Update YES button state if amount is 0 (optional, but good UX)
+  // 金額が0の場合にYESボタンの状態を更新（オプションだが良いUX）
   // $("btnInsYes").disabled = (Number(a.value) <= 0);
 
 } else {
-  // Hide overlay
+  // オーバーレイを隠す
   $("overlayInsurance").classList.remove("show");
 }
 
@@ -2643,7 +2656,7 @@ prevPhase = state.phase;
 prevPhase = state.phase;
 
 
-      updateBettingControls(); // Enable/Disable bet buttons
+      updateBettingControls(); // ベットボタンの有効/無効更新
       console.log("render ok", state.phase);
 
     }
@@ -2657,29 +2670,29 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
 }
 
 
-    // ========= UI events =========
-    // ========= UI events (Buttons) =========
-    // Exposed to global scope for onclick attributes
+    // ========= UI イベント =========
+    // ========= UI イベント (ボタン) =========
+    // onclick属性用にグローバルスコープに公開
     window.updateBet = function(addVal) {
       if (!state) return;
       let cur = Number($("betInput").value || 0);
       let next = cur + addVal;
       if (next < 0) next = 0;
-      if (state.bank < next) next = floorEven(state.bank); // Cap at bank
+      if (state.bank < next) next = floorEven(state.bank); // 所持金でキャップ
       
       $("betInput").value = next;
-      // if ($("betSelect")) $("betSelect").value = next; // Removed
+      // if ($("betSelect")) $("betSelect").value = next; // 削除済
       
-      // Send update
+      // 更新を送信
       callAction("set_bet", next);
     };
 
-    // UI Update Logic for Disable
+    // 無効化のためのUI更新ロジック
     function updateBettingControls() {
         if (!state) return;
         const canBet = (state.phase === "betting" || state.phase === "roundOver");
         
-        // Disable buttons
+        // ボタンを無効化
         const btns = document.querySelectorAll(".btn-bet");
         btns.forEach(b => b.disabled = !canBet);
         
@@ -2690,14 +2703,14 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
         }
     }
 
-    // Direct input change
+    // 直接入力の変更
     function onBetInputChange(e) {
       if (!state) return;
       let val = floorEven(e.target.value);
       if (val < 0) val = 0;
       if (state.bank < val) val = floorEven(state.bank);
 
-      // Sync inputs
+      // 入力を同期
       $("betInput").value = val;
       if ($("betInGame")) $("betInGame").value = val;
       if ($("betSelect")) $("betSelect").value = val;
@@ -2722,14 +2735,14 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
       window.LOC.lang = next;
     };
 
-        // History overlay
+        // 履歴オーバーレイ
     $("btnHistory").onclick = ()=>{
       renderHistoryOverlay();
       $("overlayHistory").classList.add("show");
     };
     $("btnCloseHistory").onclick = ()=> $("overlayHistory").classList.remove("show");
 
-// ========= Ranking (localStorage) =========
+// ========= ランキング (localStorage) =========
 const RANK_KEY = "bjRanking_v1";
 const NAME_KEY = "bjPlayerName_v1";
 
@@ -2776,7 +2789,7 @@ function addRankingRecord(rec){
   list.unshift(rec);
   if (list.length > 50) list.length = 50;
 
-  // Profit desc → finalBank desc → duration asc
+  // 利益 降順 → 最終所持金 降順 → 経過時間 昇順
   list.sort((a,b)=>{
     const pa = (a.profit|0), pb = (b.profit|0);
     if (pb !== pa) return pb - pa;
@@ -2862,12 +2875,12 @@ function finalizeSessionRanking(st){
   toast(`${t("rank.saved")}${profit>=0?`+${profit}`:profit}`);
 }
 
-// === Action Throttling ===
+// === アクションの間引き（スロットリング） ===
 let uiLocked = false;
 let uiLockTimer = null;
 function lockUI(ms){
   uiLocked = true;
-  render(); // update buttons
+  render(); // ボタン更新
   if(uiLockTimer) clearTimeout(uiLockTimer);
   uiLockTimer = setTimeout(()=>{
     uiLocked = false;
@@ -2881,7 +2894,7 @@ $("btnPause").onclick = ()=>{
   //if (!state) return toast("ゲーム中に使えます");
   //if (!$("screenGame").classList.contains("active")) return toast("ゲーム中に使えます");
 
-  // Call engine pause if possible
+  // 可能ならエンジンのポーズを呼び出す
   if(state) {
     callAction("set_paused", 1);
     pausedAt = performance.now();
@@ -2901,7 +2914,7 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 $("btnQuit").onclick = ()=> doResetToTitle();
 $("btnSORevive").onclick = doRevive;
 
-    // ========= UI events (Insurance) =========
+    // ========= UI イベント (Insurance) =========
     if ($("btnInsMaxSide")) {
         $("btnInsMaxSide").onclick = () => {
           if(!state) return;
@@ -2921,7 +2934,7 @@ $("btnSORevive").onclick = doRevive;
 $("btnDebugAce").onclick = () => {
   $("btnDeal").disabled = true;
   $("btnDebugAce").disabled = true;
-  // Auto-cap bet logic skipped for brevity on debug button, assuming valid bet
+  // デバッグボタンなので自動キャップロジックは省略（妥当なベットと仮定）
   setTimeout(()=>{ 
     lockUI(800); 
     callAction("debug_deal_ace"); 
@@ -2932,14 +2945,14 @@ $("btnDeal").onclick = ()=> {
   $("btnHit").disabled = true;
   $("btnStand").disabled = true;
 
-  // Auto-cap bet before deal
+  // ディール前にベットを自動キャップ
   if (state && (state.phase === "betting" || state.phase === "roundOver")) {
-    let bet = floorEven($("betInput").value); // Changed from betInGame
+    let bet = floorEven($("betInput").value); // betInGame から変更
     if (state.bank < bet) {
 
       bet = floorEven(state.bank);
       $("betInput").value = bet;
-      // Sync select if possible
+      // 可能ならセレクトを同期
       const sel = $("betSelect");
       if(sel) sel.value = bet;
       
@@ -2949,7 +2962,7 @@ $("btnDeal").onclick = ()=> {
   }
 
   setTimeout(()=>{ 
-    lockUI(800); // Deal animation is long
+    lockUI(800); // ディールアニメーションは長い
     callAction("deal"); 
   }, 50);
 };
@@ -2958,7 +2971,7 @@ $("btnDeal").onclick = ()=> {
 
 
 
-    // Start session (engine ready guard)
+    // セッション開始（エンジン準備完了ガード）
     $("btnStart").onclick = () => {
       try{ soHideOverlay(); }catch(e){}
 
@@ -3011,7 +3024,7 @@ if ($("btnSetBet")) $("btnSetBet").onclick = ()=>{
   if (!state) return;
   const phase = state.phase;
   let v = floorEven($("betInput").value);
-  if (state.bank < v) v = floorEven(state.bank); // Cap at current bank
+  if (state.bank < v) v = floorEven(state.bank); // 現在の所持金でキャップ
   $("betInput").value = v;
 
   // BETTING / roundOver 中は今まで通りエンジンに bet を送る
@@ -3035,42 +3048,42 @@ if ($("btnSetBet")) $("btnSetBet").onclick = ()=>{
 };
 
 
-    // Main actions (Dock)
+    // メインアクション (ドック)
 $("btnHit").onclick = ()=> {
   if (!state) return;
-  if (uiLocked) return; // Ignore spam
+  if (uiLocked) return; // 連打無視
 
   if (state.phase === "offerInsurance") {
     const mx = state.insurance?.max ?? 0;
     let v = floorEven($("insAmountSide").value);
     v = Math.max(0, Math.min(v, mx));
     $("insAmountSide").value = v;
-    return callAction("buy_insurance", v); // YES
+    return callAction("buy_insurance", v); // はい
   }
 
-  lockUI(600); // Card animation ~420ms + margin
+  lockUI(600); // カードアニメーション ~420ms + マージン
   return callAction("hit");
 };
 
 $("btnStand").onclick = ()=> {
   if (!state) return;
-  if (uiLocked && state.phase !== "offerInsurance") return; // Allow answering insurance? No, standard lock rules.
+  if (uiLocked && state.phase !== "offerInsurance") return; // インシュランス回答は許可？ いや、標準ロックルールで。
 
   if (state.phase === "offerInsurance"){
     $("insAmountSide").value = 0;
-    return callAction("buy_insurance", 0);   // NO
+    return callAction("buy_insurance", 0);   // いいえ
   }
-  lockUI(1000); // Waiting for dealer turn start
+  lockUI(1000); // ディーラーのターン開始待ち
   return callAction("stand");
 };
 
-// New Dock Action Listeners
+// 新しいドックアクションリスナー
 $("btnDouble").onclick = ()=> callAction("double_down");
 $("btnSplit").onclick = ()=> callAction("split");
 $("btnSurrender").onclick = ()=> callAction("surrender");
 $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
 
-// Insurance (New)
+// インシュランス (新規)
 $("btnInsNo").onclick = () => {
   callAction("buy_insurance", 0);
   $("overlayInsurance").classList.remove("show");
@@ -3086,16 +3099,16 @@ $("btnInsMaxOverlay").onclick = () => {
   $("insAmountOverlay").value = mx;
 };
 
-// Bet Select Listener
+// ベット選択リスナー
 if ($("betSelect")) $("betSelect").onchange = (e) => {
   if (!state) return;
   const val = Number(e.target.value); 
   
-  // Sync input
+  // 入力を同期
   if($("betInput")) $("betInput").value = val;
   if($("betInGame")) $("betInGame").value = val;
 
-  // If in valid betting phase, send action immediately
+  // 有効なベットフェーズなら即座にアクション送信
   if (state.phase === "betting" || state.phase === "roundOver") {
      callAction("set_bet", val);
      if (state.phase === "roundOver") {
@@ -3105,7 +3118,7 @@ if ($("betSelect")) $("betSelect").onchange = (e) => {
   }
 };
 
-// Session Over buttons
+// セッション終了ボタン
 $("btnSOTitle").onclick = ()=> doResetToTitle();
 $("btnSORetry").onclick = ()=> {
   doResetToTitle();
@@ -3131,7 +3144,7 @@ $("nameInput")?.addEventListener("input", ()=>{
   localStorage.setItem(NAME_KEY, v);
 });
 
-    // keyboard shortcuts
+    // キーボードショートカット
     window.addEventListener("keydown", (e)=>{
       if (!apiReady() || !$("screenGame").classList.contains("active")) return;
       const k = e.key.toLowerCase();
@@ -3157,7 +3170,7 @@ $("nameInput")?.addEventListener("input", ()=>{
 
     });
 
-    // bet hint pre-engine（タイトル画面用）
+    // ベットヒント (エンジン接続前・タイトル画面用)
     function updateBetHintPreEngine(){
       const el = $("betInputTitle") || $("betInput");
       if (!el) return;
@@ -3168,7 +3181,7 @@ $("nameInput")?.addEventListener("input", ()=>{
     else if ($("betInput")) $("betInput").addEventListener("input", updateBetHintPreEngine);
     updateBetHintPreEngine();
 
-    // kick engine sync loop
+    // エンジン同期ループを開始
     syncEngine();
   
   </script>
@@ -3183,7 +3196,7 @@ $("nameInput")?.addEventListener("input", ()=>{
   #fxCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
 </style>
 <script>
-  // Particle System
+  // パーティクルシステム
   const fxCanvas = document.createElement("canvas");
   fxCanvas.id = "fxCanvas";
   document.body.appendChild(fxCanvas);
