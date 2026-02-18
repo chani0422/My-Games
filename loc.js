@@ -148,6 +148,7 @@ const RESOURCES = {
     "js.ad_waiting": "Waiting for ad…",
     "js.selectable": "Selectable",
 
+    "dev.add_chips": "DEV +1000",
   },
   
   ja: {
@@ -298,6 +299,7 @@ const RESOURCES = {
     "js.ad_waiting": "広告の終了を待っています…",
     "js.selectable": "選択できます",
 
+    "dev.add_chips": "デバッグ +1000",
   }
 };
 

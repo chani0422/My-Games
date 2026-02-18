@@ -1690,6 +1690,20 @@ window.CG.p = new Promise((resolve) => {
   <script>
     window.CG?.loadingStart?.();
     let prevPhase = null;
+
+    // ========= モード管理 (Hoisted) =========
+    const MODE_KEY = "bj_mode";
+    const BANK_KEY_NORMAL = "bj_bank_normal";
+    const HISTORY_KEY_CHALLENGE = "bj_history_challenge";
+    const HISTORY_KEY_NORMAL = "bj_history_normal";
+
+    let currentMode = "challenge"; // "challenge" | "normal"
+
+    // 起動時にモード復元
+    const savedMode = localStorage.getItem(MODE_KEY);
+    if (savedMode === "normal" || savedMode === "challenge") {
+        currentMode = savedMode;
+    }
     
 
     // ========= ユーティリティ =========
@@ -3057,19 +3071,8 @@ $("btnDeal").onclick = ()=> {
 
 
     // ========= モード管理 =========
-    const MODE_KEY = "bj_mode";
-    const BANK_KEY_NORMAL = "bj_bank_normal";
-    const HISTORY_KEY_CHALLENGE = "bj_history_challenge";
-    const HISTORY_KEY_NORMAL = "bj_history_normal";
-    // ランキングキーなども必要に応じて分離（今回は履歴キーを例示）
-
-    let currentMode = "challenge"; // "challenge" | "normal"
-
-    // 起動時にモード復元（任意）
-    const savedMode = localStorage.getItem(MODE_KEY);
-    if (savedMode === "normal" || savedMode === "challenge") {
-        currentMode = savedMode;
-    }
+    // ========= モード管理 (移動済み) =========
+    // logic moved to top
 
     // ヒストリーロード関数の修正
     function loadHistory(){
@@ -3398,6 +3401,55 @@ $("nameInput")?.addEventListener("input", ()=>{
     if ($("betInputTitle")) $("betInputTitle").addEventListener("input", updateBetHintPreEngine);
     else if ($("betInput")) $("betInput").addEventListener("input", updateBetHintPreEngine);
     updateBetHintPreEngine();
+
+    
+    // ==========================================
+    // デバッグ機能: ?dev=1 がある場合のみ有効化
+    // ==========================================
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDev = urlParams.get('dev') === '1';
+
+    if (isDev) {
+        console.log("Dev mode enabled");
+        // Pauseオーバーレイにボタンを追加する処理
+        // DOMContentLoaded後、またはエンジン同期時に実行
+        const initDebugUI = () => {
+            const container = document.querySelector("#overlayPause .bd .row");
+            if (container && !document.getElementById("btnDebugFull")) {
+                const btn = document.createElement("button");
+                btn.id = "btnDebugFull";
+                btn.className = "btn";
+                btn.style.fontSize = "12px";
+                btn.style.padding = "4px 8px";
+                btn.dataset.i18n = "dev.add_chips";
+                btn.textContent = t("dev.add_chips") || "DEV +1000";
+                
+                // 既存ボタンの前に挿入（または後ろ）
+                container.insertBefore(btn, container.firstChild);
+
+                btn.onclick = () => {
+                   if (!apiReady()) return;
+                   callAction("add_funds", 1000);
+                   toast("Debug: +1000 Chips");
+                   
+                   // Normalモードなら保存
+                   if (currentMode === "normal") {
+                       setTimeout(()=>{
+                           if (state && state.bank) localStorage.setItem(BANK_KEY_NORMAL, String(state.bank));
+                       }, 500);
+                   }
+                };
+            }
+        };
+
+        // タイミング対策: 即時とエンジンあとの両方で試行
+        if (document.readyState === "loading") {
+            window.addEventListener("DOMContentLoaded", initDebugUI);
+        } else {
+            initDebugUI();
+        }
+        window.addEventListener("bj-engine-ready", initDebugUI);
+    }
 
     // エンジン同期ループを開始
     syncEngine();
