@@ -150,8 +150,24 @@ const RESOURCES = {
 
     "mode.challenge": "CHALLENGE",
     "mode.normal": "NORMAL",
+    "mode.practice": "PRACTICE",
 
     "dev.add_chips": "DEV +1000",
+
+    // Practice Mode
+    "prac.title": "PRACTICE",
+    "prac.desc": "Free play (5 mins). Result not saved.",
+    "prac.free_left": "Daily Free: ",
+    "prac.ticket_left": "Tickets: ",
+    "prac.start_free": "Start (Free)",
+    "prac.start_ticket": "Start (1 Ticket)",
+    "prac.watch_ad": "Watch Ad (+1 Ticket)",
+    "prac.no_ticket": "No tickets. Watch Ad to play.",
+    "prac.session_over": "Practice Over",
+    "prac.retry_free": "Retry (Free)",
+    "prac.retry_ticket": "Retry (1 Ticket)",
+    "prac.time_up": "Time's up!",
+    "prac.confirm_ad": "Watch a video to get a play ticket?",
   },
   
   ja: {
@@ -304,8 +320,24 @@ const RESOURCES = {
 
     "mode.challenge": "チャレンジ",
     "mode.normal": "ノーマル",
+    "mode.practice": "練習モード",
 
     "dev.add_chips": "デバッグ +1000",
+
+    // Practice Mode
+    "prac.title": "練習モード",
+    "prac.desc": "5分間無料で練習できます（戦績保存なし）。",
+    "prac.free_left": "本日の無料枠: ",
+    "prac.ticket_left": "所持チケット: ",
+    "prac.start_free": "スタート（無料）",
+    "prac.start_ticket": "スタート（チケット消費）",
+    "prac.watch_ad": "広告を見てチケット入手",
+    "prac.no_ticket": "チケットが足りません。広告を見て入手してください。",
+    "prac.session_over": "練習終了",
+    "prac.retry_free": "もう一度（無料）",
+    "prac.retry_ticket": "もう一度（チケット消費）",
+    "prac.time_up": "時間切れ！",
+    "prac.confirm_ad": "動画広告を見て、プレイ権（チケット）を獲得しますか？",
   }
 };
 

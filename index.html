@@ -574,6 +574,25 @@
       justify-content: center;
       align-items: flex-end; /* 底揃え */
       flex-wrap: wrap; /* 画面が狭い場合は折り返す */
+      min-height: 140px; /* カードがない時も高さを確保してレイアウトガタつき防止 */
+    }
+
+    /* 練習モード用スタイル */
+    #modeBadge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #fff;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    #modeBadge.practice {
+      background: #4caf50;
+      border-color: #81c784;
     }
 
 
@@ -1231,7 +1250,42 @@ window.CG.p = new Promise((resolve) => {
 
 
     <!-- TITLE -->
-    <div class="screen active" id="screenTitle">
+    
+  <!-- 練習モード終了オーバーレイ -->
+  <div class="overlay" id="overlayPracticeOver" style="z-index: 100;">
+    <div class="modal" style="text-align:center;">
+      <h2 data-i18n="prac.session_over" style="margin-top:0">Practice Over</h2>
+      <p data-i18n="prac.time_up">Time's up!</p>
+      
+      <div class="ctaRow" style="flex-direction:column; gap:10px; margin-top:20px;">
+        <button class="btn primary" id="btnPracRetryFree" style="display:none;">
+          <span data-i18n="prac.retry_free">Retry (Free)</span>
+        </button>
+        <button class="btn primary" id="btnPracRetryTicket" style="display:none;">
+          <span data-i18n="prac.retry_ticket">Retry (Ticket)</span>
+        </button>
+        <button class="btn" id="btnPracWatchAd">
+          <span data-i18n="prac.watch_ad">Watch Ad (+1 Ticket)</span>
+        </button>
+        <button class="btn ghost" id="btnPracToTitle">
+          <span data-i18n="so.to_title">To Title</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 広告確認オーバーレイ -->
+  <div class="overlay" id="overlayAdConfirm" style="z-index: 101;">
+    <div class="modal" style="text-align:center;">
+      <h3 data-i18n="prac.confirm_ad">Watch a video to get a play ticket?</h3>
+      <div class="ctaRow" style="margin-top:20px;">
+        <button class="btn primary" id="btnAdYes" data-i18n="ins.yes">YES</button>
+        <button class="btn ghost" id="btnAdNo" data-i18n="ins.no">NO</button>
+      </div>
+    </div>
+  </div>
+
+<div class="screen active" id="screenTitle">
       <div class="card">
         <div class="titleHero">
           <div class="chipline" data-i18n="title.payout">🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1</div>
@@ -1240,11 +1294,17 @@ window.CG.p = new Promise((resolve) => {
 
           <div class="ctaRow">
             <!-- 既存のStartボタンを廃止し、2つのモードボタンを設置 -->
-            <button class="btn primary ctaBig" id="btnStartChallenge" disabled>
-              Challenge<br><span style="font-size:12px;font-weight:normal">Bank 5000</span>
+            <button class="btn ctaBig" id="btnModeChallenge">
+              <div style="font-size:16px" data-i18n="mode.challenge">CHALLENGE</div>
+              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="prac.desc">Ranking Mode</div>
             </button>
-            <button class="btn primary ctaBig" id="btnStartNormal" disabled>
-              Normal<br><span style="font-size:12px;font-weight:normal">Save Bank</span>
+            <button class="btn ctaBig" id="btnModeNormal">
+              <div style="font-size:16px" data-i18n="mode.normal">NORMAL</div>
+              <div class="small" style="font-weight:normal; opacity:.7">Save Bank</div>
+            </button>
+            <button class="btn ctaBig" id="btnModePractice">
+              <div style="font-size:16px" data-i18n="mode.practice">PRACTICE</div>
+              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="prac.desc">Free Play</div>
             </button>
           </div>
           <div class="ctaRow" style="margin-top:12px; justify-content:center;">
@@ -1457,8 +1517,8 @@ window.CG.p = new Promise((resolve) => {
   <div class="overlay" id="overlayBankruptcy">
     <div class="modal">
       <div class="hd">
-        <b>BANKRUPTCY</b>
-        <span class="badge bad">LOSE</span>
+        <b data-i18n="bank.bankruptcy">BANKRUPTCY</b>
+        <span class="badge bad" data-i18n="dyn.lose">LOSE</span>
       </div>
       <div class="bd">
         <div style="text-align:center; padding:20px 0;">
@@ -1559,12 +1619,7 @@ window.CG.p = new Promise((resolve) => {
 
       <div class="rule-sec">
         <b data-i18n="how.act_title">ACTIONS</b>
-        <div class="rule-list">
-          <div class="rule-item" data-i18n="how.act_hit">HIT</div>
-          <div class="rule-item" data-i18n="how.act_stand">STAND</div>
-          <div class="rule-item" data-i18n="how.act_double">DOUBLE</div>
-          <div class="rule-item" data-i18n="how.act_split">SPLIT</div>
-          <div class="rule-item" data-i18n="how.act_surrender">SURRENDER</div>
+    <div class="rule-item" data-i18n="how.act_surrender">SURRENDER</div>
           <div class="rule-item" data-i18n="how.act_insurance">INSURANCE</div>
         </div>
       </div>
@@ -1897,8 +1952,9 @@ function apiReady(){
         window.CG?.loadingStop?.();
         
         $("subLine").textContent = "ready.";
-        if($("btnStartChallenge")) $("btnStartChallenge").disabled = false;
-        if($("btnStartNormal")) $("btnStartNormal").disabled = false;
+        if($("btnModeChallenge")) $("btnModeChallenge").disabled = false;
+        if($("btnModeNormal")) $("btnModeNormal").disabled = false;
+        if($("btnModePractice")) $("btnModePractice").disabled = false;
 
         toast("Engine ready!");
         return;
@@ -3249,8 +3305,9 @@ $("btnDeal").onclick = ()=> {
     };
 
     // ボタンイベント紐づけ
-    $("btnStartChallenge").onclick = () => window.startSession("challenge");
-    $("btnStartNormal").onclick = () => window.startSession("normal");
+    $("btnModeChallenge").onclick = () => window.startSession("challenge");
+    $("btnModeNormal").onclick = () => window.startSession("normal");
+    $("btnModePractice").onclick = () => window.startSession("practice");
 
 
 if ($("btnSetBet")) $("btnSetBet").onclick = ()=>{
