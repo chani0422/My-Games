@@ -552,13 +552,17 @@ struct Engine {
     }
   }
 
+  // 破産復活: 広告視聴後に bank を付与してセッション継続
   int revive(int amount) {
     if (phase != Phase::SESSION_OVER)
       return set_error(INVALID_STATE, "Not session over");
     if (bank > 0)
       return set_error(INVALID_STATE, "Not bankrupt");
 
-    if (timeLeftMs <= 0 || round >= roundLimit) {
+    // session_over() と同じ判定: 自然終了なら復活不可
+    bool timeUp = (sessionMs > 0 && timeLeftMs <= 0);
+    bool roundUp = (roundLimit > 0 && round >= roundLimit);
+    if (timeUp || roundUp) {
       return set_error(INVALID_STATE, "Session ended naturally");
     }
 
@@ -1269,6 +1273,7 @@ struct Engine {
     string sessJson = "{";
     sessJson += "\"round\":" + std::to_string(round) + ",";
     sessJson += "\"roundLimit\":" + std::to_string(roundLimit) + ",";
+    sessJson += "\"sessionMs\":" + std::to_string(sessionMs) + ",";
     sessJson += "\"timeLeftMs\":" + std::to_string(timeLeftMs);
     sessJson += "}";
 

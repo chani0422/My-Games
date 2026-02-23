@@ -852,19 +852,20 @@
       left:50%; transform:translateX(-50%);
       bottom: calc(var(--dockH) + 18px + env(safe-area-inset-bottom, 0px));
       display:flex; flex-direction:column; gap:8px;
-      /* Normal Mode Enhancements */
-    body[data-mode="normal"] .stat-round,
-    body[data-mode="normal"] .stat-time {
-      display: none !important;
-    }
-    
-    /* Responsive Adjustments */
       padding-bottom: calc(12px + env(safe-area-inset-bottom));
       padding-left: calc(12px + env(safe-area-inset-left));
       padding-right: calc(12px + env(safe-area-inset-right));
       z-index:99;
       pointer-events:none;
     }
+    /* Normal Mode: Round/Time 非表示 */
+    body[data-mode="normal"] .stat-round,
+    body[data-mode="normal"] .stat-time {
+      display: none !important;
+    }
+    /* CrazyGames SDK "Result not served" 等を非表示 */
+    .overlay .crazygames-error,
+    .overlay [class*="crazygames"] { display: none !important; }
     /* Touch Targets */
     .toastWrap .btn, .toastWrap .chipbtn { min-height:44px; min-width:44px; }
     .toastWrap .opt { min-height:44px; }
@@ -1919,6 +1920,13 @@ window.CG.p = new Promise((resolve) => {
         bonusApplied: (st.roundResult && "bonusApplied" in st.roundResult) ? st.roundResult.bonusApplied : 0,
       };
 
+      // P1-7: Practiceモードの履歴は金額を0表示
+      if (currentMode === "practice") {
+        entry.bet = 0;
+        entry.net = 0;
+        entry.bank = 0;
+      }
+
       const list = loadHistory();
       list.unshift(entry);          // 新しいものを先頭に
       if (list.length > 100) list.length = 100; // 最大100件
@@ -2065,6 +2073,59 @@ $("btnSORetry").onclick = () => {
   }
 };
 
+// ========= 破産オーバーレイのボタン配線 =========
+// タイトルへ
+$("btnBankruptTitle").onclick = () => {
+  $("overlayBankruptcy").classList.remove("show");
+  doResetToTitle();
+};
+
+// 広告で復活 (+5000)
+$("btnBankruptAd").onclick = () => {
+  if (isAdRequesting) return;
+  const btn = $("btnBankruptAd");
+  const errEl = $("adErrorMsg");
+  btn.disabled = true;
+  if (errEl) errEl.style.display = "none";
+
+  const callbacks = {
+    adFinished: () => {
+      isAdRequesting = false;
+      btn.disabled = false;
+      // C++ revive(5000) でセッション継続復活
+      const rc = callAction("revive", 5000);
+      if (rc === 0) {
+        $("overlayBankruptcy").classList.remove("show");
+        toast("復活しました！ +5000");
+      } else {
+        // revive失敗 = セッション自然終了だった場合
+        $("overlayBankruptcy").classList.remove("show");
+        beginSessionOverFlow(state);
+      }
+    },
+    adError: (error) => {
+      isAdRequesting = false;
+      btn.disabled = false;
+      console.warn("Ad Error (bankruptcy):", error);
+      if (errEl) errEl.style.display = "block";
+    },
+  };
+
+  isAdRequesting = true;
+  try {
+    if (window.CrazyGames?.SDK?.ad?.requestAd) {
+      window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+    } else {
+      // SDK未接続時のデバッグ用: 即成功扱い
+      console.warn("SDK not ready, simulating ad success");
+      setTimeout(callbacks.adFinished, 1000);
+    }
+  } catch (e) {
+    console.error(e);
+    callbacks.adError(e);
+  }
+};
+
     // ========= タイマー =========
     let sessionMs = 300000;
     let startTickAt = 0;
@@ -2178,15 +2239,21 @@ function setPause(paused) {
 
     function doResetToTitle(){
       stopTick();
-      // stopTick();
       callAction("reset_session");
       $("overlayPause").classList.remove("show");
       $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
-      // try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO?.bannerId || "cg-so-banner"); }catch(e){}
+      $("overlayBankruptcy") && $("overlayBankruptcy").classList.remove("show");
       $("overlayHow").classList.remove("show");
       $("overlayMore") && $("overlayMore").classList.remove("show");
       $("overlayHistory") && $("overlayHistory").classList.remove("show");
       goScreen("title");
+
+      // body.dataset.mode をクリア
+      delete document.body.dataset.mode;
+
+      // P1-6: タイトル画面のBankをNormal所持金で更新
+      const normalBank = Number(localStorage.getItem(BANK_KEY_NORMAL)) || 5000;
+      $("bank").textContent = String(normalBank);
 
       $("subLine").textContent = t("ui.ready");
       toast(t("toast.reset_done"));
@@ -2300,9 +2367,12 @@ function soFillStats(st){
     stats.appendChild(el);
   });
 
-  // 復活ボタンロジック
+  // 復活ボタンロジック（無制限セッション対応）
   const reviveRow = document.getElementById("soReviveRow");
-  if (st.bank <= 0 && st.session.timeLeftMs > 0 && st.session.round < st.session.roundLimit) {
+  const timeUp = (st.session.sessionMs > 0 && st.session.timeLeftMs <= 0);
+  const roundUp = (st.session.roundLimit > 0 && st.session.round >= st.session.roundLimit);
+  const naturalEnd = timeUp || roundUp;
+  if (st.bank <= 0 && !naturalEnd) {
       if(reviveRow) reviveRow.style.display = "flex";
   } else {
       if(reviveRow) reviveRow.style.display = "none";
@@ -2529,7 +2599,9 @@ function beginSessionOverFlow(st){
       }
       prevBank = newBank;
 
-      $("round").textContent = `${state.session.round}/${state.session.roundLimit}`;
+      // 追加: roundLimit==0 のとき ∞ 表示
+      const rl = state.session.roundLimit;
+      $("round").textContent = rl > 0 ? `${state.session.round}/${rl}` : `${state.session.round}/∞`;
       $("time").textContent = fmtTime(state.session.timeLeftMs);
 
       if ($("phaseBadge")) $("phaseBadge").textContent = state.phase;
@@ -3356,9 +3428,11 @@ $("btnPracToTitle").onclick = () => {
           return;
        }
 
-       // 状態取得してレンダリング
-       const json = bjApi.get_state_json();
-       const st = JSON.parse(decodeURIComponent(json));
+       // P0-1: 状態取得 — refresh() 方式で安全にポインタを処理
+       refresh();
+
+       // body.dataset.mode を設定（CSS出し分け用）
+       document.body.dataset.mode = mode;
        
        // タイマースタート
        if (timeLimitSec > 0) {
@@ -3376,18 +3450,14 @@ $("btnPracToTitle").onclick = () => {
            // Timeは表示
            $("time").parentElement.style.display = "flex";
        } else if (mode === "normal") {
-           // Normal: Time/Round 隠す？
-           // 既存: Title screen: hide Round/Time
-           $("round").parentElement.style.display = "flex";
-           $("time").parentElement.style.display = "none"; // Normalは時間無制限
+           // Normal: CSSの body[data-mode="normal"] で Round/Time を隠す
+           $("round").parentElement.style.display = "";
+           $("time").parentElement.style.display = "";
        } else {
            // Challenge: 両方表示
            $("round").parentElement.style.display = "flex";
            $("time").parentElement.style.display = "flex";
        }
-       
-       bjApi.free_ptr(json);
-       state = st;
 
        // セッションオーバー状態のリセット
        try { soHideOverlay(); } catch(e) {}

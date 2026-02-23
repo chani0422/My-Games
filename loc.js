@@ -156,7 +156,7 @@ const RESOURCES = {
 
     // Practice Mode
     "prac.title": "PRACTICE",
-    "prac.desc": "Free play (5 mins). Result not saved.",
+    "prac.desc": "Free play (5 mins).",
     "prac.free_left": "Daily Free: ",
     "prac.ticket_left": "Tickets: ",
     "prac.start_free": "Start (Free)",
@@ -327,7 +327,7 @@ const RESOURCES = {
 
     // Practice Mode
     "prac.title": "練習モード",
-    "prac.desc": "5分間無料で練習できます（戦績保存なし）。",
+    "prac.desc": "5分間無料で練習できます。",
     "prac.free_left": "本日の無料枠: ",
     "prac.ticket_left": "所持チケット: ",
     "prac.start_free": "スタート（無料）",
