@@ -1258,14 +1258,8 @@ window.CG.p = new Promise((resolve) => {
       <p data-i18n="prac.time_up">Time's up!</p>
       
       <div class="ctaRow" style="flex-direction:column; gap:10px; margin-top:20px;">
-        <button class="btn primary" id="btnPracRetryFree" style="display:none;">
-          <span data-i18n="prac.retry_free">Retry (Free)</span>
-        </button>
-        <button class="btn primary" id="btnPracRetryTicket" style="display:none;">
-          <span data-i18n="prac.retry_ticket">Retry (Ticket)</span>
-        </button>
-        <button class="btn" id="btnPracWatchAd">
-          <span data-i18n="prac.watch_ad">Watch Ad (+1 Ticket)</span>
+<button class="btn" id="btnPracWatchAd">
+          <span data-i18n="prac.ad_again">Watch Ad (+1 Ticket)</span>
         </button>
         <button class="btn ghost" id="btnPracToTitle">
           <span data-i18n="so.to_title">To Title</span>
@@ -1745,14 +1739,60 @@ window.CG.p = new Promise((resolve) => {
     const HISTORY_KEY_CHALLENGE = "bj_history_challenge";
     const HISTORY_KEY_NORMAL = "bj_history_normal";
 
-    let currentMode = "challenge"; // "challenge" | "normal"
+    const PRAC_FREE_KEY = "bj_prac_free_date"; // YYYY-MM-DD (JST)
+    const PRAC_TICKET_KEY = "bj_prac_ticket";    // number
+
+    let currentMode = "challenge"; // "challenge" | "normal" | "practice"
+    let isAdRequesting = false; // 広告連打防止
 
     // 起動時にモード復元
     const savedMode = localStorage.getItem(MODE_KEY);
-    if (savedMode === "normal" || savedMode === "challenge") {
+    if (savedMode === "normal" || savedMode === "challenge" || savedMode === "practice") {
         currentMode = savedMode;
     }
     
+    // JST (UTC+9) の日付文字列を取得 "YYYY-MM-DD"
+    function getJstDateStr() {
+       const now = new Date();
+       const jstOffset = 9 * 60; // +9 hours
+       const localOffset = now.getTimezoneOffset(); // minutes (inv sign)
+       // 現在時刻(UTC) + 9時間
+       const jstMs = now.getTime() + (jstOffset + localOffset) * 60000;
+       const jstDate = new Date(jstMs);
+       
+       const y = jstDate.getFullYear();
+       const m = String(jstDate.getMonth()+1).padStart(2,'0');
+       const d = String(jstDate.getDate()).padStart(2,'0');
+       return `${y}-${m}-${d}`;
+    }
+
+    function getPracState() {
+       const today = getJstDateStr();
+       const lastDate = localStorage.getItem(PRAC_FREE_KEY);
+       const freeUsed = (lastDate === today);
+       const tickets = Number(localStorage.getItem(PRAC_TICKET_KEY) || 0);
+       return { today, freeUsed, tickets };
+    }
+
+    function consumePracTicket() {
+       const s = getPracState();
+       if (!s.freeUsed) {
+          // 無料枠消費
+          localStorage.setItem(PRAC_FREE_KEY, s.today);
+          return true;
+       }
+       if (s.tickets > 0) {
+          localStorage.setItem(PRAC_TICKET_KEY, String(s.tickets - 1));
+          return true;
+       }
+       return false;
+    }
+
+    function addPracTicket(n) {
+       const cur = Number(localStorage.getItem(PRAC_TICKET_KEY) || 0);
+       localStorage.setItem(PRAC_TICKET_KEY, String(cur + n));
+       updateModeButtons(); // UI更新
+    }
 
     // ========= ユーティリティ =========
     const $ = (id)=>document.getElementById(id);
@@ -1956,6 +1996,8 @@ function apiReady(){
         if($("btnModeNormal")) $("btnModeNormal").disabled = false;
         if($("btnModePractice")) $("btnModePractice").disabled = false;
 
+        updateModeButtons();
+
         toast("Engine ready!");
         return;
       }
@@ -1976,14 +2018,51 @@ function apiReady(){
 
 // セッション終了ボタン
 $("btnSOTitle").onclick = ()=> doResetToTitle();
-$("btnSORetry").onclick = ()=> {
-  doResetToTitle();
-  // Restart with same mode
-  setTimeout(()=> {
-      if (typeof window.startSession === "function" && currentMode) {
+$("btnSORetry").onclick = () => {
+  // リザルト：ボタンは「広告でもう一度」だけにする（btnSORetry を流用）
+  if (isAdRequesting) return;
+
+  const btn = $("btnSORetry");
+  const orig = btn.textContent;
+  btn.textContent = "Loading Ad...";
+  btn.disabled = true;
+
+  const restore = () => {
+    btn.textContent = orig;
+    btn.disabled = false;
+  };
+
+  const callbacks = {
+    adFinished: () => {
+      isAdRequesting = false;
+      restore();
+      doResetToTitle();
+      setTimeout(() => {
+        if (typeof window.startSession === "function" && currentMode) {
           window.startSession(currentMode);
-      }
-  }, 200);
+        }
+      }, 200);
+    },
+    adError: (error) => {
+      isAdRequesting = false;
+      console.warn("Ad Error:", error);
+      restore();
+      toast(t("ad.load_fail"));
+    },
+  };
+
+  isAdRequesting = true;
+  try {
+    if (window.CrazyGames?.SDK?.ad?.requestAd) {
+      window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+    } else {
+      console.warn("SDK not ready, simulating ad success");
+      setTimeout(callbacks.adFinished, 1000);
+    }
+  } catch (e) {
+    console.error(e);
+    callbacks.adError(e);
+  }
 };
 
     // ========= タイマー =========
@@ -2361,6 +2440,16 @@ function beginSessionOverFlow(st){
   if (window.SO.active) return;
   window.SO.active = true;
 
+  // 練習モードの場合の終了フロー
+  if (currentMode === "practice") {
+      toast(t("prac.time_up")); // "Time's up!"
+      setTimeout(() => {
+          $("overlayPracticeOver").classList.add("show");
+          window.CG?.gameplayStop?.();
+      }, 1000);
+      return;
+  }
+
   // 結果を見せるためにオーバーレイ表示前に4秒待機
   toast(t("so.delay"));
   setTimeout(() => {
@@ -2425,11 +2514,18 @@ function beginSessionOverFlow(st){
       const bankEl = $("bank");
       const bankPill = bankEl.closest(".pill");
       const newBank = Number(state.bank);
-      if (prevBank === null){
-        bankEl.textContent = String(newBank);
-      } else if (prevBank !== newBank){
-        animateNumber(bankEl, prevBank, newBank, 520);
-        bankPill.classList.remove("bankFlash"); void bankPill.offsetWidth; bankPill.classList.add("bankFlash");
+      
+      if (currentMode === "practice") {
+          // 練習モード: Bankは表示しない or 固定
+          bankEl.textContent = "---";
+          // bankEl.textContent = "∞"; 
+      } else {
+          if (prevBank === null){
+            bankEl.textContent = String(newBank);
+          } else if (prevBank !== newBank){
+            animateNumber(bankEl, prevBank, newBank, 520);
+            bankPill.classList.remove("bankFlash"); void bankPill.offsetWidth; bankPill.classList.add("bankFlash");
+          }
       }
       prevBank = newBank;
 
@@ -2713,7 +2809,7 @@ if (insMode) {
       const net = state.roundResult.netProfit|0;
       const msgEl = $("roundMsg");
       const metaEl = $("roundMeta");
-      if (isRoundOver){
+      if (isRoundOver && currentMode !== "practice"){
         /*
         // "WIN +100" 等を2秒の遅延中も表示したままにする
         if (state.phase === "sessionOver"){
@@ -2731,17 +2827,36 @@ if (insMode) {
           msgEl.className = "msg neutral";
         }
         metaEl.textContent = `${t("dyn.streak")} ${state.roundResult.streak} / ${t("dyn.bonus")} ${state.roundResult.bonusPercent}% (+${state.roundResult.bonusApplied})`;
+      } else if (isRoundOver && currentMode === "practice") {
+        // 練習モード: 勝敗のみ表示（金額は非表示）
+        if (net > 0) {
+          msgEl.textContent = "WIN!";
+          msgEl.className = "msg win";
+        } else if (net < 0) {
+          msgEl.textContent = "LOSE";
+          msgEl.className = "msg lose";
+        } else {
+          msgEl.textContent = "PUSH";
+          msgEl.className = "msg neutral";
+        }
+        metaEl.textContent = "";
       }
 
 
 
-      const v = floorEven($("betInput").value);
-      if($("betHint")) $("betHint").textContent = `${t("dyn.input")}=${$("betInput").value} → ${t("dyn.even")}=${v}`;
+      // 練習モード: Bet UIを非表示
+      if (currentMode === "practice") {
+          const v = floorEven($("betInput").value);
+          if($("betHint")) $("betHint").textContent = "";
+      } else {
+          const v = floorEven($("betInput").value);
+          if($("betHint")) $("betHint").textContent = `${t("dyn.input")}=${$("betInput").value} → ${t("dyn.even")}=${v}`;
+      }
 
 
       // ===== ベットのロック/アンロック =====
-// BETを編集できるのは「配る前」or「勝敗確定後」だけ
-  const betEditable = (state.phase === "betting" || state.phase === "roundOver" || state.phase === "sessionOver");
+// BETを編集できるのは「配る前」or「勝敗確定後」だけ（練習モードでは常に無効）
+  const betEditable = currentMode !== "practice" && (state.phase === "betting" || state.phase === "roundOver" || state.phase === "sessionOver");
 // 入力欄とSETボタン
 setDis("betInGame", !betEditable);
 setDis("btnSetBet", !betEditable);
@@ -2815,11 +2930,6 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     prevPlayerLens = [];
     prevPlayerJson = "";
 }
-
-
-    // ========= UI イベント =========
-    // ========= UI イベント (ボタン) =========
-    // onclick属性用にグローバルスコープに公開
     window.updateBet = function(addVal) {
       if (!state) return;
       let cur = Number($("betInput").value || 0);
@@ -3050,13 +3160,480 @@ $("btnPause").onclick = ()=>{
 };
 
 $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
+  // エンジン側へ再開通知
+  if(state) {
+      callAction("set_paused", 0);
+  }
+  
   if (pausedAt){
     pausedTotal += performance.now() - pausedAt;
     pausedAt = 0;
   }
-  callAction("set_paused", 0);
   setPause(false);
 };
+
+    // ========= 広告連携 (Rewarded) =========
+    function requestAdForTicket(after = null) {
+       if (isAdRequesting) return;
+       isAdRequesting = true;
+       $("adErrorMsg").style.display = "none";
+       toast(t("js.ad_waiting"));
+
+       // CrazyGames SDK
+       const callbacks = {
+         adFinished: () => {
+            isAdRequesting = false;
+            addPracTicket(1);
+            toast("Ticket +1 Get!");
+            // オーバーレイを閉じる
+            $("overlayAdConfirm").classList.remove("show");
+            // 呼び出し元が「広告後に続行したい」場合はコールバック
+            if (typeof after === "function") after();
+         },
+         adError: (error) => {
+            isAdRequesting = false;
+            console.warn("Ad Error:", error);
+            toast(t("ad.load_fail"));
+         },
+         adStarted: () => {
+            console.log("Ad Started");
+         }
+       };
+
+       if (window.CrazyGames?.SDK?.ad?.requestAd) {
+          window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
+       } else {
+          // SDKなし/ロード前 -> デバッグ用: 即成功扱い (or エラー)
+          console.warn("SDK not ready, simulating ad success");
+          setTimeout(callbacks.adFinished, 1000);
+       }
+    }
+
+
+    // ========= モード選択ボタン制御 =========
+    function updateModeButtons() {
+       const ps = getPracState();
+       
+       const btnP = $("btnModePractice");
+       if (btnP) {
+          const desc = btnP.querySelector(".small");
+          if (desc) {
+             if (!ps.freeUsed) {
+                desc.textContent = t("prac.start_free");
+                desc.style.color = "#37d67a";
+             } else if (ps.tickets > 0) {
+                desc.textContent = t("prac.start_ticket") + ` (${ps.tickets})`;
+                desc.style.color = "#ffcc66";
+             } else {
+                desc.textContent = t("prac.watch_ad");
+                desc.style.color = "#ffffff";
+             }
+          }
+       }
+    }
+
+    $("btnModeChallenge").onclick = () => startSession("challenge");
+    $("btnModeNormal").onclick = () => startSession("normal");
+    
+    $("btnModePractice").onclick = () => {
+       const ps = getPracState();
+       if (!ps.freeUsed) {
+           // 無料枠あり -> 開始
+           startSession("practice");
+       } else if (ps.tickets > 0) {
+           // チケットあり -> 開始
+           startSession("practice");
+       } else {
+           // チケットなし -> 広告確認
+           $("overlayAdConfirm").classList.add("show");
+       }
+    };
+
+    // 広告確認オーバーレイ
+    $("btnAdYes").onclick = () => {
+       requestAdForTicket(() => startSession("practice"));
+    };
+    $("btnAdNo").onclick = () => {
+       $("overlayAdConfirm").classList.remove("show");
+    };
+    
+    // 練習終了オーバーレイ（Time up）
+// 仕様：Retry は表示しない。選択肢は「タイトルへ戻る」「広告でもう一度」だけ。
+// 「広告でもう一度」は Rewarded Ad を見せてチケット +1 → そのまま Practice を開始（= チケット消費）する。
+$("btnPracWatchAd").onclick = () => {
+   requestAdForTicket(() => {
+      $("overlayPracticeOver").classList.remove("show");
+      startSession("practice");
+   });
+};
+$("btnPracToTitle").onclick = () => {
+   $("overlayPracticeOver").classList.remove("show");
+   doResetToTitle();
+};
+
+// ========= スタートセッション =========
+    window.startSession = function(mode) {
+       if (!mode) mode = "challenge";
+
+       // 練習モードの消費処理
+       if (mode === "practice") {
+           if (!consumePracTicket()) {
+               toast(t("prac.no_ticket"));
+               return; 
+           }
+       }
+
+       currentMode = mode;
+       localStorage.setItem(MODE_KEY, mode);
+       updateModeButtons(); // チケット減ったのを反映
+
+       let initialBank = 5000;
+       let roundLimit = 0; // 無制限
+       let timeLimitSec = 300; // 5分 (デフォルト)
+
+       if (mode === "challenge") {
+           initialBank = 5000;
+           roundLimit = 0; 
+           timeLimitSec = 300; // 5分
+       } else if (mode === "normal") {
+           initialBank = Number(localStorage.getItem(BANK_KEY_NORMAL)) || 5000;
+           if (initialBank <= 0) initialBank = 5000;
+           roundLimit = 0;
+           timeLimitSec = 0; // 無制限
+       } else if (mode === "practice") {
+           initialBank = 1000000; // 練習用: 十分な額
+           roundLimit = 0;
+           timeLimitSec = 300; // 5分
+       }
+
+       if (!apiReady()) {
+           toast("Engine not ready!");
+           return;
+       }
+
+       // UI切り替え
+       $("screenTitle").classList.remove("active");
+       $("screenGame").classList.add("active");
+
+       // 練習モード時はBetカードとBank pillを非表示
+       const betCard = $("betInput")?.closest(".card");
+       const bankPill = $("bank")?.closest(".pill");
+       if (mode === "practice") {
+           if (betCard) betCard.style.display = "none";
+           if (bankPill) bankPill.style.display = "none";
+       } else {
+           if (betCard) betCard.style.display = "";
+           if (bankPill) bankPill.style.display = "";
+       }
+       
+       // モードバッジ更新
+       const mb = $("modeBadge");
+       mb.className = "badge"; // reset
+       if (mode === "practice") {
+          mb.textContent = t("mode.practice");
+          mb.classList.add("good"); // 緑色とか
+          mb.style.background = "#4caf50";
+       } else if (mode === "challenge") {
+          mb.textContent = t("mode.challenge");
+          mb.classList.add("neutral");
+       } else {
+          mb.textContent = t("mode.normal");
+          mb.classList.add("neutral");
+       }
+
+       // 開始
+       const seed = seed64();
+       // ルール: Double, Split, Surrender, Insurance, EvenMoney, DAS
+       // Challenge/Practiceは固定、Normalは本来設定に従うが、今回は全部ONで実装簡略化
+       // または index.html の checkbox を読む (既存実装があればそれを使う)
+       const mask = getRuleMaskFromUI(); // 後で定義確認
+
+       const ret = bjApi.start_session(seed.lo, seed.hi, mask, timeLimitSec, roundLimit, initialBank);
+       if (ret !== 0) {
+          console.error("start_session failed", ret);
+          toast("Error starting session");
+          doResetToTitle();
+          return;
+       }
+
+       // 状態取得してレンダリング
+       const json = bjApi.get_state_json();
+       const st = JSON.parse(decodeURIComponent(json));
+       
+       // タイマースタート
+       if (timeLimitSec > 0) {
+           startTick();
+           sessionMs = timeLimitSec * 1000;
+       } else {
+           // 時間無制限（Normalモード）: タイマー不要
+           stopTick();
+           sessionMs = Infinity;
+       }
+
+       if (mode === "practice") {
+           // 練習モード：Round非表示
+           $("round").parentElement.style.display = "none";
+           // Timeは表示
+           $("time").parentElement.style.display = "flex";
+       } else if (mode === "normal") {
+           // Normal: Time/Round 隠す？
+           // 既存: Title screen: hide Round/Time
+           $("round").parentElement.style.display = "flex";
+           $("time").parentElement.style.display = "none"; // Normalは時間無制限
+       } else {
+           // Challenge: 両方表示
+           $("round").parentElement.style.display = "flex";
+           $("time").parentElement.style.display = "flex";
+       }
+       
+       bjApi.free_ptr(json);
+       state = st;
+
+       // セッションオーバー状態のリセット
+       try { soHideOverlay(); } catch(e) {}
+       sessionEndAdDone = false;
+
+       // ランキング用セッション初期化
+       currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+       sessionStartBank = Number(initialBank);
+       sessionFinalized = false;
+
+       // 名前の復元
+       const savedName = localStorage.getItem(NAME_KEY);
+       if (savedName && $("nameInput")) $("nameInput").value = savedName;
+
+       // ベット設定
+       let bet = 100;
+       if ($("betInput")) bet = Number($("betInput").value);
+       if (!bet || bet < 10) bet = 10;
+       bet = floorEven(bet);
+       if (bet > initialBank) bet = initialBank;
+       if ($("betInput")) $("betInput").value = bet;
+       callAction("set_bet", bet);
+
+       // アニメーションキャッシュクリア
+       prevDealerCards = [];
+       prevPlayerLens = [];
+       prevBank = null;
+       hideBoardAfterSet = false;
+
+       render(); // 初回描画
+       
+       callAction("set_paused", 0);
+       setPause(false);
+       
+       lockUI(800);
+       goScreen("game");
+       
+       toast(mode === "normal" ? "Normal Mode Start!" : 
+             mode === "practice" ? "Practice Mode Start!" : t("toast.good_luck"));
+       
+       window.CG.gameplayStart();
+    };
+
+
+    // ========= アクションイベント定義 =========
+    $("btnHit").onclick = ()=> {
+      if (!state) return;
+      if (uiLocked) return; 
+
+      if (state.phase === "offerInsurance") {
+        const mx = state.insurance?.max ?? 0;
+        let v = floorEven($("insAmountSide").value);
+        v = Math.max(0, Math.min(v, mx));
+        $("insAmountSide").value = v;
+        return callAction("buy_insurance", v); 
+      }
+
+      lockUI(600); 
+      return callAction("hit");
+    };
+
+    $("btnStand").onclick = ()=> {
+      if (!state) return;
+      if (uiLocked && state.phase !== "offerInsurance") return; 
+
+      if (state.phase === "offerInsurance"){
+        $("insAmountSide").value = 0;
+        return callAction("buy_insurance", 0);   
+      }
+      lockUI(1000); 
+      return callAction("stand");
+    };
+
+    $("btnDouble").onclick = ()=> callAction("double_down");
+    $("btnSplit").onclick = ()=> callAction("split");
+    $("btnSurrender").onclick = ()=> callAction("surrender");
+    $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
+
+    $("btnInsNo").onclick = () => {
+      callAction("buy_insurance", 0);
+      $("overlayInsurance").classList.remove("show");
+    };
+    $("btnInsYes").onclick = () => {
+      const val = Number($("insAmountOverlay").value);
+      callAction("buy_insurance", val);
+      $("overlayInsurance").classList.remove("show");
+    };
+    $("btnInsMaxOverlay").onclick = () => {
+      if(!state) return;
+      const mx = state.insurance.max|0;
+      $("insAmountOverlay").value = mx;
+    };
+    
+    $("btnRanking").onclick = ()=> {
+      renderRankingOverlay();
+      $("overlayRanking").classList.add("show");
+    };
+    $("btnCloseRanking").onclick = ()=> $("overlayRanking").classList.remove("show");
+
+    $("nameInput")?.addEventListener("input", ()=>{
+      const v = $("nameInput").value.trim().slice(0,12) || "YOU";
+      localStorage.setItem(NAME_KEY, v);
+    });
+
+    window.addEventListener("keydown", (e)=>{
+      if (!apiReady() || !$("screenGame").classList.contains("active")) return;
+      const k = e.key.toLowerCase();
+      if (k === "d") $("btnDeal").click();
+      if (k === "h") $("btnHit").click();
+      if (k === "s") $("btnStand").click();
+      if (k === "escape"){
+        if ($("overlayHow").classList.contains("show")) {
+            $("overlayHow").classList.remove("show");
+        } else if ($("overlayPause").classList.contains("show")) {
+            $("btnClosePause").click();
+        }
+      }
+      if (state && state.phase === "offerInsurance"){
+         if (k === "y") $("btnHit").click();
+         if (k === "n") $("btnStand").click();
+      }
+    });
+
+    // デバッグ機能
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDev = urlParams.get('dev') === '1';
+    if (isDev) console.log("Dev mode enabled");
+
+    // ========= 開発用デバッグUI =========
+    if (isDev) {
+        const initDebugUI = () => {
+            // ポーズオーバーレイにチップ追加ボタン
+            const container = document.querySelector("#overlayPause .bd .row");
+            if (container && !document.getElementById("btnDebugFull")) {
+                const btn = document.createElement("button");
+                btn.id = "btnDebugFull";
+                btn.className = "btn";
+                btn.style.fontSize = "12px";
+                btn.style.padding = "4px 8px";
+                btn.textContent = "DEV +1000";
+                container.insertBefore(btn, container.firstChild);
+                btn.onclick = () => {
+                   if (!apiReady()) return;
+                   callAction("add_funds", 1000);
+                   toast("Debug: +1000 Chips");
+                   if (currentMode === "normal") {
+                       setTimeout(()=>{
+                           if (state && state.bank) localStorage.setItem(BANK_KEY_NORMAL, String(state.bank));
+                       }, 500);
+                   }
+                };
+            }
+
+            // タイトル画面に練習チケット付与ボタン
+            const titleRow = document.querySelector("#screenTitle .ctaRow");
+            if (titleRow && !document.getElementById("btnDevTicket")) {
+                const ticketBtn = document.createElement("button");
+                ticketBtn.id = "btnDevTicket";
+                ticketBtn.className = "btn ghost";
+                ticketBtn.style.fontSize = "11px";
+                ticketBtn.style.padding = "4px 8px";
+                ticketBtn.style.border = "1px dashed #ff0";
+                ticketBtn.style.color = "#ff0";
+                ticketBtn.textContent = "🎫 DEV +1 Ticket";
+                titleRow.parentElement.insertBefore(ticketBtn, titleRow.nextSibling);
+                ticketBtn.onclick = () => {
+                   addPracTicket(1);
+                   toast("Debug: +1 Practice Ticket");
+                };
+            }
+        };
+
+        // タイミング対策: 即時とエンジン後の両方で試行
+        if (document.readyState === "loading") {
+            window.addEventListener("DOMContentLoaded", initDebugUI);
+        } else {
+            initDebugUI();
+        }
+        window.addEventListener("bj-engine-ready", initDebugUI);
+    }
+
+    // エンジン同期ループを開始
+    syncEngine();
+
+    // ベットヒント (エンジン接続前・タイトル画面用)
+    function updateBetHintPreEngine(){
+      const el = $("betInputTitle") || $("betInput");
+      if (!el) return;
+      const v = floorEven(el.value);
+      if ($("betHint")) $("betHint").textContent = `入力=${el.value} → 偶数化=${v}`;
+    }
+    if ($("betInputTitle")) $("betInputTitle").addEventListener("input", updateBetHintPreEngine);
+    else if ($("betInput")) $("betInput").addEventListener("input", updateBetHintPreEngine);
+    updateBetHintPreEngine();
+
+
+    // Deal / DebugAce
+    $("btnDebugAce").onclick = () => {
+      $("btnDeal").disabled = true;
+      $("btnDebugAce").disabled = true;
+      setTimeout(()=>{ 
+        lockUI(800); 
+        callAction("debug_deal_ace"); 
+      }, 50);
+    };
+
+    $("btnDeal").onclick = ()=> {
+      $("btnHit").disabled = true;
+      $("btnStand").disabled = true;
+
+      // ディール前にベットを自動キャップ
+      if (state && (state.phase === "betting" || state.phase === "roundOver")) {
+        let bet = floorEven($("betInput").value); 
+        if (state.bank < bet) {
+          bet = floorEven(state.bank);
+          $("betInput").value = bet;
+          // 可能ならセレクトを同期
+          const sel = $("betSelect");
+          if(sel) sel.value = bet;
+          callAction("set_bet", bet);
+          toast(t("toast.bet_adjusted"));
+        }
+      }
+
+      setTimeout(()=>{ 
+        lockUI(800); 
+        callAction("deal"); 
+      }, 50);
+    };
+
+
+
+    function getRuleMaskFromUI() {
+       let mask = 0;
+       if($("optDouble").checked) mask |= 1;
+       if($("optSplit").checked) mask |= 2;
+       if($("optSurrender").checked) mask |= 4;
+       if($("optInsurance").checked) mask |= 8;
+       if($("optEvenMoney").checked) mask |= 16;
+       if($("optDAS").checked) mask |= 32;
+       if($("optSplitBJ").checked) mask |= 64;
+       if($("optH17").checked) mask |= 128;
+       return mask;
+    }
+
+
 
 $("btnQuit").onclick = ()=> doResetToTitle();
 $("btnSORevive").onclick = doRevive;
@@ -3078,460 +3655,17 @@ $("btnSORevive").onclick = doRevive;
     $("btnEvenMoneyIns").onclick = () => {callAction("take_even_money");};
 
 
-$("btnDebugAce").onclick = () => {
-  $("btnDeal").disabled = true;
-  $("btnDebugAce").disabled = true;
-  // デバッグボタンなので自動キャップロジックは省略（妥当なベットと仮定）
-  setTimeout(()=>{ 
-    lockUI(800); 
-    callAction("debug_deal_ace"); 
-  }, 50);
-};
-
-$("btnDeal").onclick = ()=> {
-  $("btnHit").disabled = true;
-  $("btnStand").disabled = true;
-
-  // ディール前にベットを自動キャップ
-  if (state && (state.phase === "betting" || state.phase === "roundOver")) {
-    let bet = floorEven($("betInput").value); // betInGame から変更
-    if (state.bank < bet) {
-
-      bet = floorEven(state.bank);
-      $("betInput").value = bet;
-      // 可能ならセレクトを同期
-      const sel = $("betSelect");
-      if(sel) sel.value = bet;
-      
-      callAction("set_bet", bet);
-      toast(t("toast.bet_adjusted"));
-    }
-  }
-
-  setTimeout(()=>{ 
-    lockUI(800); // ディールアニメーションは長い
-    callAction("deal"); 
-  }, 50);
-};
 
 
 
 
 
 
-    // ========= モード管理 =========
-    // ========= モード管理 (移動済み) =========
-    // logic moved to top
-
-    // ヒストリーロード関数の修正
-    function loadHistory(){
-        try{
-            const key = (currentMode === "normal") ? HISTORY_KEY_NORMAL : HISTORY_KEY_CHALLENGE;
-            const raw = localStorage.getItem(key);
-            if (!raw) return [];
-            const arr = JSON.parse(raw);
-            if (!Array.isArray(arr)) return [];
-            return arr;
-        } catch(e){
-            console.warn("history load failed", e);
-            return [];
-        }
-    }
-
-    function saveHistory(list){
-        try{
-            const key = (currentMode === "normal") ? HISTORY_KEY_NORMAL : HISTORY_KEY_CHALLENGE;
-            localStorage.setItem(key, JSON.stringify(list));
-        } catch(e){
-            console.warn("history save failed", e);
-        }
-    }
-
-    // セッション開始（エンジン準備完了ガード）
-    // mode: "challenge" | "normal"
-    window.startSession = (mode) => {
-      try{ soHideOverlay(); }catch(e){}
-
-      sessionEndAdDone = false; 
-      if (!apiReady()){
-        toast(t("ui.engine_not_ready"));
-        return;
-      }
-
-      currentMode = mode;
-      localStorage.setItem(MODE_KEY, mode);
-
-      localStorage.setItem(MODE_KEY, mode);
-
-      // タイトル画面のベット入力は削除されたため、固定値 or ゲーム画面入力値を採用
-      let bet = 100;
-      if ($("betInput")) bet = Number($("betInput").value);
-      if (!bet || bet < 10) bet = 10;
-      bet = floorEven(bet);
-      
-      // 初期所持金の決定
-      let initialBank = 5000;
-      if (mode === "normal") {
-          const savedBank = localStorage.getItem(BANK_KEY_NORMAL);
-          if (savedBank) {
-              initialBank = Number(savedBank);
-              if (!Number.isFinite(initialBank) || initialBank <= 0) {
-                  // 破産状態? 本来なら広告へ誘導だが、ここではセーフティとして5000
-                  initialBank = 5000; 
-              }
-          }
-      }
-      
-      // ベットが所持金を超えないようにキャップ
-      if (bet > initialBank) bet = initialBank;
-      if (bet > 5000 && mode === "challenge") bet = 5000; // Challengeキャップ
-
-      const {lo,hi} = seed64();
-      const mask = rulesMaskFromUI();
-
-      // モードに応じた設定
-      let sessionSeconds = 300;
-      let roundLimit = 12;
-      
-      document.body.dataset.mode = mode;
-      
-      const badge = $("modeBadge");
-      if (badge) {
-          badge.textContent = (mode === "normal") ? t("mode.normal") : t("mode.challenge");
-          // badge.className = "badge " + (mode === "normal" ? "neutral" : "primary"); // 色変えたいなら
-      }
-
-      if (mode === "normal") {
-          sessionSeconds = 0; // 無制限
-          roundLimit = 0;     // 無制限
-      }
-
-      // セッション開始 (initialBankを渡す)
-      callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit, initialBank);
-
-      // ===== ランキング用セッション初期化 =====
-      currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      sessionStartBank = Number(initialBank); // state.bank はまだ来ていないので initialBank を使う
-      sessionFinalized = false;
-
-      const savedName = localStorage.getItem(NAME_KEY);
-      if (savedName && $("nameInput")) $("nameInput").value = savedName;
-
-      // ベット設定・同期
-      if ($("betInput")) $("betInput").value = bet;
-      callAction("set_bet", bet);
-
-      // アニメーションキャッシュクリア
-      prevDealerCards = [];
-      prevPlayerLens = [];
-      prevBank = null;
-      hideBoardAfterSet = false;
-
-    // ========= 破産オーバーレイ制御 =========
-    let isAdRequesting = false;
-    
-    $("btnBankruptTitle").onclick = () => {
-        $("overlayBankruptcy").classList.remove("show");
-        doResetToTitle();
-    };
-    
-    $("btnBankruptAd").onclick = async () => {
-        if (isAdRequesting) return;
-        isAdRequesting = true;
-        $("btnBankruptAd").disabled = true;
-        $("adErrorMsg").style.display = "none";
-        
-        // CrazyGames Rewarded Ad
-        const callbacks = {
-            adFinished: () => {
-                // 成功：+5000して復帰
-                isAdRequesting = false;
-                $("btnBankruptAd").disabled = false;
-                $("overlayBankruptcy").classList.remove("show");
-                
-                // C++側に資金追加
-                callAction("add_funds", 5000);
-                
-                // Normalモードなら保存
-                if (currentMode === "normal") {
-                    // state更新待ちが必要かもだが、add_fundsは即時反映されるはず
-                    // 少し待ってから保存するか、次のupdateで保存される
-                    setTimeout(()=>{
-                        if (state && state.bank) localStorage.setItem(BANK_KEY_NORMAL, String(state.bank));
-                    }, 500);
-                }
-                
-                toast(t("toast.revived"));
-                
-                // 完了後、BETフェーズに戻すために new round 相当の処理が必要？
-                // 現状、bankruptになるのは roundOver 後なので、次は "Next Round" ボタンを押す流れになるはず
-                // ただし roundOver 状態で bank>0 になればフローは継続できる
-            },
-            adError: (error) => {
-                console.warn("Ad error:", error);
-                isAdRequesting = false;
-                $("btnBankruptAd").disabled = false;
-                $("adErrorMsg").style.display = "block";
-            },
-            adStarted: () => {
-                console.log("Ad started");
-            }
-        };
-        
-        try {
-            if (window.CG && window.CG.ready) {
-                window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
-            } else {
-                // SDKなし（ローカルデバッグ等）：成功扱い
-                console.log("Mock Ad Success");
-                setTimeout(callbacks.adFinished, 1000);
-            }
-        } catch(e) {
-            callbacks.adError(e);
-        }
-    };
-
-    lockUI(800);
-    goScreen("game");
-      
-      if (mode === "normal") {
-          // タイマー停止 (念のため一度呼んでから止めないほうがいいかもだが)
-          // startTick() を呼ばない
-      } else {
-          startTick();
-      }
-      
-      toast(mode === "normal" ? "Normal Mode Start!" : t("toast.good_luck"));
-    };
-
-    // ボタンイベント紐づけ
-    $("btnModeChallenge").onclick = () => window.startSession("challenge");
-    $("btnModeNormal").onclick = () => window.startSession("normal");
-    $("btnModePractice").onclick = () => window.startSession("practice");
 
 
-if ($("btnSetBet")) $("btnSetBet").onclick = ()=>{
-  if (!state) return;
-  const phase = state.phase;
-  let v = floorEven($("betInput").value);
-  if (state.bank < v) v = floorEven(state.bank); // 現在の所持金でキャップ
-  $("betInput").value = v;
-
-  // BETTING / roundOver 中は今まで通りエンジンに bet を送る
-  if (phase === "betting" || phase === "roundOver") {
-    callAction("set_bet", v);
-
-    // roundOver 中に SET したら盤面を消して「次ラウンド待ち」の見た目にする
-    if (phase === "roundOver") {
-      hideBoardAfterSet = true;
-      render();
-    }
-    return;
-  }
-
-  // ★ sessionOver 中に SET を押した場合 → 盤面だけ消す
-  if (phase === "sessionOver") {
-    // hideBoardAfterSet = true; //// boardHidden = true で空に描く
-    render();      // エンジンには触らず、見た目だけ更新
-    return;
-  }
-};
 
 
-    // メインアクション (ドック)
-$("btnHit").onclick = ()=> {
-  if (!state) return;
-  if (uiLocked) return; // 連打無視
-
-  if (state.phase === "offerInsurance") {
-    const mx = state.insurance?.max ?? 0;
-    let v = floorEven($("insAmountSide").value);
-    v = Math.max(0, Math.min(v, mx));
-    $("insAmountSide").value = v;
-    return callAction("buy_insurance", v); // はい
-  }
-
-  lockUI(600); // カードアニメーション ~420ms + マージン
-  return callAction("hit");
-};
-
-$("btnStand").onclick = ()=> {
-  if (!state) return;
-  if (uiLocked && state.phase !== "offerInsurance") return; // インシュランス回答は許可？ いや、標準ロックルールで。
-
-  if (state.phase === "offerInsurance"){
-    $("insAmountSide").value = 0;
-    return callAction("buy_insurance", 0);   // いいえ
-  }
-  lockUI(1000); // ディーラーのターン開始待ち
-  return callAction("stand");
-};
-
-// 新しいドックアクションリスナー
-$("btnDouble").onclick = ()=> callAction("double_down");
-$("btnSplit").onclick = ()=> callAction("split");
-$("btnSurrender").onclick = ()=> callAction("surrender");
-$("btnEvenMoney").onclick = ()=> callAction("take_even_money");
-
-// インシュランス (新規)
-$("btnInsNo").onclick = () => {
-  callAction("buy_insurance", 0);
-  $("overlayInsurance").classList.remove("show");
-};
-$("btnInsYes").onclick = () => {
-  const val = Number($("insAmountOverlay").value);
-  callAction("buy_insurance", val);
-  $("overlayInsurance").classList.remove("show");
-};
-$("btnInsMaxOverlay").onclick = () => {
-  if(!state) return;
-  const mx = state.insurance.max|0;
-  $("insAmountOverlay").value = mx;
-};
-
-// ベット選択リスナー
-if ($("betSelect")) $("betSelect").onchange = (e) => {
-  if (!state) return;
-  const val = Number(e.target.value); 
-  
-  // 入力を同期
-  if($("betInput")) $("betInput").value = val;
-  if($("betInGame")) $("betInGame").value = val;
-
-  // 有効なベットフェーズなら即座にアクション送信
-  if (state.phase === "betting" || state.phase === "roundOver") {
-     callAction("set_bet", val);
-     if (state.phase === "roundOver") {
-        hideBoardAfterSet = true;
-        render();
-     }
-  }
-};
-
-// セッション終了ボタン
-$("btnSOTitle").onclick = ()=> doResetToTitle();
-$("btnSORetry").onclick = ()=> {
-  doResetToTitle();
-  // Restart with same mode
-  setTimeout(()=> {
-      if (typeof window.startSession === "function" && currentMode) {
-          window.startSession(currentMode);
-      }
-  }, 200);
-};
-
-
-$("btnRanking").onclick = ()=> {
-  renderRankingOverlay();
-  $("overlayRanking").classList.add("show");
-};
-$("btnCloseRanking").onclick = ()=> $("overlayRanking").classList.remove("show");
-
-//このコメントアウトはランキング削除機能を無効化するためのものです
-// $("btnClearRanking").onclick = ()=> {
-//   saveRanking([]);
-//   renderRankingOverlay();
-//   toast("Ranking cleared");
-// };
-
-$("nameInput")?.addEventListener("input", ()=>{
-  const v = $("nameInput").value.trim().slice(0,12) || "YOU";
-  localStorage.setItem(NAME_KEY, v);
-});
-
-    // キーボードショートカット
-    window.addEventListener("keydown", (e)=>{
-      if (!apiReady() || !$("screenGame").classList.contains("active")) return;
-      const k = e.key.toLowerCase();
-      if (k === "d") $("btnDeal").click();
-      if (k === "h") $("btnHit").click();
-      if (k === "s") $("btnStand").click();
-      if (k === "escape"){
-        if ($("overlayHow").classList.contains("show")) {
-            $("overlayHow").classList.remove("show");
-        } else if ($("overlayPause").classList.contains("show")) {
-            $("btnClosePause").click();
-        }
-  }
-      if (state && state.phase === "offerInsurance"){
-      if (k === "y") $("btnHit").click();
-      if (k === "n") $("btnStand").click();
-      if (k === "m") {
-        const btn = $("btnDockMore");
-        if (btn) btn.click();
-      }
-      return;
-    }
-
-    });
-
-    // ベットヒント (エンジン接続前・タイトル画面用)
-    function updateBetHintPreEngine(){
-      const el = $("betInputTitle") || $("betInput");
-      if (!el) return;
-      const v = floorEven(el.value);
-      if ($("betHint")) $("betHint").textContent = `入力=${el.value} → 偶数化=${v}`;
-    }
-    if ($("betInputTitle")) $("betInputTitle").addEventListener("input", updateBetHintPreEngine);
-    else if ($("betInput")) $("betInput").addEventListener("input", updateBetHintPreEngine);
-    updateBetHintPreEngine();
-
-    
-    // ==========================================
-    // デバッグ機能: ?dev=1 がある場合のみ有効化
-    // ==========================================
-    const urlParams = new URLSearchParams(window.location.search);
-    const isDev = urlParams.get('dev') === '1';
-
-    if (isDev) {
-        console.log("Dev mode enabled");
-        // Pauseオーバーレイにボタンを追加する処理
-        // DOMContentLoaded後、またはエンジン同期時に実行
-        const initDebugUI = () => {
-            const container = document.querySelector("#overlayPause .bd .row");
-            if (container && !document.getElementById("btnDebugFull")) {
-                const btn = document.createElement("button");
-                btn.id = "btnDebugFull";
-                btn.className = "btn";
-                btn.style.fontSize = "12px";
-                btn.style.padding = "4px 8px";
-                btn.dataset.i18n = "dev.add_chips";
-                btn.textContent = t("dev.add_chips") || "DEV +1000";
-                
-                // 既存ボタンの前に挿入（または後ろ）
-                container.insertBefore(btn, container.firstChild);
-
-                btn.onclick = () => {
-                   if (!apiReady()) return;
-                   callAction("add_funds", 1000);
-                   toast("Debug: +1000 Chips");
-                   
-                   // Normalモードなら保存
-                   if (currentMode === "normal") {
-                       setTimeout(()=>{
-                           if (state && state.bank) localStorage.setItem(BANK_KEY_NORMAL, String(state.bank));
-                       }, 500);
-                   }
-                };
-            }
-        };
-
-        // タイミング対策: 即時とエンジンあとの両方で試行
-        if (document.readyState === "loading") {
-            window.addEventListener("DOMContentLoaded", initDebugUI);
-        } else {
-            initDebugUI();
-        }
-        window.addEventListener("bj-engine-ready", initDebugUI);
-    }
-
-    // エンジン同期ループを開始
-    syncEngine();
-  
   </script>
-
-
-
 <!-- Last Build Scripts -->
 <script src="loc.js"></script>
 <script src="blackjack.js"></script>

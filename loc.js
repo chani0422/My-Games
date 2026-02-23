@@ -71,7 +71,7 @@ const RESOURCES = {
     "so.wait": "Please wait…",
     "so.sponsored": "Sponsored",
     "so.to_title": "To Title",
-    "so.retry": "EARN 5000 & RETRY",
+    "so.retry": "WATCH AD & PLAY AGAIN (+5000)",
     "so.revive": "📺 Watch Ad to Revive (+500)",
     "so.delay": "Add Delay Before Session Over",
     
@@ -162,6 +162,7 @@ const RESOURCES = {
     "prac.start_free": "Start (Free)",
     "prac.start_ticket": "Start (1 Ticket)",
     "prac.watch_ad": "Watch Ad (+1 Ticket)",
+    "prac.ad_again": "Watch Ad & Play Again",
     "prac.no_ticket": "No tickets. Watch Ad to play.",
     "prac.session_over": "Practice Over",
     "prac.retry_free": "Retry (Free)",
@@ -241,7 +242,7 @@ const RESOURCES = {
     "so.wait": "Please wait…",
     "so.sponsored": "Sponsored",
     "so.to_title": "タイトルへ",
-    "so.retry": "EARN 5000 & RETRY",
+    "so.retry": "📺 広告でもう一度 (+5000)",
     "so.revive": "📺 広告を見て復活 (+500)",
     "so.delay": "セッション終了まで少しお待ちください",
     
@@ -332,6 +333,7 @@ const RESOURCES = {
     "prac.start_free": "スタート（無料）",
     "prac.start_ticket": "スタート（チケット消費）",
     "prac.watch_ad": "広告を見てチケット入手",
+    "prac.ad_again": "📺 広告でもう一度",
     "prac.no_ticket": "チケットが足りません。広告を見て入手してください。",
     "prac.session_over": "練習終了",
     "prac.retry_free": "もう一度（無料）",
