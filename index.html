@@ -1297,6 +1297,10 @@ window.CG.p = new Promise((resolve) => {
               <div style="font-size:16px" data-i18n="mode.normal">NORMAL</div>
               <div class="small" style="font-weight:normal; opacity:.7">Save Bank</div>
             </button>
+            <button class="btn ctaBig" id="btnNormalRevive" style="display:none; border-color:#ff9800;">
+              <div style="font-size:14px">WATCH AD +50000</div>
+              <div class="small" style="font-weight:normal; opacity:.7">Normal復活</div>
+            </button>
             <button class="btn ctaBig" id="btnModePractice">
               <div style="font-size:16px" data-i18n="mode.practice">PRACTICE</div>
               <div class="small" style="font-weight:normal; opacity:.7" data-i18n="prac.desc">Free Play</div>
@@ -1368,11 +1372,11 @@ window.CG.p = new Promise((resolve) => {
 
                   <!-- ベットボタン -->
                   <style>
-                    .bet-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; width:100%; }
+                    .bet-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; width:100%; }
                     .btn-bet { 
                        padding:8px 2px; border-radius:8px; border:none; 
                        background:#444; color:#fff; font-weight:bold; cursor:pointer;
-                       font-size:12px;
+                       font-size:13px;
                     }
                     .btn-bet:active { background:#666; transform:scale(0.95); }
                     .btn-bet:disabled { opacity:0.5; transform:none; }
@@ -1381,15 +1385,13 @@ window.CG.p = new Promise((resolve) => {
                   </style>
                   <div class="bet-grid">
                       <!-- 上段: プラス -->
-                      <button class="btn-bet plus" onclick="updateBet(10)">+10</button>
-                      <button class="btn-bet plus" onclick="updateBet(100)">+100</button>
-                      <button class="btn-bet plus" onclick="updateBet(1000)">+1k</button>
-                      <button class="btn-bet plus" onclick="updateBet(10000)">+10k</button>
+                      <button class="btn-bet plus" onclick="updateBet(1000)">+1K</button>
+                      <button class="btn-bet plus" onclick="updateBet(10000)">+10K</button>
+                      <button class="btn-bet plus" onclick="updateBet(100000)">+100K</button>
                       <!-- 下段: マイナス -->
-                      <button class="btn-bet minus" onclick="updateBet(-10)">-10</button>
-                      <button class="btn-bet minus" onclick="updateBet(-100)">-100</button>
-                      <button class="btn-bet minus" onclick="updateBet(-1000)">-1k</button>
-                      <button class="btn-bet minus" onclick="updateBet(-10000)">-10k</button>
+                      <button class="btn-bet minus" onclick="updateBet(-1000)">-1K</button>
+                      <button class="btn-bet minus" onclick="updateBet(-10000)">-10K</button>
+                      <button class="btn-bet minus" onclick="updateBet(-100000)">-100K</button>
                   </div>
                 </div>
 
@@ -1528,7 +1530,7 @@ window.CG.p = new Promise((resolve) => {
         <div class="soBtns">
           <button class="btn ghost" id="btnBankruptTitle" data-i18n="cmd.title">TITLE</button>
           <button class="btn primary ctaBig" id="btnBankruptAd">
-            <span style="font-size:14px">WATCH AD</span><br>+5000
+            <span style="font-size:14px">WATCH AD</span><br>+50000
           </button>
         </div>
       </div>
@@ -1562,13 +1564,7 @@ window.CG.p = new Promise((resolve) => {
           </div>
 
           <div class="row soBtns">
-            <button class="btn ghost" id="btnSOTitle" disabled data-i18n="so.to_title">タイトルへ</button>
-            <button class="btn primary" id="btnSORetry" disabled data-i18n="so.retry">EARN 5000 & RETRY</button>
-          </div>
-          <div class="row soBtns" id="soReviveRow" style="justify-content:center; margin-top:10px; display:none;">
-             <button class="btn good" id="btnSORevive" style="width:100%; font-size:15px; padding:14px;" data-i18n="so.revive">
-               📺 Watch Ad to Revive (+500)
-             </button>
+            <button class="btn primary" id="btnSOTitle" disabled data-i18n="so.to_title">タイトルへ</button>
           </div>
         </div>
       </div>
@@ -1798,6 +1794,15 @@ window.CG.p = new Promise((resolve) => {
     // ========= ユーティリティ =========
     const $ = (id)=>document.getElementById(id);
 
+    // Normal モードの所持金を安全に取得（bank=0 で || 5000 に潰されるバグ防止）
+    const MIN_BET = 1000; // 最低ベット額
+    function getNormalBank() {
+        const raw = localStorage.getItem(BANK_KEY_NORMAL);
+        if (raw === null) return 5000; // 初回プレイ
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : 5000;
+    }
+
     function toast(msg){
       const w = $("toastWrap");
       const el = document.createElement("div");
@@ -2024,54 +2029,9 @@ function apiReady(){
 
 // ... (skipping unchanged lines) ...
 
-// セッション終了ボタン
+// セッション終了ボタン（タイトルへ戻るのみ）
 $("btnSOTitle").onclick = ()=> doResetToTitle();
-$("btnSORetry").onclick = () => {
-  // リザルト：ボタンは「広告でもう一度」だけにする（btnSORetry を流用）
-  if (isAdRequesting) return;
 
-  const btn = $("btnSORetry");
-  const orig = btn.textContent;
-  btn.textContent = "Loading Ad...";
-  btn.disabled = true;
-
-  const restore = () => {
-    btn.textContent = orig;
-    btn.disabled = false;
-  };
-
-  const callbacks = {
-    adFinished: () => {
-      isAdRequesting = false;
-      restore();
-      doResetToTitle();
-      setTimeout(() => {
-        if (typeof window.startSession === "function" && currentMode) {
-          window.startSession(currentMode);
-        }
-      }, 200);
-    },
-    adError: (error) => {
-      isAdRequesting = false;
-      console.warn("Ad Error:", error);
-      restore();
-      toast(t("ad.load_fail"));
-    },
-  };
-
-  isAdRequesting = true;
-  try {
-    if (window.CrazyGames?.SDK?.ad?.requestAd) {
-      window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
-    } else {
-      console.warn("SDK not ready, simulating ad success");
-      setTimeout(callbacks.adFinished, 1000);
-    }
-  } catch (e) {
-    console.error(e);
-    callbacks.adError(e);
-  }
-};
 
 // ========= 破産オーバーレイのボタン配線 =========
 // タイトルへ
@@ -2080,7 +2040,7 @@ $("btnBankruptTitle").onclick = () => {
   doResetToTitle();
 };
 
-// 広告で復活 (+5000)
+// 広告で復活 (+50000 → Normal再開)
 $("btnBankruptAd").onclick = () => {
   if (isAdRequesting) return;
   const btn = $("btnBankruptAd");
@@ -2092,16 +2052,18 @@ $("btnBankruptAd").onclick = () => {
     adFinished: () => {
       isAdRequesting = false;
       btn.disabled = false;
-      // C++ revive(5000) でセッション継続復活
-      const rc = callAction("revive", 5000);
-      if (rc === 0) {
-        $("overlayBankruptcy").classList.remove("show");
-        toast("復活しました！ +5000");
-      } else {
-        // revive失敗 = セッション自然終了だった場合
-        $("overlayBankruptcy").classList.remove("show");
-        beginSessionOverFlow(state);
-      }
+      // bank=50000 で保存し、Normal自動再開
+      localStorage.setItem(BANK_KEY_NORMAL, "50000");
+      $("overlayBankruptcy").classList.remove("show");
+      // アニメーションキャッシュをリセット
+      prevDealerCards = [];
+      prevPlayerLens = [];
+      prevBank = null;
+      toast("復活しました！ +50000");
+      // doResetToTitleを使わず直接startSessionを呼ぶ
+      // (reset_sessionがbank=5000に上書きする問題を回避)
+      stopTick();
+      window.startSession("normal");
     },
     adError: (error) => {
       isAdRequesting = false;
@@ -2252,7 +2214,7 @@ function setPause(paused) {
       delete document.body.dataset.mode;
 
       // P1-6: タイトル画面のBankをNormal所持金で更新
-      const normalBank = Number(localStorage.getItem(BANK_KEY_NORMAL)) || 5000;
+      const normalBank = getNormalBank();
       $("bank").textContent = String(normalBank);
 
       $("subLine").textContent = t("ui.ready");
@@ -2306,9 +2268,7 @@ function soSetView(stage){
 
 function soSetButtonsEnabled(enabled){
   const b1 = document.getElementById("btnSOTitle");
-  const b2 = document.getElementById("btnSORetry");
   if (b1) b1.disabled = !enabled;
-  if (b2) b2.disabled = !enabled;
 }
 
 function soClearTimers(){
@@ -2367,16 +2327,7 @@ function soFillStats(st){
     stats.appendChild(el);
   });
 
-  // 復活ボタンロジック（無制限セッション対応）
-  const reviveRow = document.getElementById("soReviveRow");
-  const timeUp = (st.session.sessionMs > 0 && st.session.timeLeftMs <= 0);
-  const roundUp = (st.session.roundLimit > 0 && st.session.round >= st.session.roundLimit);
-  const naturalEnd = timeUp || roundUp;
-  if (st.bank <= 0 && !naturalEnd) {
-      if(reviveRow) reviveRow.style.display = "flex";
-  } else {
-      if(reviveRow) reviveRow.style.display = "none";
-  }
+  // 復活ボタンは削除済み（仕様B: 自然終了では復活不可）
 }
 
 async function soRequestBanner(){
@@ -2445,49 +2396,7 @@ function soRequestMidgame(){
   window.SO.adFailSafe = setTimeout(finish, 15000);
 }
 
-function doRevive(){
-    if (window.SO.adReviveActive) return;
-
-    if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) {
-        // toast("Ads are disabled in this version.");
-        console.log("Ads differred for Basic Launch");
-        return;
-    }
-    window.SO.adReviveActive = true;
-    const btn = document.getElementById("btnSORevive");
-    const origText = btn.textContent;
-    btn.textContent = "Loading Ad...";
-    btn.disabled = true;
-
-    const finish = (success) => {
-        window.SO.adReviveActive = false;
-        btn.textContent = origText;
-        btn.disabled = false;
-        
-        if (success) {
-            callAction("revive", 500); // 500チップで復活
-            soHideOverlay();
-            window.CG?.gameplayStart?.();
-            toast("Revived with 500 chips!");
-        } else {
-            toast("Ad failed. Try again.");
-        }
-    };
-
-    try {
-        const callbacks = {
-          adFinished: () => finish(true),
-          adError: (error) => {
-              console.warn("Reward ad error:", error);
-              finish(false);
-          },
-        };
-        // window.CrazyGames?.SDK?.ad?.requestAd?.("rewarded", callbacks);
-    } catch(e) {
-        console.error(e);
-        finish(false);
-    }
-}
+// doRevive 関数は削除済み（SessionOverでの復活は不可）
 
 function soUpdateLock(){
   const lockNote = document.getElementById("soLockNote");
@@ -2848,16 +2757,23 @@ if (insMode) {
       }
       
       finalizeSessionRanking(state);
-      if (state.phase === "sessionOver") beginSessionOverFlow(state);
+      // 破産(bank < MIN_BET)時は sessionOver フローを呼ばない（UI重なり防止）
+      if (state.phase === "sessionOver") {
+          const isBankrupt = currentMode === "normal" && Number(state.bank) < MIN_BET;
+          if (!isBankrupt) {
+              beginSessionOverFlow(state);
+          }
+      }
 
       $("roundBanner").style.display = (isRoundOver && !isDealerAnimating) ? "flex" : "none";
 
-      // 破産判定 (Normalモードのみ)
+      // 破産判定 (Normalモードのみ): bank < MIN_BET(1K) で破産
       if (currentMode === "normal" && isRoundOver && !isDealerAnimating) {
           const b = Number(state.bank);
-          if (b <= 0) {
-              // 破産オーバーレイ表示
-              // 少し待ってから表示（演出が終わるのを待つ）
+          if (b < MIN_BET) {
+              // 破産確定: bank=0 を即座に保存
+              localStorage.setItem(BANK_KEY_NORMAL, "0");
+              // 破産オーバーレイ表示（演出が終わるのを待つ）
               setTimeout(()=>{
                   if($("overlayBankruptcy")) $("overlayBankruptcy").classList.add("show");
               }, 1500);
@@ -3002,15 +2918,22 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     prevPlayerLens = [];
     prevPlayerJson = "";
 }
+    // K表記フォーマッター
+    function fmtK(n) {
+        n = Number(n);
+        if (n >= 1000 && n % 1000 === 0) return (n / 1000) + "K";
+        return String(n);
+    }
+
     window.updateBet = function(addVal) {
       if (!state) return;
       let cur = Number($("betInput").value || 0);
       let next = cur + addVal;
-      if (next < 0) next = 0;
+      if (next < MIN_BET) next = MIN_BET; // 最低Bet=1K
       if (state.bank < next) next = floorEven(state.bank); // 所持金でキャップ
+      if (next < MIN_BET) next = MIN_BET; // clamp後も最低保証
       
       $("betInput").value = next;
-      // if ($("betSelect")) $("betSelect").value = next; // 削除済
       
       // 更新を送信
       callAction("set_bet", next);
@@ -3302,10 +3225,61 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
              }
           }
        }
+
+       // Normal 破産状態の検出・救済ボタン表示
+       const normalBank = getNormalBank();
+       const btnNormal = $("btnModeNormal");
+       const btnRevive = $("btnNormalRevive");
+       if (normalBank < MIN_BET) {
+           if (btnNormal) btnNormal.style.display = "none";
+           if (btnRevive) btnRevive.style.display = "";
+       } else {
+           if (btnNormal) btnNormal.style.display = "";
+           if (btnRevive) btnRevive.style.display = "none";
+       }
     }
 
     $("btnModeChallenge").onclick = () => startSession("challenge");
     $("btnModeNormal").onclick = () => startSession("normal");
+
+    // タイトル画面の破産救済ボタン
+    if ($("btnNormalRevive")) {
+        $("btnNormalRevive").onclick = () => {
+            if (isAdRequesting) return;
+            const btn = $("btnNormalRevive");
+            btn.disabled = true;
+
+            const callbacks = {
+                adFinished: () => {
+                    isAdRequesting = false;
+                    btn.disabled = false;
+                    // bank=50000 で保存し、Normal自動再開
+                    localStorage.setItem(BANK_KEY_NORMAL, "50000");
+                    toast("復活しました！ +50000");
+                    startSession("normal");
+                },
+                adError: (error) => {
+                    isAdRequesting = false;
+                    btn.disabled = false;
+                    console.warn("Ad Error (title revive):", error);
+                    toast(t("ad.load_fail"));
+                },
+            };
+
+            isAdRequesting = true;
+            try {
+                if (window.CrazyGames?.SDK?.ad?.requestAd) {
+                    window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+                } else {
+                    console.warn("SDK not ready, simulating ad success");
+                    setTimeout(callbacks.adFinished, 1000);
+                }
+            } catch (e) {
+                console.error(e);
+                callbacks.adError(e);
+            }
+        };
+    }
     
     $("btnModePractice").onclick = () => {
        const ps = getPracState();
@@ -3364,12 +3338,12 @@ $("btnPracToTitle").onclick = () => {
        let timeLimitSec = 300; // 5分 (デフォルト)
 
        if (mode === "challenge") {
-           initialBank = 5000;
+           initialBank = 50000;
            roundLimit = 0; 
            timeLimitSec = 300; // 5分
        } else if (mode === "normal") {
-           initialBank = Number(localStorage.getItem(BANK_KEY_NORMAL)) || 5000;
-           if (initialBank <= 0) initialBank = 5000;
+           initialBank = getNormalBank();
+           if (initialBank < MIN_BET) initialBank = 0; // 破産状態はそのまま保持
            roundLimit = 0;
            timeLimitSec = 0; // 無制限
        } else if (mode === "practice") {
@@ -3420,6 +3394,7 @@ $("btnPracToTitle").onclick = () => {
        // または index.html の checkbox を読む (既存実装があればそれを使う)
        const mask = getRuleMaskFromUI(); // 後で定義確認
 
+       console.log("startSession:", mode, "initialBank=", initialBank);
        const ret = bjApi.start_session(seed.lo, seed.hi, mask, timeLimitSec, roundLimit, initialBank);
        if (ret !== 0) {
           console.error("start_session failed", ret);
@@ -3430,6 +3405,10 @@ $("btnPracToTitle").onclick = () => {
 
        // P0-1: 状態取得 — refresh() 方式で安全にポインタを処理
        refresh();
+
+       // ベット入力欄をMIN_BETで初期化
+       $("betInput").value = MIN_BET;
+       callAction("set_bet", MIN_BET);
 
        // body.dataset.mode を設定（CSS出し分け用）
        document.body.dataset.mode = mode;
@@ -3597,12 +3576,12 @@ $("btnPracToTitle").onclick = () => {
                 btn.className = "btn";
                 btn.style.fontSize = "12px";
                 btn.style.padding = "4px 8px";
-                btn.textContent = "DEV +1000";
+                btn.textContent = "DEV +10000";
                 container.insertBefore(btn, container.firstChild);
                 btn.onclick = () => {
                    if (!apiReady()) return;
-                   callAction("add_funds", 1000);
-                   toast("Debug: +1000 Chips");
+                   callAction("add_funds", 10000);
+                   toast("Debug: +10000 Chips");
                    if (currentMode === "normal") {
                        setTimeout(()=>{
                            if (state && state.bank) localStorage.setItem(BANK_KEY_NORMAL, String(state.bank));
@@ -3706,7 +3685,7 @@ $("btnPracToTitle").onclick = () => {
 
 
 $("btnQuit").onclick = ()=> doResetToTitle();
-$("btnSORevive").onclick = doRevive;
+// btnSORevive は削除済み
 
     // ========= UI イベント (Insurance) =========
     if ($("btnInsMaxSide")) {
