@@ -1,4 +1,4 @@
-# AIで作ったゲーム
+# 自作ゲーム
 
 BlackJack (C++ & WebAssembly) のデモはこちら👇
 
