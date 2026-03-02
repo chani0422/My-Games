@@ -1757,6 +1757,7 @@ window.CG.p = new Promise((resolve) => {
             <div id="pauseXpText">XP: 0 / 100</div>
             <div class="xp-progress"><div class="xp-progress-fill" id="pauseXpFill" style="width:0%"></div></div>
           </div>
+          <button class="btn ghost" id="btnAddXP" style="font-size:10px; padding:2px 6px; color:#ffd700; border-color:#ffd700;">+10 XP</button>
           <button class="btn ghost" id="btnResetLevel" style="font-size:10px; padding:2px 6px; color:#ff5252; border-color:#ff5252;">Reset</button>
         </div>
         <p class="muted" style="margin-top:0;" data-i18n="pause.msg">
@@ -3586,6 +3587,15 @@ $("btnPause").onclick = ()=>{
 };
 
 // レベルリセットボタン
+// +10 XP デバッグボタン
+if ($("btnAddXP")) {
+  $("btnAddXP").onclick = () => {
+    addXP(10);
+    updateLevelUI();
+    toast("+10 XP");
+  };
+}
+
 if ($("btnResetLevel")) {
   $("btnResetLevel").onclick = () => {
     if (!confirm("レベルを1にリセットしますか？\nXPと報酬付与履歴もリセットされます。")) return;
