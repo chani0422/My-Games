@@ -1938,6 +1938,7 @@ window.CG.p = new Promise((resolve) => {
     const XP_KEY = "bj_xp";
     const LEVEL_KEY = "bj_level";
     const LEVEL_REWARDED_KEY = "bj_level_rewarded";
+    const LEVEL_PENDING_KEY  = "bj_level_pending"; // 未受取り報酬保存用
     const LEVEL_REWARD_AMOUNT = 1000; // 通常報酬
     const LEVEL_REWARD_AD     = 5000; // 広告視聴時の報酬
     // 結果別ベースXP
@@ -2049,6 +2050,23 @@ window.CG.p = new Promise((resolve) => {
 
     function getXP()  { return Number(localStorage.getItem(XP_KEY) || 0); }
     function getLevel(){ return xpToLevel(getXP()); }
+
+    // ========= Pending報酬ヘルパー =========
+    function getPendingLevelReward() {
+      try {
+        const raw = localStorage.getItem(LEVEL_PENDING_KEY);
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (obj && typeof obj.levelsUp === "number" && obj.levelsUp > 0) return obj;
+      } catch(e) { console.warn("Invalid pending reward data", e); }
+      return null;
+    }
+    function setPendingLevelReward(obj) {
+      localStorage.setItem(LEVEL_PENDING_KEY, JSON.stringify(obj));
+    }
+    function clearPendingLevelReward() {
+      localStorage.removeItem(LEVEL_PENDING_KEY);
+    }
     function getLevelRewarded(){ return Number(localStorage.getItem(LEVEL_REWARDED_KEY) || 0); }
     // ========= XPベット額スケール計算 =========
     // 全handのbet合計（Split/Double込み）
@@ -2105,23 +2123,27 @@ window.CG.p = new Promise((resolve) => {
       }
     }
 
-    // レベルアップ報酬（Normal Modeのみ）。付与するレベル数を返す（実際のチップ加算はユーザー選択後）
+    // レベルアップ報酬（Normal Modeのみ）。pending報酬を生成しレベル数を返す
+    // ★ LEVEL_REWARDED_KEYはここでは進めない（受取確定後に進める）
     function awardLevelRewardsIfNeeded(currentLevel) {
       if (currentMode !== "normal") return 0;
+      // 既にpendingがあるなら二重生成しない
+      if (getPendingLevelReward()) return 0;
       let rewarded = getLevelRewarded();
       if (rewarded === 0) {
         // 初回: Lv1から開始としてrewarded=1に設定
         rewarded = 1;
         localStorage.setItem(LEVEL_REWARDED_KEY, "1");
       }
-      let levelsUp = 0;
-      while (rewarded < currentLevel) {
-        rewarded++;
-        levelsUp++;
-      }
-      if (levelsUp > 0) {
-        localStorage.setItem(LEVEL_REWARDED_KEY, String(rewarded));
-      }
+      if (currentLevel <= rewarded) return 0;
+      const levelsUp = currentLevel - rewarded;
+      // pendingをlocalStorageに保存（受取り前にリロードしても復元可能）
+      setPendingLevelReward({
+        fromLevel: rewarded,
+        toLevel: currentLevel,
+        levelsUp: levelsUp,
+        createdAt: Date.now()
+      });
       return levelsUp;
     }
 
@@ -2213,25 +2235,27 @@ window.CG.p = new Promise((resolve) => {
 
     // 通常報酬受け取り
     function acceptNormalReward() {
-      if (!pendingLevelReward) return;
-      const amount = pendingLevelReward.levelsUp * LEVEL_REWARD_AMOUNT;
+      const pending = pendingLevelReward || getPendingLevelReward();
+      if (!pending) return;
+      const amount = pending.levelsUp * LEVEL_REWARD_AMOUNT;
       applyLevelReward(amount);
+      finalizeLevelReward(pending);
       toast(`+${amount.toLocaleString()} chips`);
-      closeLevelUpOverlay();
     }
 
     // 広告視聴でx5報酬
     function acceptAdReward() {
-      if (!pendingLevelReward) return;
-      const amount = pendingLevelReward.levelsUp * LEVEL_REWARD_AD;
+      const pending = pendingLevelReward || getPendingLevelReward();
+      if (!pending) return;
+      const amount = pending.levelsUp * LEVEL_REWARD_AD;
       const btnAd = $("btnRewardAd");
       if (btnAd) btnAd.disabled = true;
 
       const callbacks = {
         adFinished: () => {
           applyLevelReward(amount);
+          finalizeLevelReward(pending);
           toast(`\ud83c\udf89 +${amount.toLocaleString()} chips`);
-          closeLevelUpOverlay();
         },
         adError: (err) => {
           console.warn("Ad error (level reward):", err);
@@ -2255,6 +2279,15 @@ window.CG.p = new Promise((resolve) => {
       }
     }
 
+    // 報酬確定: LEVEL_REWARDED_KEYを進め、pendingをクリアし、UIを閉じる
+    function finalizeLevelReward(pending) {
+      if (pending && pending.toLevel) {
+        localStorage.setItem(LEVEL_REWARDED_KEY, String(pending.toLevel));
+      }
+      clearPendingLevelReward();
+      closeLevelUpOverlay();
+    }
+
     function closeLevelUpOverlay() {
       const overlay = $("overlayLevelUp");
       if (overlay) overlay.classList.remove("show");
@@ -2264,6 +2297,15 @@ window.CG.p = new Promise((resolve) => {
       if (btnAd) btnAd.disabled = false;
       pendingLevelReward = null;
       updateLevelUI();
+    }
+
+    // 起動時にpending報酬があれば復元表示
+    function restorePendingReward() {
+      if (currentMode !== "normal") return;
+      const pending = getPendingLevelReward();
+      if (!pending) return;
+      pendingLevelReward = pending;
+      showLevelUpCelebration(pending.toLevel, pending.levelsUp);
     }
 
     function spawnConfetti() {
@@ -3721,6 +3763,7 @@ if ($("btnResetLevel")) {
     localStorage.setItem(XP_KEY, "0");
     localStorage.removeItem(LEVEL_KEY);
     localStorage.setItem(LEVEL_REWARDED_KEY, "1");
+    clearPendingLevelReward();
     updateLevelUI();
     toast("レベルをリセットしました");
   };
@@ -4192,6 +4235,9 @@ $("btnPracToTitle").onclick = () => {
 
     // エンジン同期ループを開始
     syncEngine();
+
+    // 起動時にpending報酬があれば復元表示
+    restorePendingReward();
 
     // ベットヒント (エンジン接続前・タイトル画面用)
     function updateBetHintPreEngine(){
