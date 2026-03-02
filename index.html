@@ -1757,6 +1757,7 @@ window.CG.p = new Promise((resolve) => {
             <div id="pauseXpText">XP: 0 / 100</div>
             <div class="xp-progress"><div class="xp-progress-fill" id="pauseXpFill" style="width:0%"></div></div>
           </div>
+          <button class="btn ghost" id="btnResetLevel" style="font-size:10px; padding:2px 6px; color:#ff5252; border-color:#ff5252;">Reset</button>
         </div>
         <p class="muted" style="margin-top:0;" data-i18n="pause.msg">
           セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。
@@ -3550,6 +3551,18 @@ $("btnPause").onclick = ()=>{
   }
   setPause(true);
 };
+
+// レベルリセットボタン
+if ($("btnResetLevel")) {
+  $("btnResetLevel").onclick = () => {
+    if (!confirm("レベルを1にリセットしますか？\nXPと報酬付与履歴もリセットされます。")) return;
+    localStorage.setItem(XP_KEY, "0");
+    localStorage.removeItem(LEVEL_KEY);
+    localStorage.setItem(LEVEL_REWARDED_KEY, "0");
+    updateLevelUI();
+    toast("レベルをリセットしました");
+  };
+}
 
 $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
   // エンジン側へ再開通知
