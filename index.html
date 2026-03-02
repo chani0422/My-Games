@@ -1914,6 +1914,10 @@ window.CG.p = new Promise((resolve) => {
       <div class="levelup-title">LEVEL UP!</div>
       <div class="levelup-level" id="levelupLevel">Lv 2</div>
       <div class="levelup-reward" id="levelupReward">+1000 chips</div>
+      <div class="levelup-choices" id="levelupChoices" style="display:none; margin-top:12px; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn primary" id="btnRewardNormal" style="min-width:120px;">+1,000 受け取る</button>
+        <button class="btn" id="btnRewardAd" style="min-width:120px; background:linear-gradient(135deg,#ffd700,#ff9800); color:#1a1a2e; font-weight:bold;">🎬 ×5 (+5,000)</button>
+      </div>
     </div>
   </div>
 
@@ -1934,7 +1938,8 @@ window.CG.p = new Promise((resolve) => {
     const XP_KEY = "bj_xp";
     const LEVEL_KEY = "bj_level";
     const LEVEL_REWARDED_KEY = "bj_level_rewarded";
-    const LEVEL_REWARD_AMOUNT = 1000; // 1レベルにつき +1000 チップ
+    const LEVEL_REWARD_AMOUNT = 1000; // 通常報酬
+    const LEVEL_REWARD_AD     = 5000; // 広告視聴時の報酬
     // 結果別ベースXP
     const XP_BLACKJACK = 20;  // ブラックジャック勝ち
     const XP_WIN       = 10;  // 通常勝ち
@@ -2100,7 +2105,7 @@ window.CG.p = new Promise((resolve) => {
       }
     }
 
-    // レベルアップ報酬（Normal Modeのみ）。付与したボーナス額を返す
+    // レベルアップ報酬（Normal Modeのみ）。付与するレベル数を返す（実際のチップ加算はユーザー選択後）
     function awardLevelRewardsIfNeeded(currentLevel) {
       if (currentMode !== "normal") return 0;
       let rewarded = getLevelRewarded();
@@ -2109,23 +2114,25 @@ window.CG.p = new Promise((resolve) => {
         rewarded = 1;
         localStorage.setItem(LEVEL_REWARDED_KEY, "1");
       }
-      let bonus = 0;
+      let levelsUp = 0;
       while (rewarded < currentLevel) {
         rewarded++;
-        bonus += LEVEL_REWARD_AMOUNT;
+        levelsUp++;
       }
-      if (bonus > 0) {
+      if (levelsUp > 0) {
         localStorage.setItem(LEVEL_REWARDED_KEY, String(rewarded));
-        // Normal Bank に加算
-        const bank = getNormalBank();
-        const newBank = bank + bonus;
-        localStorage.setItem(BANK_KEY_NORMAL, String(newBank));
-        // エンジンにもチップを追加（ゲーム中の場合）
-        if (typeof bjApi !== 'undefined' && bjApi && bjApi.add_funds) {
-          bjApi.add_funds(bonus);
-        }
       }
-      return bonus;
+      return levelsUp;
+    }
+
+    // 報酬チップを実際に加算
+    function applyLevelReward(amount) {
+      if (amount <= 0) return;
+      const bank = getNormalBank();
+      localStorage.setItem(BANK_KEY_NORMAL, String(bank + amount));
+      if (typeof bjApi !== 'undefined' && bjApi && bjApi.add_funds) {
+        bjApi.add_funds(amount);
+      }
     }
 
     // ========= レベルUI更新 =========
@@ -2169,22 +2176,94 @@ window.CG.p = new Promise((resolve) => {
     }
 
     // ========= レベルアップ演出 =========
-    function showLevelUpCelebration(level, bonus) {
+    let pendingLevelReward = null; // { level, levelsUp } — ユーザー選択待ち
+
+    function showLevelUpCelebration(level, levelsUp) {
       const overlay = $("overlayLevelUp");
       if (!overlay) return;
       $("levelupLevel").textContent = `Lv ${level}`;
-      // Normalモードではチップ報酬を表示、それ以外は非表示
+
       const rewardEl = $("levelupReward");
-      if (rewardEl) {
-        rewardEl.textContent = bonus > 0 ? `+${bonus} chips` : "";
-        rewardEl.style.display = bonus > 0 ? "" : "none";
+      const choicesEl = $("levelupChoices");
+      const normalReward = levelsUp * LEVEL_REWARD_AMOUNT;
+      const adReward = levelsUp * LEVEL_REWARD_AD;
+
+      if (currentMode === "normal" && levelsUp > 0) {
+        // Normalモード: 選択式UI表示
+        if (rewardEl) { rewardEl.textContent = `報酬を選んでください！`; rewardEl.style.display = ""; }
+        if (choicesEl) {
+          choicesEl.style.display = "flex";
+          const btnNormal = $("btnRewardNormal");
+          const btnAd = $("btnRewardAd");
+          if (btnNormal) btnNormal.textContent = `+${normalReward.toLocaleString()} 受け取る`;
+          if (btnAd) btnAd.textContent = `\ud83c\udfac \u00d75 (+${adReward.toLocaleString()})`;
+        }
+        pendingLevelReward = { level, levelsUp };
+      } else {
+        // Normal以外: 報酬なし、自動閉じ
+        if (rewardEl) { rewardEl.textContent = ""; rewardEl.style.display = "none"; }
+        if (choicesEl) choicesEl.style.display = "none";
+        pendingLevelReward = null;
+        setTimeout(() => { overlay.classList.remove("show"); }, 2500);
       }
+
       overlay.classList.add("show");
       spawnConfetti();
-      // 2.5秒後に自動で閉じる
-      setTimeout(() => {
-        overlay.classList.remove("show");
-      }, 2500);
+    }
+
+    // 通常報酬受け取り
+    function acceptNormalReward() {
+      if (!pendingLevelReward) return;
+      const amount = pendingLevelReward.levelsUp * LEVEL_REWARD_AMOUNT;
+      applyLevelReward(amount);
+      toast(`+${amount.toLocaleString()} chips`);
+      closeLevelUpOverlay();
+    }
+
+    // 広告視聴でx5報酬
+    function acceptAdReward() {
+      if (!pendingLevelReward) return;
+      const amount = pendingLevelReward.levelsUp * LEVEL_REWARD_AD;
+      const btnAd = $("btnRewardAd");
+      if (btnAd) btnAd.disabled = true;
+
+      const callbacks = {
+        adFinished: () => {
+          applyLevelReward(amount);
+          toast(`\ud83c\udf89 +${amount.toLocaleString()} chips`);
+          closeLevelUpOverlay();
+        },
+        adError: (err) => {
+          console.warn("Ad error (level reward):", err);
+          if (btnAd) btnAd.disabled = false;
+          toast("広告が再生できませんでした");
+        },
+        adStarted: () => { console.log("Level reward ad started"); },
+      };
+
+      try {
+        if (window.CrazyGames?.SDK?.ad?.requestAd) {
+          window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+        } else {
+          // SDK未接続時: デバッグ用即成功
+          console.warn("SDK not ready, simulating ad success (level reward)");
+          setTimeout(callbacks.adFinished, 1000);
+        }
+      } catch (e) {
+        console.error(e);
+        callbacks.adError(e);
+      }
+    }
+
+    function closeLevelUpOverlay() {
+      const overlay = $("overlayLevelUp");
+      if (overlay) overlay.classList.remove("show");
+      const choicesEl = $("levelupChoices");
+      if (choicesEl) choicesEl.style.display = "none";
+      const btnAd = $("btnRewardAd");
+      if (btnAd) btnAd.disabled = false;
+      pendingLevelReward = null;
+      updateLevelUI();
     }
 
     function spawnConfetti() {
@@ -3619,6 +3698,14 @@ $("btnPause").onclick = ()=>{
 };
 
 // レベルリセットボタン
+// レベルアップ報酬選択ボタン
+if ($("btnRewardNormal")) {
+  $("btnRewardNormal").onclick = () => acceptNormalReward();
+}
+if ($("btnRewardAd")) {
+  $("btnRewardAd").onclick = () => acceptAdReward();
+}
+
 // +10 XP デバッグボタン
 if ($("btnAddXP")) {
   $("btnAddXP").onclick = () => {
