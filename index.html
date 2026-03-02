@@ -2205,24 +2205,56 @@ function setPause(paused) {
       $("overlayPause").classList.remove("show");
       $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
       $("overlayBankruptcy") && $("overlayBankruptcy").classList.remove("show");
+      $("overlayPracticeOver") && $("overlayPracticeOver").classList.remove("show");
       $("overlayHow").classList.remove("show");
       $("overlayMore") && $("overlayMore").classList.remove("show");
       $("overlayHistory") && $("overlayHistory").classList.remove("show");
       goScreen("title");
 
-      // body.dataset.mode をクリア
+      // body.dataset.mode をクリア（CSSのdata-mode出し分けをリセット）
       delete document.body.dataset.mode;
 
-      // P1-6: タイトル画面のBankをNormal所持金で更新
+      // currentMode をリセット（タイトル画面ではモード未選択）
+      currentMode = "";
+
+      // ── タイトル画面用UIリセット ──
+      // startSession() が設定したインラインstyleを除去し、
+      // CSSルール (.topbar:not(.in-game) .stat-round/time { display:none })
+      // が正しく効くようにする
+      const roundPill = $("round")?.parentElement;
+      const timePill  = $("time")?.parentElement;
+      const bankPill  = $("bank")?.closest(".pill");
+      const betCard   = $("betInput")?.closest(".card");
+      if (roundPill) roundPill.style.display = "";
+      if (timePill)  timePill.style.display  = "";
+      if (bankPill)  bankPill.style.display  = "";
+      if (betCard)   betCard.style.display   = "";
+
+      // タイトル画面のBankは常にNormal所持金を表示（source of truth）
       const normalBank = getNormalBank();
       $("bank").textContent = String(normalBank);
 
+      // Round/Timeの値もリセット（CSSで非表示だが念のため）
+      $("round").textContent = "-";
+      $("time").textContent  = "-";
+
+      // モードボタンの状態を更新
+      updateModeButtons();
+
+      // セッションオーバー状態のリセット
+      try { soHideOverlay(); } catch(e) {}
+      window.SO.active = false;
+
       $("subLine").textContent = t("ui.ready");
       toast(t("toast.reset_done"));
-      // animation caches reset
+      // アニメーションキャッシュをリセット
       prevDealerCards = [];
+      prevDealerJson = "";
       prevPlayerLens = [];
+      prevPlayerJson = "";
       prevBank = null;
+      dealerShowCount = 0;
+      if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
     }
 
     // ========= アニメーションキャッシュ =========
