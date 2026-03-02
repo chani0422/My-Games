@@ -2039,7 +2039,7 @@ window.CG.p = new Promise((resolve) => {
     function getLevel(){ return xpToLevel(getXP()); }
     function getLevelRewarded(){ return Number(localStorage.getItem(LEVEL_REWARDED_KEY) || 0); }
 
-    // XP付与 → レベルアップ報酬チェック
+    // XP付与 → レベルアップ演出 + 報酬チェック
     function addXP(amount) {
       if (amount <= 0) return;
       const oldXP = getXP();
@@ -2047,20 +2047,24 @@ window.CG.p = new Promise((resolve) => {
       localStorage.setItem(XP_KEY, String(newXP));
       const newLevel = xpToLevel(newXP);
       const oldLevel = xpToLevel(oldXP);
-      // レベルが上がった場合のみ報酬チェック
+      // レベルが上がった場合
       if (newLevel > oldLevel) {
-        awardLevelRewardsIfNeeded(newLevel);
+        // チップ報酬（Normalモードのみ）
+        const bonus = awardLevelRewardsIfNeeded(newLevel);
+        // 演出は全モードで発火
+        showLevelUpCelebration(newLevel, bonus);
+        updateLevelUI();
       }
     }
 
-    // レベルアップ報酬（Normal Modeのみ）
+    // レベルアップ報酬（Normal Modeのみ）。付与したボーナス額を返す
     function awardLevelRewardsIfNeeded(currentLevel) {
-      if (currentMode !== "normal") return;
+      if (currentMode !== "normal") return 0;
       let rewarded = getLevelRewarded();
       // 初回起動: rewardedが0なら現在レベルまで「付与済み」として初期化（遡り報酬なし）
       if (rewarded === 0 && currentLevel > 1) {
         localStorage.setItem(LEVEL_REWARDED_KEY, String(currentLevel));
-        return;
+        return 0;
       }
       let bonus = 0;
       while (rewarded < currentLevel) {
@@ -2077,10 +2081,8 @@ window.CG.p = new Promise((resolve) => {
         if (typeof bjApi !== 'undefined' && bjApi && bjApi.add_funds) {
           bjApi.add_funds(bonus);
         }
-        // レベルアップ演出を発火
-        showLevelUpCelebration(currentLevel, bonus);
-        updateLevelUI();
       }
+      return bonus;
     }
 
     // ========= レベルUI更新 =========
@@ -2117,7 +2119,12 @@ window.CG.p = new Promise((resolve) => {
       const overlay = $("overlayLevelUp");
       if (!overlay) return;
       $("levelupLevel").textContent = `Lv ${level}`;
-      $("levelupReward").textContent = `+${bonus} chips`;
+      // Normalモードではチップ報酬を表示、それ以外は非表示
+      const rewardEl = $("levelupReward");
+      if (rewardEl) {
+        rewardEl.textContent = bonus > 0 ? `+${bonus} chips` : "";
+        rewardEl.style.display = bonus > 0 ? "" : "none";
+      }
       overlay.classList.add("show");
       spawnConfetti();
       // 2.5秒後に自動で閉じる
