@@ -2000,24 +2000,30 @@ function apiReady(){
 
 
     function syncEngine(){
-      if (apiReady()){
-        setEngineBadge("READY", "good");
-        window.CG?.loadingStop?.();
-        
-        $("subLine").textContent = "ready.";
-        if($("btnModeChallenge")) $("btnModeChallenge").disabled = false;
-        if($("btnModeNormal")) $("btnModeNormal").disabled = false;
-        if($("btnModePractice")) $("btnModePractice").disabled = false;
+  if (apiReady()){
+    setEngineBadge("READY", "good");
+    window.CG?.loadingStop?.();
+    
+    $("subLine").textContent = "ready.";
+    if($("btnModeChallenge")) $("btnModeChallenge").disabled = false;
+    if($("btnModeNormal")) $("btnModeNormal").disabled = false;
+    if($("btnModePractice")) $("btnModePractice").disabled = false;
 
-        updateModeButtons();
+    updateModeButtons();
 
-        toast("Engine ready!");
-        return;
-      }
-      // まだ準備できていない場合（通常ここには来ないはずだが念のため）
-      setEngineBadge("LOADING", null);
-      $("subLine").textContent = "loading engine…";
+    // タイトル画面なら Bank を Normal 所持金で確定表示
+    // （refresh() → render() が state.bank を上書きするのを防ぐ）
+    if ($("screenTitle")?.classList.contains("active")) {
+      $("bank").textContent = String(getNormalBank());
     }
+
+    toast("Engine ready!");
+    return;
+  }
+  // まだ準備できていない場合（通常ここには来ないはずだが念のため）
+  setEngineBadge("LOADING", null);
+  $("subLine").textContent = "loading engine…";
+}
 
     // イベントリスナで初期化検知
     window.addEventListener("bj-engine-ready", syncEngine);
@@ -2521,15 +2527,23 @@ function beginSessionOverFlow(st){
           $("subLine").textContent = `phase: ${state.phase}`;
       }
 
+      // タイトル画面判定
+      const isTitle = $("screenTitle")?.classList.contains("active");
+
       // 所持金アニメーション
       const bankEl = $("bank");
       const bankPill = bankEl.closest(".pill");
       const newBank = Number(state.bank);
       
-      if (currentMode === "practice") {
+      if (isTitle) {
+          // タイトル画面: 常にNormal所持金を表示（state.bankで上書きしない）
+          const nb = getNormalBank();
+          bankEl.textContent = String(nb);
+          prevBank = null; // タイトル中はアニメ不要
+      } else if (currentMode === "practice") {
           // 練習モード: Bankは表示しない or 固定
           bankEl.textContent = "---";
-          // bankEl.textContent = "∞"; 
+          prevBank = newBank;
       } else {
           if (prevBank === null){
             bankEl.textContent = String(newBank);
@@ -2537,13 +2551,15 @@ function beginSessionOverFlow(st){
             animateNumber(bankEl, prevBank, newBank, 520);
             bankPill.classList.remove("bankFlash"); void bankPill.offsetWidth; bankPill.classList.add("bankFlash");
           }
+          prevBank = newBank;
       }
-      prevBank = newBank;
 
-      // 追加: roundLimit==0 のとき ∞ 表示
-      const rl = state.session.roundLimit;
-      $("round").textContent = rl > 0 ? `${state.session.round}/${rl}` : `${state.session.round}/∞`;
-      $("time").textContent = fmtTime(state.session.timeLeftMs);
+      // タイトル画面ではRound/Timeを更新しない（CSSで非表示だが値も保護）
+      if (!isTitle) {
+        const rl = state.session.roundLimit;
+        $("round").textContent = rl > 0 ? `${state.session.round}/${rl}` : `${state.session.round}/∞`;
+        $("time").textContent = fmtTime(state.session.timeLeftMs);
+      }
 
       if ($("phaseBadge")) $("phaseBadge").textContent = state.phase;
       $("rulesMini").textContent = [
