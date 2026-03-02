@@ -1933,7 +1933,6 @@ window.CG.p = new Promise((resolve) => {
     const LEVEL_KEY = "bj_level";
     const LEVEL_REWARDED_KEY = "bj_level_rewarded";
     const LEVEL_REWARD_AMOUNT = 1000; // 1レベルにつき +1000 チップ
-    const XP_PER_LEVEL = 100;         // 100 XP で 1 レベルアップ
     const XP_PER_ROUND = 10;          // 1ラウンドにつき +10 XP
 
     let currentMode = "challenge"; // "challenge" | "normal" | "practice"
@@ -2002,9 +2001,33 @@ window.CG.p = new Promise((resolve) => {
     }
 
     // ========= XP / レベル ヘルパー =========
-    // XPからレベルを算出（レベル1から開始）
+    // レベルLから L+1 に必要なXP量を返す
+    function xpNeed(level) {
+      return Math.floor(120 + 30 * level + 6 * level * level);
+    }
+
+    // 累積XPからレベル・進捗を算出（累積しきい値方式）
+    function xpToLevelAndProgress(xp) {
+      let level = 1;
+      let cumulative = 0;
+      while (true) {
+        const need = xpNeed(level);
+        if (cumulative + need > xp) {
+          // このレベル内でXPが足りない → 現在レベル
+          return {
+            level: level,
+            xpInLevel: xp - cumulative,  // このレベル内の進捗XP
+            xpNeeded: need               // 次のレベルまでの必要XP
+          };
+        }
+        cumulative += need;
+        level++;
+      }
+    }
+
+    // 後方互換: XPからレベルだけ返す
     function xpToLevel(xp) {
-      return Math.floor(xp / XP_PER_LEVEL) + 1;
+      return xpToLevelAndProgress(xp).level;
     }
 
     function getXP()  { return Number(localStorage.getItem(XP_KEY) || 0); }
@@ -2058,10 +2081,8 @@ window.CG.p = new Promise((resolve) => {
     // ========= レベルUI更新 =========
     function updateLevelUI() {
       const xp = getXP();
-      const level = xpToLevel(xp);
-      const xpInLevel = xp % XP_PER_LEVEL;       // 現在レベル内のXP
-      const xpNeeded = XP_PER_LEVEL;              // 次のレベルまでの必要XP
-      const pct = (xpInLevel / xpNeeded * 100).toFixed(1);
+      const { level, xpInLevel, xpNeeded } = xpToLevelAndProgress(xp);
+      const pct = xpNeeded > 0 ? (xpInLevel / xpNeeded * 100).toFixed(1) : "0";
 
       // topbar pill
       const pillEl = $("levelPill");
