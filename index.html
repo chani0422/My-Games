@@ -1935,11 +1935,17 @@ window.CG.p = new Promise((resolve) => {
     const LEVEL_KEY = "bj_level";
     const LEVEL_REWARDED_KEY = "bj_level_rewarded";
     const LEVEL_REWARD_AMOUNT = 1000; // 1レベルにつき +1000 チップ
-    // 結果別XP付与量
+    // 結果別ベースXP
     const XP_BLACKJACK = 20;  // ブラックジャック勝ち
     const XP_WIN       = 10;  // 通常勝ち
     const XP_PUSH      = 5;   // 引き分け
     const XP_LOSS      = 3;   // 負け
+    // スケール係数（ベット額によるXP倍率）
+    const XP_SCALE_BJ   = 0.55;
+    const XP_SCALE_WIN  = 0.55;
+    const XP_SCALE_PUSH = 0.35;
+    const XP_SCALE_LOSS = 0.15;
+    const XP_SCALE_CAP  = 3.0; // スケール上限
 
     let currentMode = "challenge"; // "challenge" | "normal" | "practice"
     let isAdRequesting = false; // 広告連打防止
@@ -2039,6 +2045,42 @@ window.CG.p = new Promise((resolve) => {
     function getXP()  { return Number(localStorage.getItem(XP_KEY) || 0); }
     function getLevel(){ return xpToLevel(getXP()); }
     function getLevelRewarded(){ return Number(localStorage.getItem(LEVEL_REWARDED_KEY) || 0); }
+    // ========= XPベット額スケール計算 =========
+    // 全handのbet合計（Split/Double込み）
+    function getTotalBetFromState(st) {
+      if (st && st.hands && st.hands.length > 0) {
+        let total = 0;
+        for (const h of st.hands) total += (h.bet || 0);
+        if (total > 0) return total;
+      }
+      // フォールバック: betInputの値
+      const el = $("betInput") || $("betInGame");
+      return el ? Number(el.value) || MIN_BET : MIN_BET;
+    }
+
+    // ラウンド結果からXPを計算
+    function calcRoundXP(st) {
+      const totalBet = getTotalBetFromState(st);
+      const units = Math.max(1, totalBet / MIN_BET);
+      const risk = Math.log10(units); // 1K→0, 10K→1, 100K→2
+
+      const hasBJ = st.hands && st.hands.some(h => h.flags && h.flags.blackjack);
+      const net = (st.roundResult && st.roundResult.netProfit) || 0;
+
+      let base, k;
+      if (hasBJ && net > 0) {
+        base = XP_BLACKJACK; k = XP_SCALE_BJ;
+      } else if (net > 0) {
+        base = XP_WIN; k = XP_SCALE_WIN;
+      } else if (net === 0) {
+        base = XP_PUSH; k = XP_SCALE_PUSH;
+      } else {
+        base = XP_LOSS; k = XP_SCALE_LOSS;
+      }
+
+      const scale = Math.min(1 + k * risk, XP_SCALE_CAP);
+      return Math.max(1, Math.round(base * scale));
+    }
 
     // XP付与 → レベルアップ演出 + 報酬チェック
     function addXP(amount) {
@@ -2062,10 +2104,18 @@ window.CG.p = new Promise((resolve) => {
     function awardLevelRewardsIfNeeded(currentLevel) {
       if (currentMode !== "normal") return 0;
       let rewarded = getLevelRewarded();
-      // 初回起動: rewardedが0なら現在レベルまで「付与済み」として初期化（遡り報酬なし）
-      if (rewarded === 0 && currentLevel > 1) {
-        localStorage.setItem(LEVEL_REWARDED_KEY, String(currentLevel));
-        return 0;
+      if (rewarded === 0) {
+        // LEVEL_REWARDED_KEYが未設定の場合
+        const hasExistingXP = localStorage.getItem(XP_KEY) !== null && getXP() > 0;
+        if (hasExistingXP && currentLevel > 1) {
+          // 移行ケース: 既存ユーザー→過去分の遡り報酬なし
+          localStorage.setItem(LEVEL_REWARDED_KEY, String(currentLevel));
+          return 0;
+        } else {
+          // 新規ケース: Lv1から開始→Lv2到達時に報酬が出るように
+          rewarded = 1;
+          localStorage.setItem(LEVEL_REWARDED_KEY, "1");
+        }
       }
       let bonus = 0;
       while (rewarded < currentLevel) {
@@ -3162,17 +3212,7 @@ if (insMode) {
       // XP付与（Normalモードのみ、同一ラウンドでは1回だけ）
       const currentRound = state.session ? state.session.round : -1;
       if (currentRound !== xpAwardedRound && currentMode === "normal" && (phase === "roundOver" || phase === "sessionOver")) {
-        // ラウンド結果から付与XPを決定
-        let xpAmount = XP_LOSS; // デフォルト: 負け
-        const hasBJ = state.hands && state.hands.some(h => h.flags && h.flags.blackjack);
-        const net = (state.roundResult && state.roundResult.netProfit) || 0;
-        if (hasBJ && net > 0) {
-          xpAmount = XP_BLACKJACK; // ブラックジャック勝ち
-        } else if (net > 0) {
-          xpAmount = XP_WIN;       // 通常勝ち
-        } else if (net === 0) {
-          xpAmount = XP_PUSH;      // 引き分け
-        }
+        const xpAmount = calcRoundXP(state);
         addXP(xpAmount);
         xpAwardedRound = currentRound;
         updateLevelUI();
