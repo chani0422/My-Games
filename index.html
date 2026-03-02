@@ -3612,13 +3612,13 @@ $("btnPracToTitle").onclick = () => {
       }
     });
 
-    // デバッグ機能
+    // デバッグ機能（常に有効）
     const urlParams = new URLSearchParams(window.location.search);
-    const isDev = urlParams.get('dev') === '1';
-    if (isDev) console.log("Dev mode enabled");
+    const isDev = true;
+    console.log("Dev mode enabled");
 
     // ========= 開発用デバッグUI =========
-    if (isDev) {
+    {
         const initDebugUI = () => {
             // ポーズオーバーレイにチップ追加ボタン
             const container = document.querySelector("#overlayPause .bd .row");
