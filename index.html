@@ -2006,9 +2006,9 @@ window.CG.p = new Promise((resolve) => {
     }
 
     // ========= XP / レベル ヘルパー =========
-    // レベルLから L+1 に必要なXP量（毎レベル+20ずつ増加）
+    // レベルLから L+1 に必要なXP量（毎レベル+20ずつ増加、Lv1→2は50）
     function xpNeed(level) {
-      return 80 + 20 * level;
+      return 30 + 20 * level;
     }
 
     // 累積XPからレベル・進捗を算出（累積しきい値方式）
@@ -2091,13 +2091,22 @@ window.CG.p = new Promise((resolve) => {
       const { level, xpInLevel, xpNeeded } = xpToLevelAndProgress(xp);
       const pct = xpNeeded > 0 ? (xpInLevel / xpNeeded * 100).toFixed(1) : "0";
 
+      // Normal以外ではレベルUI要素を非表示にする
+      const isNormal = (currentMode === "normal");
+      const isTitle = $("screenTitle")?.classList.contains("active");
+      const showLevel = isNormal || isTitle; // タイトル画面では常に表示
+
       // topbar pill
+      const statLevel = document.querySelector(".pill.stat-level");
+      if (statLevel) statLevel.style.display = showLevel ? "" : "none";
       const pillEl = $("levelPill");
       if (pillEl) pillEl.textContent = String(level);
       const barEl = $("xpBarFill");
       if (barEl) barEl.style.width = pct + "%";
 
-      // タイトル画面のレベルカード
+      // タイトル画面のレベルカード（タイトル画面では常に表示）
+      const titleCard = $("titleLevelCard");
+      if (titleCard) titleCard.style.display = "";
       const titleBadge = $("titleLevelBadge");
       if (titleBadge) titleBadge.textContent = `Lv ${level}`;
       const titleXpText = $("titleXpText");
@@ -2105,7 +2114,9 @@ window.CG.p = new Promise((resolve) => {
       const titleXpFill = $("titleXpFill");
       if (titleXpFill) titleXpFill.style.width = pct + "%";
 
-      // ポーズメニューのレベル情報
+      // ポーズメニューのレベル情報（Normal以外は非表示）
+      const pauseInfo = $("pauseLevelInfo");
+      if (pauseInfo) pauseInfo.style.display = isNormal ? "" : "none";
       const pauseBadge = $("pauseLevelBadge");
       if (pauseBadge) pauseBadge.textContent = `Lv ${level}`;
       const pauseXpText = $("pauseXpText");
@@ -3147,9 +3158,9 @@ if (insMode) {
       // ラウンドが終わった瞬間だけ履歴に追加
       pushHistoryEntry(state);
 
-      // XP付与（ラウンド終了の瞬間に1回だけ）
+      // XP付与（Normalモードのみ、ラウンド終了の瞬間に1回だけ）
       if (phase !== prevPhase) xpAwardedThisPhase = false;
-      if (!xpAwardedThisPhase && (phase === "roundOver" || phase === "sessionOver")) {
+      if (!xpAwardedThisPhase && currentMode === "normal" && (phase === "roundOver" || phase === "sessionOver")) {
         // ラウンド結果から付与XPを決定
         let xpAmount = XP_LOSS; // デフォルト: 負け
         const hasBJ = state.hands && state.hands.some(h => h.flags && h.flags.blackjack);
