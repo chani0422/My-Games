@@ -2105,17 +2105,9 @@ window.CG.p = new Promise((resolve) => {
       if (currentMode !== "normal") return 0;
       let rewarded = getLevelRewarded();
       if (rewarded === 0) {
-        // LEVEL_REWARDED_KEYが未設定の場合
-        const hasExistingXP = localStorage.getItem(XP_KEY) !== null && getXP() > 0;
-        if (hasExistingXP && currentLevel > 1) {
-          // 移行ケース: 既存ユーザー→過去分の遡り報酬なし
-          localStorage.setItem(LEVEL_REWARDED_KEY, String(currentLevel));
-          return 0;
-        } else {
-          // 新規ケース: Lv1から開始→Lv2到達時に報酬が出るように
-          rewarded = 1;
-          localStorage.setItem(LEVEL_REWARDED_KEY, "1");
-        }
+        // 初回: Lv1から開始としてrewarded=1に設定
+        rewarded = 1;
+        localStorage.setItem(LEVEL_REWARDED_KEY, "1");
       }
       let bonus = 0;
       while (rewarded < currentLevel) {
@@ -3641,7 +3633,7 @@ if ($("btnResetLevel")) {
     if (!confirm("レベルを1にリセットしますか？\nXPと報酬付与履歴もリセットされます。")) return;
     localStorage.setItem(XP_KEY, "0");
     localStorage.removeItem(LEVEL_KEY);
-    localStorage.setItem(LEVEL_REWARDED_KEY, "0");
+    localStorage.setItem(LEVEL_REWARDED_KEY, "1");
     updateLevelUI();
     toast("レベルをリセットしました");
   };
