@@ -1739,8 +1739,17 @@ window.CG.p = new Promise((resolve) => {
     const PRAC_FREE_KEY = "bj_prac_free_date"; // YYYY-MM-DD (JST)
     const PRAC_TICKET_KEY = "bj_prac_ticket";    // number
 
+    // ========= XP / レベルシステム =========
+    const XP_KEY = "bj_xp";
+    const LEVEL_KEY = "bj_level";
+    const LEVEL_REWARDED_KEY = "bj_level_rewarded";
+    const LEVEL_REWARD_AMOUNT = 1000; // 1レベルにつき +1000 チップ
+    const XP_PER_LEVEL = 100;         // 100 XP で 1 レベルアップ
+    const XP_PER_ROUND = 10;          // 1ラウンドにつき +10 XP
+
     let currentMode = "challenge"; // "challenge" | "normal" | "practice"
     let isAdRequesting = false; // 広告連打防止
+    let xpAwardedThisPhase = false; // XP二重付与防止フラグ
 
     // 起動時にモード復元
     const savedMode = localStorage.getItem(MODE_KEY);
@@ -1801,6 +1810,59 @@ window.CG.p = new Promise((resolve) => {
         if (raw === null) return 5000; // 初回プレイ
         const n = Number(raw);
         return Number.isFinite(n) ? n : 5000;
+    }
+
+    // ========= XP / レベル ヘルパー =========
+    // XPからレベルを算出（レベル1から開始）
+    function xpToLevel(xp) {
+      return Math.floor(xp / XP_PER_LEVEL) + 1;
+    }
+
+    function getXP()  { return Number(localStorage.getItem(XP_KEY) || 0); }
+    function getLevel(){ return xpToLevel(getXP()); }
+    function getLevelRewarded(){ return Number(localStorage.getItem(LEVEL_REWARDED_KEY) || 0); }
+
+    // XP付与 → レベルアップ報酬チェック
+    function addXP(amount) {
+      if (amount <= 0) return;
+      const oldXP = getXP();
+      const newXP = oldXP + amount;
+      localStorage.setItem(XP_KEY, String(newXP));
+      const newLevel = xpToLevel(newXP);
+      const oldLevel = xpToLevel(oldXP);
+      // レベルが上がった場合のみ報酬チェック
+      if (newLevel > oldLevel) {
+        awardLevelRewardsIfNeeded(newLevel);
+      }
+    }
+
+    // レベルアップ報酬（Normal Modeのみ）
+    function awardLevelRewardsIfNeeded(currentLevel) {
+      if (currentMode !== "normal") return;
+      let rewarded = getLevelRewarded();
+      // 初回起動: rewardedが0なら現在レベルまで「付与済み」として初期化（遡り報酬なし）
+      if (rewarded === 0 && currentLevel > 1) {
+        localStorage.setItem(LEVEL_REWARDED_KEY, String(currentLevel));
+        return;
+      }
+      let bonus = 0;
+      while (rewarded < currentLevel) {
+        rewarded++;
+        bonus += LEVEL_REWARD_AMOUNT;
+      }
+      if (bonus > 0) {
+        localStorage.setItem(LEVEL_REWARDED_KEY, String(rewarded));
+        // Normal Bank に加算
+        const bank = getNormalBank();
+        const newBank = bank + bonus;
+        localStorage.setItem(BANK_KEY_NORMAL, String(newBank));
+        // エンジンにもチップを追加（ゲーム中の場合）
+        if (typeof bjApi !== 'undefined' && bjApi && bjApi.add_funds) {
+          bjApi.add_funds(bonus);
+        }
+        const levelsUp = currentLevel - (rewarded - (bonus / LEVEL_REWARD_AMOUNT));
+        toast(`LEVEL UP! Lv${currentLevel} +${bonus} chips`);
+      }
     }
 
     function toast(msg){
@@ -2797,6 +2859,13 @@ if (insMode) {
 
       // ラウンドが終わった瞬間だけ履歴に追加
       pushHistoryEntry(state);
+
+      // XP付与（ラウンド終了の瞬間に1回だけ）
+      if (phase !== prevPhase) xpAwardedThisPhase = false;
+      if (!xpAwardedThisPhase && (phase === "roundOver" || phase === "sessionOver")) {
+        addXP(XP_PER_ROUND);
+        xpAwardedThisPhase = true;
+      }
       
       // NormalモードならBANK保存
       if (currentMode === "normal" && state.phase === "roundOver") {
