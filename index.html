@@ -2207,7 +2207,18 @@ function setPause(paused) {
 
     function doResetToTitle(){
       stopTick();
+
+      // ── 画面遷移を先に行う ──
+      // callAction("reset_session") 内で refresh() → render() が呼ばれるため、
+      // 先にタイトル画面に切り替えて isTitle=true にしておく。
+      // これにより render() が state.bank ではなく getNormalBank() を表示する。
+      goScreen("title");
+      delete document.body.dataset.mode;
+      currentMode = "";
+
+      // エンジンにリセットを通知（この中で render() が呼ばれる）
       callAction("reset_session");
+
       $("overlayPause").classList.remove("show");
       $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
       $("overlayBankruptcy") && $("overlayBankruptcy").classList.remove("show");
@@ -2215,13 +2226,6 @@ function setPause(paused) {
       $("overlayHow").classList.remove("show");
       $("overlayMore") && $("overlayMore").classList.remove("show");
       $("overlayHistory") && $("overlayHistory").classList.remove("show");
-      goScreen("title");
-
-      // body.dataset.mode をクリア（CSSのdata-mode出し分けをリセット）
-      delete document.body.dataset.mode;
-
-      // currentMode をリセット（タイトル画面ではモード未選択）
-      currentMode = "";
 
       // ── タイトル画面用UIリセット ──
       // startSession() が設定したインラインstyleを除去し、
