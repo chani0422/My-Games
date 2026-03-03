@@ -336,7 +336,8 @@ struct Engine {
     h.score = sc.total;
     h.soft = sc.soft;
     h.flags.bust = (h.score > 21);
-    h.flags.blackjack = is_blackjack_2cards(h.cards);
+    // スプリット後のA+10はBlackjackとして扱わない（ただの21、配当1:1）
+    h.flags.blackjack = is_blackjack_2cards(h.cards) && !h.flags.fromSplit;
     if (h.flags.bust)
       h.flags.finished = true;
     if (!h.flags.bust && h.score == 21) {
@@ -356,6 +357,7 @@ struct Engine {
       return false;
     const Card &up = dealer[0];
     int pv = point_value(up);
+    // A表示または10点札表示の際にPeekを行う
     return (up.rank == 1) || (pv == 10);
   }
 
@@ -665,25 +667,45 @@ struct Engine {
 
     update_all_caches();
 
-    bool peek = should_peek();
     bool upIsAce = (!dealer.empty() && dealer[0].rank == 1);
     bool upIsTen = (!dealer.empty() && point_value(dealer[0]) == 10);
+    bool dealerBJ = dealer_has_blackjack_now();
 
-    if (upIsAce && rules.allowInsurance) {
-      ins.offered = true;
-      ins.max = std::min(baseBet / 2, bank);
-      ins.bet = 0;
-      ins.evenMoneyOffered = (rules.allowEvenMoney && hands[0].flags.blackjack);
-      ins.evenMoneyTaken = false;
+    // ディーラーA表示時：Insurance設定に関わらずまずPeekしてBJなら即終了
+    if (upIsAce) {
+      if (dealerBJ) {
+        dealerHoleKnown = true;
+        // 自分もBJなら引き分け(Push)、そうでなければ負け
+        if (hands[0].flags.blackjack) {
+          bank += hands[0].bet;
+        }
+        int profitBeforeBonus = bank - bankAtRoundStart;
+        int profitAfterBonus = apply_streak_bonus_if_needed(profitBeforeBonus);
+        finalize_round_and_update_streak(profitAfterBonus);
+        set_phase(Phase::ROUND_OVER);
+        round += 1;
+        if (session_over()) set_phase(Phase::SESSION_OVER);
+        return OK;
+      }
+      
+      // ディーラーBJでなかった場合、Insuranceのオファーフェーズへ（Late Surrender判定のため）
+      if (rules.allowInsurance) {
+        ins.offered = true;
+        ins.max = std::min(baseBet / 2, bank);
+        ins.bet = 0;
+        ins.evenMoneyOffered = (rules.allowEvenMoney && hands[0].flags.blackjack);
+        ins.evenMoneyTaken = false;
 
-      dealerHoleKnown = false;
-      dealerPeekNoBJ = false;
+        dealerHoleKnown = false;
+        dealerPeekNoBJ = true; // 既にチェック済み
 
-      set_phase(Phase::OFFER_INSURANCE);
-      return OK;
+        set_phase(Phase::OFFER_INSURANCE);
+        return OK;
+      }
     }
 
-    if (upIsTen && peek && dealer_has_blackjack_now()) {
+    // ディーラー10点札表示時：PeekしてBJなら即終了
+    if (upIsTen && dealerBJ) {
       dealerHoleKnown = true;
       if (hands[0].flags.blackjack) {
         bank += hands[0].bet;
@@ -693,8 +715,7 @@ struct Engine {
       finalize_round_and_update_streak(profitAfterBonus);
       set_phase(Phase::ROUND_OVER);
       round += 1;
-      if (session_over())
-        set_phase(Phase::SESSION_OVER);
+      if (session_over()) set_phase(Phase::SESSION_OVER);
       return OK;
     }
 
@@ -708,8 +729,7 @@ struct Engine {
       finalize_round_and_update_streak(profitAfterBonus);
       set_phase(Phase::ROUND_OVER);
       round += 1;
-      if (session_over())
-        set_phase(Phase::SESSION_OVER);
+      if (session_over()) set_phase(Phase::SESSION_OVER);
       return OK;
     }
 
@@ -1020,7 +1040,8 @@ struct Engine {
 
     for (auto &hh : hands) {
       update_hand_cache(hh);
-      if (rules.splitBJAsBJ && hh.flags.fromSplit && hh.flags.blackjack) {
+      // splitBJAsBJ ルールを廃止し、スプリット後のBJ（21）は即終了扱いにする
+      if (hh.flags.fromSplit && hh.score == 21) {
         hh.flags.finished = true;
       }
     }
@@ -1133,9 +1154,8 @@ struct Engine {
       return false;
     if (bank < h.bet)
       return false;
-    int v0 = split_value(h.cards[0]);
-    int v1 = split_value(h.cards[1]);
-    return v0 == v1;
+    // 点数の一致ではなく、カードランク（番号）の一致を条件にする
+    return h.cards[0].rank == h.cards[1].rank;
   }
 
   bool can_surrender() const {

@@ -1,4 +1,3 @@
-
 const RESOURCES = {
   en: {
     // トップバー
@@ -7,7 +6,7 @@ const RESOURCES = {
     "ui.ready": "ready.",
     "ui.engine_ready": "Engine ready!",
     "ui.engine_not_ready": "engine not ready",
-    
+
     // 統計 & メニュー
     "stats.bank": "Bank",
     "stats.round": "Round",
@@ -15,18 +14,19 @@ const RESOURCES = {
     "menu.menu": "MENU",
     "menu.history": "History",
     "menu.ranking": "Ranking",
-    
+
     // タイトル & ホーム
     "title.payout": "🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1",
     "title.main": "Blackjack",
     "title.sub": "Aim for a personal best in the ranking!!",
     "title.deal_start": "DEAL / START",
     "title.how": "How to Play",
-    "title.bet_hint": "Bet (Even number recommended to avoid fractional insurance)",
+    "title.bet_hint":
+      "Bet (Even number recommended to avoid fractional insurance)",
     "title.options": "Options (Toggle ON/OFF)",
 
     "title.marking": "Markings/Controls",
-    
+
     // オプション
     "opt.double": "Double Down",
     "opt.split": "Split",
@@ -36,7 +36,7 @@ const RESOURCES = {
     "opt.das": "DAS",
     "opt.split_bj": "Split BJ as BJ",
     "opt.h17": "Dealer hits Soft 17",
-    
+
     // ゲーム画面
     "game.garage": "CASINO TABLE",
     "game.bet_info": "BET / INFO",
@@ -46,25 +46,25 @@ const RESOURCES = {
     "game.more": "MORE",
     "game.more_title": "More actions",
     "game.more_hint": "※Functions only when available.",
-    
+
     // サイドパネルコマンド
     "cmd.double": "Double",
     "cmd.split": "Split",
     "cmd.surrender": "Surrender",
     "cmd.even_money": "Even Money",
-    
+
     // インシュランス (サイド)
     "ins.insurance": "Insurance",
     "ins.max": "MAX",
     "ins.dock_hint": "Select YES / NO in DOCK below",
     "ins.yes": "YES",
     "ins.no": "NO",
-    
+
     // ドック (DOCK)
     "dock.deal": "DEAL",
     "dock.hit": "HIT",
     "dock.stand": "STAND",
-    
+
     // オーバーレイ
     "so.session_over": "SESSION OVER",
     "so.calculating": "Calculating…",
@@ -74,58 +74,66 @@ const RESOURCES = {
     "so.retry": "WATCH AD & PLAY AGAIN (+5000)",
     "so.revive": "📺 Watch Ad to Revive (+500)",
     "so.delay": "Add Delay Before Session Over",
-    
+
     "pause.title": "PAUSED",
     "pause.close": "Close",
     "pause.msg": "Session will not end. 'Continue' to return, 'Quit' to title.",
     "pause.continue": "Continue",
     "pause.quit": "Quit to Title",
-    
+
     "how.title": "HOW TO PLAY",
     "how.close": "Close",
-    
-    "how.goal_title": "GOAL",
-    "how.goal_text": "Beat the dealer's hand without going over 21.",
-    
-    "how.val_title": "CARD VALUES",
-    "how.val_text": "<b>2-10</b> = Face Value<br><b>J, Q, K</b> = 10<br><b>Ace</b> = 1 or 11",
-    
-    "how.act_title": "ACTIONS",
-    "how.act_hit": "<b>HIT</b>: Take another card.",
-    "how.act_stand": "<b>STAND</b>: End turn.",
-    "how.act_double": "<b>DOUBLE</b>: Double bet, take exactly 1 card.",
-    "how.act_split": "<b>SPLIT</b>: Split pair into two hands (bet x2).",
-    "how.act_surrender": "<b>SURRENDER</b>: Give up half bet (Late).",
-    "how.act_insurance": "<b>INSURANCE</b>: Bet half if Dealer shows Ace.",
-    
-    "how.dlr_title": "DEALER RULES",
-    "how.dlr_text": "Dealer must draw to 16 and stand on 17.",
-    
-    "how.pay_title": "PAYOUTS",
-    "how.pay_bj": "Blackjack: 3 to 2",
-    "how.pay_win": "Win: 1 to 1",
-    "how.pay_ins": "Insurance: 2 to 1",
-    
-    "how.note": "※Buttons disable automatically when actions are not available.",
-    
+
+    // Compact summary
+    "how.summary_title": "QUICK SUMMARY",
+    "how.summary_goal":
+      "Goal: Get closer to 21 than the dealer (22+ is a bust/loss).",
+    "how.summary_val":
+      "Values: 2-10 face value / JQK=10 / A=1 or 11 (auto-best).",
+    "how.summary_act": "Actions: HIT to draw / STAND to end turn.",
+    "how.summary_pay": "Payouts: Win 1:1 / BJ 3:2 / Insurance 2:1 / Push 0",
+
+    // Details (Accordion keys)
+    "how.det_action_title": "Action Details",
+    "how.det_action_text":
+      "<b>Double Down</b>: Double your bet, take only 1 card, and then stand.<br><b>Split</b>: Split a pair of cards of the same rank into two hands. (Requires additional bet).<br><b>Surrender (Late)</b>: Give up and lose half your bet after dealer checks for Blackjack.<br><b>Insurance</b>: If dealer shows Ace, bet up to half your original bet. Pays 2:1 if dealer has BJ.<br><b>Even Money</b>: If you have BJ and dealer shows Ace, you can take an immediate 1:1 payout.",
+
+    "how.det_dealer_title": "Dealer Rules",
+    "how.det_dealer_text":
+      "Dealer hits on 16 or less and stands on 17 or more.<br><b>Soft 17</b>: Depending on settings, dealer may hit or stand when holding an Ace worth 11 and a total of 17.",
+
+    "how.det_table_title": "Table Rules",
+    "how.det_table_text":
+      "6 decks are used.<br>The shoe is reshuffled when the cut card is reached.<br>Maximum of 4 hands per round (Split limit).<br><b>Split Aces</b>: Each hand receives only one card and then stands.<br>Blackjack (3:2) is only on the first two cards. Split 21 is a regular win (1:1).",
+
+    "how.det_terms_title": "Terms",
+    "how.det_terms_text":
+      "<b>Blackjack</b>: An Ace and any 10-value card (10/J/Q/K) as your first two cards.<br><b>Soft</b>: A hand where an Ace can be counted as 11 without busting.<br><b>Hard</b>: A hand without an Ace, or where all Aces must be counted as 1.",
+
+    "how.det_payout_title": "Payouts",
+    "how.det_payout_text":
+      "<b>Standard Win</b>: 1 to 1<br><b>Blackjack</b>: 3 to 2 (1.5x)<br><b>Insurance</b>: 2 to 1 (2x)<br><b>Push (Tie)</b>: No profit/loss (±0)",
+
+    "how.note": "※Buttons are only shown when the action is available.",
+
     "hist.title": "HISTORY",
     "hist.close": "Close",
     "hist.msg": "Recording recent round results (Max 100). Saved in browser.",
     "hist.none": "No history yet.",
-    
+
     "rank.title": "RANKING",
     "rank.close": "Close",
     "rank.msg": "Saving session results (by Profit) (Max 50).",
     "rank.name": "Name (Optional)",
     "rank.none": "No ranking yet.",
     "rank.saved": "Saved Ranking: ",
-    
-    // デバッグ/トースト
+
+    // Debug/Toasts
     "toast.good_luck": "Good luck!",
     "toast.bet_adjusted": "Bet adjusted to Bank",
     "toast.ranking_cleared": "Ranking cleared",
-    
-    // 動的パーツ
+
+    // Dynamic parts
     "dyn.win": "WIN",
     "dyn.lose": "LOSE",
     "dyn.push": "PUSH",
@@ -137,12 +145,22 @@ const RESOURCES = {
     "dyn.hole_hidden": "hole hidden",
     "dyn.playing": "playing",
     "dyn.max": "max",
-    
+
+    // Options Subtext
+    "opt_sub.double": "Double bet, draw 1 card",
+    "opt_sub.split": "Split matching ranks into 2 hands",
+    "opt_sub.surrender": "Early exit for 50% refund (Late)",
+    "opt_sub.insurance": "Insurance vs Dealer Ace (Max bet/2)",
+    "opt_sub.even_money": "Instant 1:1 if you have BJ vs Dealer Ace",
+    "opt_sub.das": "Allow Double Down after Splitting",
+    "opt_sub.h17": "Dealer draws on Soft 17",
+    "opt_sub.haptic": "Vibration feedback on/off",
+
     // 銀行・破産
     "bank.bankruptcy": "YOU ARE BANKRUPT",
     "bank.revive_hint": "Chips are gone.<br>Watch Ad to Revive?",
     "ad.load_fail": "Ad failed to load. Please try again.",
-    
+
     // JS dynamic
     "js.result_showing": "Showing results…",
     "js.ad_waiting": "Waiting for ad…",
@@ -170,7 +188,7 @@ const RESOURCES = {
     "prac.time_up": "Time's up!",
     "prac.confirm_ad": "Watch a video to get a play ticket?",
   },
-  
+
   ja: {
     // Top bar
     "ui.booting": "起動中…",
@@ -178,7 +196,7 @@ const RESOURCES = {
     "ui.ready": "ready.",
     "ui.engine_ready": "Engine ready!",
     "ui.engine_not_ready": "準備中...",
-    
+
     // Stats & Menu
     "stats.bank": "Bank",
     "stats.round": "Round",
@@ -186,7 +204,7 @@ const RESOURCES = {
     "menu.menu": "MENU",
     "menu.history": "履歴",
     "menu.ranking": "Rank",
-    
+
     // Titles & Home
     "title.payout": "🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1",
     "title.main": "Blackjack",
@@ -197,7 +215,7 @@ const RESOURCES = {
     "title.options": "Options（タイトルでON/OFF）",
 
     "title.marking": "マーキング/操作",
-    
+
     // Options
     "opt.double": "Double Down",
     "opt.split": "Split",
@@ -207,7 +225,7 @@ const RESOURCES = {
     "opt.das": "DAS",
     "opt.split_bj": "Split BJ as BJ",
     "opt.h17": "Dealer hits Soft 17",
-    
+
     // Game Screen
     "game.garage": "CASINO TABLE",
     "game.bet_info": "BET / INFO",
@@ -217,25 +235,25 @@ const RESOURCES = {
     "game.more": "MORE",
     "game.more_title": "More actions",
     "game.more_hint": "※押せる場合に限り機能します。",
-    
+
     // Side Panel commands
     "cmd.double": "Double",
     "cmd.split": "Split",
     "cmd.surrender": "Surrender",
     "cmd.even_money": "Even Money",
-    
+
     // Insurance Side
     "ins.insurance": "Insurance",
     "ins.max": "MAX",
     "ins.dock_hint": "下のDOCKで YES / NO を選択",
     "ins.yes": "YES",
     "ins.no": "NO",
-    
+
     // DOCK
     "dock.deal": "DEAL",
     "dock.hit": "HIT",
     "dock.stand": "STAND",
-    
+
     // Overlays
     "so.session_over": "SESSION OVER!!", // JA uses !!
     "so.calculating": "集計中…",
@@ -245,57 +263,66 @@ const RESOURCES = {
     "so.retry": "📺 広告でもう一度 (+5000)",
     "so.revive": "📺 広告を見て復活 (+500)",
     "so.delay": "セッション終了まで少しお待ちください",
-    
+
     "pause.title": "PAUSED",
     "pause.close": "閉じる",
-    "pause.msg": "セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。",
+    "pause.msg":
+      "セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。",
     "pause.continue": "Continue",
     "pause.quit": "Quit to Title",
-    
+
     "how.title": "遊び方",
     "how.close": "閉じる",
-    
-    "how.goal_title": "目標",
-    "how.goal_text": "ディーラーより21に近づけること（21を超えたら負け）。",
-    
-    "how.val_title": "カードの点数",
-    "how.val_text": "<b>2-10</b> = そのまま<br><b>J, Q, K</b> = 10<br><b>Ace</b> = 1 または 11",
-    
-    "how.act_title": "アクション",
-    "how.act_hit": "<b>HIT</b>：カードをもう1枚引く",
-    "how.act_stand": "<b>STAND</b>：現在の点数で勝負する",
-    "how.act_double": "<b>DOUBLE</b>：賭け金を倍にして、残り1枚だけ引く",
-    "how.act_split": "<b>SPLIT</b>：ペアを分割して2つの手にする（賭け金倍）",
-    "how.act_surrender": "<b>SURRENDER</b>：勝てる見込みがない時に降りる（半額返金）",
-    "how.act_insurance": "<b>INSURANCE</b>：ディーラーのAに対して保険をかける（最大bet半額）",
-    
-    "how.dlr_title": "ディーラーのルール",
-    "how.dlr_text": "ディーラーは16以下なら引き続け、17以上で止まります。",
-    
-    "how.pay_title": "配当",
-    "how.pay_bj": "Blackjack: 3 to 2 (1.5倍)",
-    "how.pay_win": "Win: 1 to 1 (等倍)",
-    "how.pay_ins": "Insurance: 2 to 1 (2倍)",
-    
-    "how.note": "※ボタンはルール上可能な場合のみ押せるようになります。",
-    
+
+    // 超要約
+    "how.summary_title": "概要（クイックガイド）",
+    "how.summary_goal": "目標：21に近い方が勝ち（22以上は負け）",
+    "how.summary_val":
+      "点数：2-10はそのまま / JQK=10 / A=1 or 11（有利な方を自動）",
+    "how.summary_act": "操作：HIT=1枚引く / STAND=引かずに終了",
+    "how.summary_pay": "配当：勝ち1:1 / BJ 3:2 / 保険2:1 / 引き分け0",
+
+    // 詳細（アコーディオン）
+    "how.det_action_title": "アクション詳細",
+    "how.det_action_text":
+      "<b>Double Down</b>：Betを2倍にして1枚だけ引き、強制的にスタンドします。<br><b>Split</b>：同ランクの2枚を2つの手に分割します（同額の追加Betが必要）。<br><b>Surrender (Late)</b>：降りて半額負けとなります。ディーラーのBJチェック後に行われます。<br><b>Insurance</b>：ディーラーのアップカードがAの時の保険。ディーラーがBJなら2:1。<br><b>Even Money</b>：自身がBJかつディーラーAの際、確定で1:1の配当を受け取れます。",
+
+    "how.det_dealer_title": "ディーラーのルール",
+    "how.det_dealer_text":
+      "ディーラーは16以下なら引き続け、17以上で止まります。<br><b>Soft 17</b>：Aを11として数える計17の場合、設定によりヒットかスタンドが変わります。",
+
+    "how.det_table_title": "テーブルルール",
+    "how.det_table_text":
+      "6デッキ（312枚）を使用します。<br>カードの残りが少なくなると、再シャッフルが行われます。<br>最大4ハンドまで分割可能です。<br><b>Split Aces</b>：Aのスプリット後は各手1枚のみ配られ、強制スタンドとなります。<br>Blackjack(3:2)は最初の2枚のみ。スプリット後の21は通常勝ち(1:1)です。",
+
+    "how.det_terms_title": "用語の解説",
+    "how.det_terms_text":
+      "<b>ブラックジャック</b>：最初の2枚が「Ace + 10点札(10/J/Q/K)」の組み合わせ。<br><b>ソフト</b>：Aceを11として数えても合計が21を超えない状態の手。<br><b>ハード</b>：Aceを含まない、またはAceを1としてしか数えられない状態の手。",
+
+    "how.det_payout_title": "配当について",
+    "how.det_payout_text":
+      "<b>通常勝ち</b>：1 to 1 (1倍)<br><b>ブラックジャック</b>：3 to 2 (1.5倍)<br><b>保険（Insurance）</b>：2 to 1 (2倍)<br><b>引き分け（Push）</b>：±0 (賭け金返却)",
+
+    "how.note": "※ボタンは状況に応じて、ルール上可能なものだけが表示されます。",
+
     "hist.title": "HISTORY",
     "hist.close": "閉じる",
-    "hist.msg": "直近のラウンド結果を記録しています（最大 100 件）。ページを閉じてもブラウザに保存されます。",
+    "hist.msg":
+      "直近のラウンド結果を記録しています（最大 100 件）。ページを閉じてもブラウザに保存されます。",
     "hist.none": "まだ履歴がありません。",
-    
+
     "rank.title": "RANKING",
     "rank.close": "閉じる",
     "rank.msg": "セッション結果（Profit順）を保存しています（最大 50 件）。",
     "rank.name": "Name（任意）",
     "rank.none": "まだランキングがありません。",
     "rank.saved": "Saved Ranking: ",
-    
+
     // Debug/Toasts
     "toast.good_luck": "Good luck!",
     "toast.bet_adjusted": "Bet adjusted to Bank",
     "toast.ranking_cleared": "Ranking cleared",
-    
+
     // Dynamic parts
     "dyn.win": "WIN",
     "dyn.lose": "LOSE",
@@ -308,7 +335,17 @@ const RESOURCES = {
     "dyn.hole_hidden": "hole hidden",
     "dyn.playing": "playing",
     "dyn.max": "max",
-    
+
+    // Options Subtext
+    "opt_sub.double": "Bet2倍で1枚引いて終了",
+    "opt_sub.split": "同ランク2枚を分割し2ハンド化",
+    "opt_sub.surrender": "降りて半額負け（レイト）",
+    "opt_sub.insurance": "ディーラーAで保険（最大半額）",
+    "opt_sub.even_money": "自分BJ＆ディーラーAで確定1:1",
+    "opt_sub.das": "スプリット後のダブルを許可",
+    "opt_sub.h17": "Soft17ならディーラーも引く",
+    "opt_sub.haptic": "操作時の振動フィードバック",
+
     // 銀行・破産
     "bank.bankruptcy": "破産しました",
     "bank.revive_hint": "チップがなくなりました。<br>広告を見て復活しますか？",
@@ -340,30 +377,34 @@ const RESOURCES = {
     "prac.retry_ticket": "もう一度（チケット消費）",
     "prac.time_up": "時間切れ！",
     "prac.confirm_ad": "動画広告を見て、プレイ権（チケット）を獲得しますか？",
-  }
+  },
 };
 
-let currentLang = localStorage.getItem('bj_lang') || 'en';
+let currentLang = localStorage.getItem("bj_lang") || "en";
 
 // For console access
 window.LOC = {
-  get lang(){ return currentLang; },
-  set lang(v){ setLanguage(v); }
+  get lang() {
+    return currentLang;
+  },
+  set lang(v) {
+    setLanguage(v);
+  },
 };
 
-function t(key){
+function t(key) {
   const dict = RESOURCES[currentLang] || RESOURCES.en;
   return dict[key] || key;
 }
 
-function updateDOM(){
+function updateDOM() {
   // 1. data-i18n
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
     if (key) {
       // If it contains HTML tags in resource, use innerHTML
       const val = t(key);
-      if (val.includes('<') && val.includes('>')) {
+      if (val.includes("<") && val.includes(">")) {
         el.innerHTML = val;
       } else {
         el.textContent = val;
@@ -372,34 +413,36 @@ function updateDOM(){
   });
 
   // 2. Placeholders
-  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-    const key = el.getAttribute('data-i18n-ph');
+  document.querySelectorAll("[data-i18n-ph]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-ph");
     if (key) {
       el.placeholder = t(key);
     }
   });
 
   // 3. Titles (tooltips)
-  document.querySelectorAll('[data-i18n-title]').forEach(el => {
-    const key = el.getAttribute('data-i18n-title');
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-title");
     if (key) {
       el.title = t(key);
     }
   });
 }
 
-function setLanguage(lang){
+function setLanguage(lang) {
   if (!RESOURCES[lang]) {
     console.warn("Unknown lang:", lang);
     return;
   }
   currentLang = lang;
-  localStorage.setItem('bj_lang', lang);
+  localStorage.setItem("bj_lang", lang);
 
   const apply = () => {
     document.documentElement.lang = lang;
     updateDOM();
-    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+    window.dispatchEvent(
+      new CustomEvent("languageChanged", { detail: { lang } }),
+    );
   };
 
   if (document.readyState === "loading") {
@@ -410,14 +453,18 @@ function setLanguage(lang){
 }
 
 // Auto init
-    // If not set/valid, default to english (or user logic)
-    const saved = localStorage.getItem('bj_lang');
-    if (!saved) {
-      const navLang = (navigator.language || navigator.userLanguage || "en").toLowerCase();
-      if (navLang.startsWith("ja")) {
-        currentLang = "ja";
-      } else if (RESOURCES[navLang.slice(0,2)]) {
-        currentLang = navLang.slice(0,2);
-      }
-    }
-    setLanguage(currentLang);
+// If not set/valid, default to english (or user logic)
+const saved = localStorage.getItem("bj_lang");
+if (!saved) {
+  const navLang = (
+    navigator.language ||
+    navigator.userLanguage ||
+    "en"
+  ).toLowerCase();
+  if (navLang.startsWith("ja")) {
+    currentLang = "ja";
+  } else if (RESOURCES[navLang.slice(0, 2)]) {
+    currentLang = navLang.slice(0, 2);
+  }
+}
+setLanguage(currentLang);
