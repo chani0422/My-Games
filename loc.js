@@ -112,7 +112,7 @@ const RESOURCES = {
 
     "how.det_payout_title": "Payouts",
     "how.det_payout_text":
-      "<b>Standard Win</b>: 1 to 1<br><b>Blackjack</b>: 3 to 2 (1.5x)<br><b>Insurance</b>: 2 to 1 (2x)<br><b>Push (Tie)</b>: No profit/loss (±0)",
+      "<b>Standard Win</b>: +Original Bet amount (= 1:1)<br><b>Blackjack</b>: +1.5x Bet amount (= 3:2)<br><b>Insurance</b>: +2x Insurance Bet amount (= 2:1)<br><b>Push (Tie)</b>: No profit/loss (±0)",
 
     "how.note": "※Buttons are only shown when the action is available.",
 
@@ -301,7 +301,7 @@ const RESOURCES = {
 
     "how.det_payout_title": "配当について",
     "how.det_payout_text":
-      "<b>通常勝ち</b>：1 to 1 (1倍)<br><b>ブラックジャック</b>：3 to 2 (1.5倍)<br><b>保険（Insurance）</b>：2 to 1 (2倍)<br><b>引き分け（Push）</b>：±0 (賭け金返却)",
+      "<b>通常勝ち</b>：+ベットと同額（= 1:1）<br><b>ブラックジャック</b>：+ベットの1.5倍（= 3:2）<br><b>保険</b>：+保険ベットの2倍（= 2:1）<br><b>引き分け</b>：増減なし（Push）",
 
     "how.note": "※ボタンは状況に応じて、ルール上可能なものだけが表示されます。",
 
