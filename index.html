@@ -650,7 +650,7 @@
       background: #0a1f14; /* ダークなフェルトカラー */
       border: 1px solid var(--gold);
     }
-    .modal__header {
+    .modal-header {
       padding: 16px;
       border-bottom: 1px solid var(--border);
       display: flex;
@@ -658,7 +658,7 @@
       align-items: center;
       background: rgba(0,0,0,0.3);
     }
-    .modal__body {
+    .modal-body {
       padding: 16px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
@@ -1911,13 +1911,13 @@ window.CG.p = new Promise((resolve) => {
     </div>
   </div>
 <!-- 遊び方 -->
-  <div id="overlay-how" class="overlay">
+  <div id="overlayHow" class="overlay">
     <div class="modal">
-      <div class="modal__header">
+      <div class="modal-header">
         <h2 data-i18n="how.title">HOW TO PLAY</h2>
-        <button class="btn ghost" onclick="hideAllOverlays()" data-i18n="how.close">Close</button>
+        <button class="btn ghost" id="btnCloseHow" data-i18n="how.close">Close</button>
       </div>
-      <div class="modal__body">
+      <div class="modal-body">
         <div style="margin-bottom: 16px;">
           <div style="font-weight: 900; color: var(--gold); margin-bottom: 4px; font-size: 14px;" data-i18n="how.summary_title">QUICK SUMMARY</div>
           <p style="margin: 4px 0; font-size: 13px;" data-i18n="how.summary_goal">Goal: Get closer to 21 than the dealer (22+ is a bust/loss).</p>
