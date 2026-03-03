@@ -634,10 +634,64 @@
       border:1px solid rgba(255,255,255,.12);
       border-radius:16px;
       background: rgba(0,0,0,.16);
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      display:flex; flex-direction:column; align-items:flex-start; gap:4px;
     }
-    .opt label{display:flex; gap:10px; align-items:center; cursor:pointer; width:100%}
+    .opt label{display:flex; gap:10px; align-items:center; cursor:pointer; width:100%; font-weight:800; font-size:13px;}
+    .opt .opt-desc{font-size:11px; color:var(--muted2); margin-left:26px;}
     .opt input{ transform: scale(1.1) }
+
+    /* ===== モーダル調整 ===== */
+    .modal {
+      max-height: calc(100dvh - 80px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: #0a1f14; /* ダークなフェルトカラー */
+      border: 1px solid var(--gold);
+    }
+    .modal-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+    }
+    .modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1;
+    }
+
+    /* アコーディオン (details/summary) */
+    details {
+      margin-bottom: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+    }
+    summary {
+      padding: 12px;
+      cursor: pointer;
+      font-weight: 900;
+      color: var(--gold2);
+      user-select: none;
+      outline: none;
+    }
+    summary:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    .details-content {
+      padding: 0 12px 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    .details-content b {
+      color: var(--text);
+    }
 
     /* ===== カジノテーブル (★ここが見た目の本体) ===== */
     .tableStage{
@@ -1551,19 +1605,45 @@ window.CG.p = new Promise((resolve) => {
              <span data-i18n="title.options">Options（タイトルでON/OFF）</span>
              <button id="btnLangToggle" class="btn ghost" style="font-size:12px; padding:4px 8px;">EN / JP</button>
           </div>
-          <div class="optGrid">
-            <div class="opt"><label><input type="checkbox" id="optDouble" checked> <span data-i18n="opt.double">Double Down</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplit" checked> <span data-i18n="opt.split">Split</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optSurrender" checked> <span data-i18n="opt.surrender">Surrender (Late)</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optInsurance" checked> <span data-i18n="opt.insurance">Insurance</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optEvenMoney" checked> <span data-i18n="opt.even_money">Even Money</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optDAS" checked> <span data-i18n="opt.das">DAS</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> <span data-i18n="opt.split_bj">Split BJ as BJ</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optH17" checked> <span data-i18n="opt.h17">Dealer hits Soft 17</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optHaptic" checked> <span data-i18n="opt.haptic">Vibration (Haptics)</span></label></div>
-          </div>
-
-          <div class="divider"></div>
+            <div class="optGrid">
+              <div class="opt">
+                <label><input type="checkbox" id="opt_double" checked> <span data-i18n="opt.double">Double Down</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.double">Double bet, draw 1 card</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_split" checked> <span data-i18n="opt.split">Split</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.split">Split matching ranks into 2 hands</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_surrender" checked> <span data-i18n="opt.surrender">Surrender</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.surrender">Early exit for 50% refund (Late)</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_insurance" checked> <span data-i18n="opt.insurance">Insurance</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.insurance">Insurance vs Dealer Ace (Max bet/2)</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_even_money" checked> <span data-i18n="opt.even_money">Even Money</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.even_money">Instant 1:1 if you have BJ vs Dealer Ace</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_das" checked> <span data-i18n="opt.das">DAS</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.das">Allow Double Down after Splitting</div>
+              </div>
+              <!-- Split BJ as BJ is now always OFF by rule logic, so we hide the toggle -->
+              <div class="opt" style="display:none;">
+                <label><input type="checkbox" id="opt_split_bj"> <span data-i18n="opt.split_bj">Split BJ as BJ</span></label>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_h17" checked> <span data-i18n="opt.h17">H17</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.h17">Dealer draws on Soft 17</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_haptic" checked> <span data-i18n="opt.haptic">Haptic</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.haptic">Vibration feedback on/off</div>
+              </div>
+            </div>
+ <div class="divider"></div>
 
           <div class="row" style="justify-content:space-between">
 
@@ -1831,42 +1911,51 @@ window.CG.p = new Promise((resolve) => {
     </div>
   </div>
 <!-- 遊び方 -->
-<div class="overlay" id="overlayHow">
-  <div class="modal wide">
-    <div class="hd">
-      <b data-i18n="how.title">HOW TO PLAY</b>
-      <button class="btn ghost" id="btnCloseHow" data-i18n="how.close">Close</button>
+  <div id="overlayHow" class="overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 data-i18n="how.title">HOW TO PLAY</h2>
+        <button class="btn ghost" id="btnCloseHow" data-i18n="how.close">Close</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 16px;">
+          <div style="font-weight: 900; color: var(--gold); margin-bottom: 4px; font-size: 14px;" data-i18n="how.summary_title">QUICK SUMMARY</div>
+          <p style="margin: 4px 0; font-size: 13px;" data-i18n="how.summary_goal">Goal: Get closer to 21 than the dealer (22+ is a bust/loss).</p>
+          <p style="margin: 4px 0; font-size: 13px;" data-i18n="how.summary_val">Values: 2-10 face value / JQK=10 / A=1 or 11 (auto-best).</p>
+          <p style="margin: 4px 0; font-size: 13px;" data-i18n="how.summary_act">Actions: HIT to draw / STAND to end turn.</p>
+          <p style="margin: 4px 0; font-size: 13px;" data-i18n="how.summary_pay">Payouts: Win 1:1 / BJ 3:2 / Insurance 2:1 / Push 0</p>
+        </div>
+
+        <details>
+          <summary data-i18n="how.det_action_title">Action Details</summary>
+          <div class="details-content" data-i18n="how.det_action_text">Action details here...</div>
+        </details>
+
+        <details>
+          <summary data-i18n="how.det_dealer_title">Dealer Rules</summary>
+          <div class="details-content" data-i18n="how.det_dealer_text">Dealer rules here...</div>
+        </details>
+
+        <details>
+          <summary data-i18n="how.det_table_title">Table Rules</summary>
+          <div class="details-content" data-i18n="how.det_table_text">Table rules here...</div>
+        </details>
+
+        <details>
+          <summary data-i18n="how.det_terms_title">Terms</summary>
+          <div class="details-content" data-i18n="how.det_terms_text">Terms here...</div>
+        </details>
+
+        <details>
+          <summary data-i18n="how.det_payout_title">Payouts</summary>
+          <div class="details-content" data-i18n="how.det_payout_text">Payout details here...</div>
+        </details>
+
+        <div class="small" style="margin-top: 16px;" data-i18n="how.note">※Buttons are only shown when the action is available.</div>
+      </div>
     </div>
-    <div class="bd">
-      
-      <div class="rule-sec">
-        <b data-i18n="how.goal_title">GOAL</b>
-        <div data-i18n="how.goal_text">Beat the dealer...</div>
-      </div>
-
-      <div class="rule-sec">
-        <b data-i18n="how.val_title">CARD VALUES</b>
-        <div data-i18n="how.val_text">2-10...</div>
-      </div>
-
-      <div class="rule-sec">
-        <b data-i18n="how.act_title">ACTIONS</b>
-    <div class="rule-item" data-i18n="how.act_surrender">SURRENDER</div>
-          <div class="rule-item" data-i18n="how.act_insurance">INSURANCE</div>
-        </div>
-      </div>
-
-      <div class="row" style="align-items:flex-start; gap:24px; flex-wrap:wrap;">
-        <div class="rule-sec" style="flex:1; min-width:240px;">
-          <b data-i18n="how.dlr_title">DEALER RULES</b>
-          <div data-i18n="how.dlr_text">Dealer must draw...</div>
-        </div>
-
-        <div class="rule-sec" style="flex:1; min-width:240px;">
-          <b data-i18n="how.pay_title">PAYOUTS</b>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; font-size:13px; font-weight:bold;">
-            <span class="pill" style="background:rgba(255,215,0,.15); color:#ffd700; padding:6px 10px;" data-i18n="how.pay_bj">BJ 3:2</span>
-            <span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" data-i18n="how.pay_win">Win 1:1</span>
+  </div>
+span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" data-i18n="how.pay_win">Win 1:1</span>
             <span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" data-i18n="how.pay_ins">Ins 2:1</span>
           </div>
         </div>
@@ -2426,7 +2515,7 @@ window.CG.p = new Promise((resolve) => {
 
     // ========= ハプティクス =========
     function vibrate(ms){
-      if (!$("optHaptic") || !$("optHaptic").checked) return;
+      if (!$("opt_haptic") || !$("opt_haptic").checked) return;
       if (typeof navigator.vibrate !== "function") return;
       try{ navigator.vibrate(ms); } catch(e){}
     }
@@ -2812,14 +2901,14 @@ $("btnBankruptAd").onclick = () => {
       const RB_DEALER_HIT_S17    = 1 << 7;
 
       let m = 0;
-      if ($("optDouble").checked)   m |= RB_ALLOW_DOUBLE;
-      if ($("optSplit").checked)    m |= RB_ALLOW_SPLIT;
-      if ($("optSurrender").checked)m |= RB_ALLOW_SURRENDER;
-      if ($("optInsurance").checked)m |= RB_ALLOW_INSURANCE;
-      if ($("optEvenMoney").checked)m |= RB_ALLOW_EVEN_MONEY;
-      if ($("optDAS").checked)      m |= RB_ALLOW_DAS;
-      if ($("optSplitBJ").checked)  m |= RB_SPLIT_BJ_AS_BJ;
-      if ($("optH17").checked)      m |= RB_DEALER_HIT_S17;
+      if ($("opt_double").checked)   m |= RB_ALLOW_DOUBLE;
+      if ($("opt_split").checked)    m |= RB_ALLOW_SPLIT;
+      if ($("opt_surrender").checked)m |= RB_ALLOW_SURRENDER;
+      if ($("opt_insurance").checked)m |= RB_ALLOW_INSURANCE;
+      if ($("opt_even_money").checked)m |= RB_ALLOW_EVEN_MONEY;
+      if ($("opt_das").checked)      m |= RB_ALLOW_DAS;
+      if ($("opt_split_bj").checked)  m |= RB_SPLIT_BJ_AS_BJ;
+      if ($("opt_h17").checked)      m |= RB_DEALER_HIT_S17;
       return m >>> 0;
     }
 
@@ -4444,14 +4533,14 @@ $("btnPracToTitle").onclick = () => {
 
     function getRuleMaskFromUI() {
        let mask = 0;
-       if($("optDouble").checked) mask |= 1;
-       if($("optSplit").checked) mask |= 2;
-       if($("optSurrender").checked) mask |= 4;
-       if($("optInsurance").checked) mask |= 8;
-       if($("optEvenMoney").checked) mask |= 16;
-       if($("optDAS").checked) mask |= 32;
-       if($("optSplitBJ").checked) mask |= 64;
-       if($("optH17").checked) mask |= 128;
+       if($("opt_double").checked) mask |= 1;
+       if($("opt_split").checked) mask |= 2;
+       if($("opt_surrender").checked) mask |= 4;
+       if($("opt_insurance").checked) mask |= 8;
+       if($("opt_even_money").checked) mask |= 16;
+       if($("opt_das").checked) mask |= 32;
+       if($("opt_split_bj").checked) mask |= 64;
+       if($("opt_h17").checked) mask |= 128;
        return mask;
     }
 
