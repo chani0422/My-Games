@@ -96,7 +96,7 @@ const RESOURCES = {
     // Details (Accordion keys)
     "how.det_action_title": "Action Details",
     "how.det_action_text":
-      "<b>Double Down</b>: Double your bet, take only 1 card, and then stand.<br><b>Split</b>: Split a pair of cards of the same rank into two hands. (Requires additional bet).<br><b>Surrender (Late)</b>: Give up and lose half your bet after dealer checks for Blackjack.<br><b>Insurance</b>: If dealer shows Ace, bet up to half your original bet. Pays 2:1 if dealer has BJ.<br><b>Even Money</b>: If you have BJ and dealer shows Ace, you can take an immediate 1:1 payout.",
+      "<b>Hit</b>: Draw another card to increase your total score. You can hit as many times as you like until you reach 21 or bust (go over 21).<br><b>Stand</b>: Keep your current hand and end your turn. The dealer will then play their hand.<br><b>Double Down</b>: Double your original bet in exchange for receiving exactly one more card and then standing. Best used on totals of 9, 10, or 11.<br><b>Split</b>: If your first two cards have the same rank (e.g., two 8s), you can split them into two separate hands by adding an identical bet. Each hand is played independently.<br><b>Surrender (Late)</b>: If offered, you can give up half of your bet and end your hand before drawing any cards (after the dealer checks for Blackjack).<br><b>Insurance</b>: A side bet offered when the dealer's upcard is an Ace. You bet up to half of your original bet; if the dealer has Blackjack, it pays 2:1.<br><b>Even Money</b>: A special form of insurance for when you have Blackjack and the dealer shows an Ace. You can choose to take a guaranteed 1:1 payout immediately.",
 
     "how.det_dealer_title": "Dealer Rules",
     "how.det_dealer_text":
@@ -285,7 +285,7 @@ const RESOURCES = {
     // 詳細（アコーディオン）
     "how.det_action_title": "アクション詳細",
     "how.det_action_text":
-      "<b>Double Down</b>：Betを2倍にして1枚だけ引き、強制的にスタンドします。<br><b>Split</b>：同ランクの2枚を2つの手に分割します（同額の追加Betが必要）。<br><b>Surrender (Late)</b>：降りて半額負けとなります。ディーラーのBJチェック後に行われます。<br><b>Insurance</b>：ディーラーのアップカードがAの時の保険。ディーラーがBJなら2:1。<br><b>Even Money</b>：自身がBJかつディーラーAの際、確定で1:1の配当を受け取れます。",
+      "<b>ヒット (Hit)</b>：カードを1枚追加します。21を超える（バースト）まで何度でも引けます。<br><b>スタンド (Stand)</b>：現在の点数で確定し、ターンを終了します。<br><b>ダブルダウン (Double)</b>：賭け金を2倍にし、カードを「あと1枚だけ」引いて強制的にスタンドします。9〜11点の時に有効な戦略です。<br><b>スプリット (Split)</b>：最初に出た2枚が同じランク（8のペアなど）の場合、追加の賭け金を払ってそれらを2つの独立した手に分割できます。<br><b>サレンダー (Surrender)</b>：不利な状況の際、賭け金の半分を放棄してそのラウンドを降ります（ディーラーのBJチェック後に行う「レイト」形式です）。<br><b>保険 (Insurance)</b>：ディーラーの表カードがAの時のサイドベット。元の賭け金の半分まで賭けられ、ディーラーがBJなら2:1の配当を得ます。<br><b>イーブンマネー (Even Money)</b>：自分がBJ、ディーラーがAの時に選べます。ディーラーの結果に関わらず、即座に1:1（等倍）の配当を得て終了します。",
 
     "how.det_dealer_title": "ディーラーのルール",
     "how.det_dealer_text":
