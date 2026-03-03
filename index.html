@@ -61,6 +61,65 @@
         linear-gradient(180deg, #03120a, #052414 40%, #07351a);
     }
 
+    /* ===== チップ吸い込み演出用 CSS ===== */
+    .chip-particle {
+      position: fixed;
+      width: 18px;
+      height: 18px;
+      background: var(--gold);
+      border: 2px solid var(--gold2);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1000;
+      box-shadow: 0 0 6px var(--gold);
+      will-change: transform, opacity;
+      opacity: 0;
+    }
+
+    @keyframes chipFly {
+      0% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+        transform: translate(var(--ox), var(--oy)) scale(1.1);
+      }
+      /* 0.0s - 0.5s: テーブル中心であふれる (滞留) */
+      50% {
+        transform: translate(calc(var(--ox) * 1.2), calc(var(--oy) * 1.2)) scale(1);
+        opacity: 1;
+      }
+      /* 0.5s - 0.85s: Bankへ移動 */
+      85% {
+        transform: translate(var(--dx), calc(var(--dy) - var(--arc))) scale(1);
+        opacity: 1;
+      }
+      95% {
+        transform: translate(var(--dx), var(--dy)) scale(0.3);
+        opacity: 0.5;
+      }
+      100% {
+        transform: translate(var(--dx), var(--dy)) scale(0.2);
+        opacity: 0;
+      }
+    }
+
+    .bank-pounce {
+      animation: bankBounce 150ms ease-out;
+    }
+
+    @keyframes bankBounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); filter: brightness(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .chip-particle { display: none !important; }
+      .bank-pounce { animation: none !important; }
+    }
+
     body::before, body::after{
       content:"";
       position:fixed; inset:-20%;
@@ -2380,6 +2439,93 @@ window.CG.p = new Promise((resolve) => {
       if (kind) b.classList.add(kind);
     }
 
+    /* ===== チップ演出制御 ===== */
+    let isChipAnimating = false;
+    let chipEffectDone = false;
+    let chipCleanupTimer = null;
+
+    function chipAbsorbCleanup(finalBank) {
+      if (!isChipAnimating) return;
+      isChipAnimating = false;
+      if (chipCleanupTimer) { clearTimeout(chipCleanupTimer); chipCleanupTimer = null; }
+
+      // 粒子DOMを全削除
+      document.querySelectorAll(".chip-particle").forEach(el => el.remove());
+
+      // Bank表示を最終値に強制更新
+      const bankEl = $("bank");
+      if (bankEl) {
+        bankEl.textContent = String(finalBank);
+        const pill = bankEl.closest(".pill");
+        if (pill) pill.classList.remove("bank-pounce");
+      }
+    }
+
+    function playChipAbsorb(finalBank) {
+      if (isChipAnimating) return;
+      // reduced-motion 対応
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        $("bank").textContent = String(finalBank);
+        return;
+      }
+
+      isChipAnimating = true;
+
+      const bankEl = $("bank");
+      const bankPill = bankEl.closest(".pill");
+      const table = document.querySelector(".tableSurface");
+      if (!bankPill || !table) {
+        chipAbsorbCleanup(finalBank);
+        return;
+      }
+
+      const fromRect = table.getBoundingClientRect();
+      const toRect = bankPill.getBoundingClientRect();
+
+      const startX = fromRect.left + fromRect.width / 2;
+      const startY = fromRect.top + fromRect.height / 2;
+      const endX = toRect.left + toRect.width / 2;
+      const endY = toRect.top + toRect.height / 2;
+
+      const dx = endX - startX;
+      const dy = endY - startY;
+
+      // 10個の粒子を生成
+      for (let i = 0; i < 10; i++) {
+        const p = document.createElement("div");
+        p.className = "chip-particle";
+        
+        // 中心から拡散する座標
+        const ox = (Math.random() - 0.5) * 140;
+        const oy = (Math.random() - 0.5) * 140;
+        p.style.left = startX + "px";
+        p.style.top = startY + "px";
+        
+        p.style.setProperty("--ox", `${ox}px`);
+        p.style.setProperty("--oy", `${oy}px`);
+        p.style.setProperty("--dx", `${dx}px`);
+        p.style.setProperty("--dy", `${dy}px`);
+        p.style.setProperty("--arc", "80px"); // 飛行時の弧
+
+        const delay = Math.random() * 80;
+        p.style.animation = `chipFly 1000ms ease-in-out ${delay}ms forwards`;
+        
+        document.body.appendChild(p);
+      }
+
+      // 850ms後にカウントアップとピルバウンス開始 (1000msアニメの85%地点)
+      chipCleanupTimer = setTimeout(() => {
+        const cur = Number(bankEl.textContent) || 0;
+        animateNumber(bankEl, cur, finalBank, 150);
+        bankPill.classList.add("bank-pounce");
+
+        chipCleanupTimer = setTimeout(() => {
+          chipAbsorbCleanup(finalBank);
+        }, 200);
+      }, 850);
+    }
+
+
     function animateNumber(el, from, to, duration=520){
       from = Number(from); to = Number(to);
       if (!Number.isFinite(from)) from = 0;
@@ -3076,8 +3222,10 @@ function beginSessionOverFlow(st){
           if (prevBank === null){
             bankEl.textContent = String(newBank);
           } else if (prevBank !== newBank){
-            animateNumber(bankEl, prevBank, newBank, 520);
-            bankPill.classList.remove("bankFlash"); void bankPill.offsetWidth; bankPill.classList.add("bankFlash");
+            if (!isChipAnimating) {
+              animateNumber(bankEl, prevBank, newBank, 520);
+              bankPill.classList.remove("bankFlash"); void bankPill.offsetWidth; bankPill.classList.add("bankFlash");
+            }
           }
           prevBank = newBank;
       }
@@ -3365,7 +3513,7 @@ if (insMode) {
           }
       }
 
-      // 勝利エフェクトのトリガー
+      // 勝利・チップエフェクトのトリガー
       if (isRoundOver) {
          if (!isDealerAnimating) {
             const net = state.roundResult.netProfit;
@@ -3373,9 +3521,14 @@ if (insMode) {
                 window.triggerWinEffect && window.triggerWinEffect();
                 winEffectDone = true;
             }
+            if (!chipEffectDone && net > 0 && !isTitle && currentMode !== "practice") {
+                playChipAbsorb(Number(state.bank));
+                chipEffectDone = true;
+            }
          }
       } else {
          winEffectDone = false;
+         chipEffectDone = false;
       }
 
 
