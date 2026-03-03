@@ -2515,7 +2515,7 @@ span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" dat
 
     // ========= ハプティクス =========
     function vibrate(ms){
-      if (!$("optHaptic") || !$("optHaptic").checked) return;
+      if (!$("opt_haptic") || !$("opt_haptic").checked) return;
       if (typeof navigator.vibrate !== "function") return;
       try{ navigator.vibrate(ms); } catch(e){}
     }
@@ -2901,14 +2901,14 @@ $("btnBankruptAd").onclick = () => {
       const RB_DEALER_HIT_S17    = 1 << 7;
 
       let m = 0;
-      if ($("optDouble").checked)   m |= RB_ALLOW_DOUBLE;
-      if ($("optSplit").checked)    m |= RB_ALLOW_SPLIT;
-      if ($("optSurrender").checked)m |= RB_ALLOW_SURRENDER;
-      if ($("optInsurance").checked)m |= RB_ALLOW_INSURANCE;
-      if ($("optEvenMoney").checked)m |= RB_ALLOW_EVEN_MONEY;
-      if ($("optDAS").checked)      m |= RB_ALLOW_DAS;
-      if ($("optSplitBJ").checked)  m |= RB_SPLIT_BJ_AS_BJ;
-      if ($("optH17").checked)      m |= RB_DEALER_HIT_S17;
+      if ($("opt_double").checked)   m |= RB_ALLOW_DOUBLE;
+      if ($("opt_split").checked)    m |= RB_ALLOW_SPLIT;
+      if ($("opt_surrender").checked)m |= RB_ALLOW_SURRENDER;
+      if ($("opt_insurance").checked)m |= RB_ALLOW_INSURANCE;
+      if ($("opt_even_money").checked)m |= RB_ALLOW_EVEN_MONEY;
+      if ($("opt_das").checked)      m |= RB_ALLOW_DAS;
+      if ($("opt_split_bj").checked)  m |= RB_SPLIT_BJ_AS_BJ;
+      if ($("opt_h17").checked)      m |= RB_DEALER_HIT_S17;
       return m >>> 0;
     }
 
@@ -4533,14 +4533,14 @@ $("btnPracToTitle").onclick = () => {
 
     function getRuleMaskFromUI() {
        let mask = 0;
-       if($("optDouble").checked) mask |= 1;
-       if($("optSplit").checked) mask |= 2;
-       if($("optSurrender").checked) mask |= 4;
-       if($("optInsurance").checked) mask |= 8;
-       if($("optEvenMoney").checked) mask |= 16;
-       if($("optDAS").checked) mask |= 32;
-       if($("optSplitBJ").checked) mask |= 64;
-       if($("optH17").checked) mask |= 128;
+       if($("opt_double").checked) mask |= 1;
+       if($("opt_split").checked) mask |= 2;
+       if($("opt_surrender").checked) mask |= 4;
+       if($("opt_insurance").checked) mask |= 8;
+       if($("opt_even_money").checked) mask |= 16;
+       if($("opt_das").checked) mask |= 32;
+       if($("opt_split_bj").checked) mask |= 64;
+       if($("opt_h17").checked) mask |= 128;
        return mask;
     }
 
