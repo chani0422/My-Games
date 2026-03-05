@@ -3691,7 +3691,7 @@ if (insMode){
   $("overlayInsurance").classList.add("show");
   
   const mx = state.insurance.max|0;
-  $("insHintOverlay").textContent = `${t("dyn.max")} ${mx} (bet/2)`;
+  $("insHintOverlay").textContent = `💰 Insurance: ${mx} (bet/2)`;
   // Insurance額はmax固定のため入力フォームは不要
 
 } else {
@@ -4474,6 +4474,9 @@ $("btnPracToTitle").onclick = () => {
     $("btnDebugAce").onclick = () => {
       $("btnDeal").disabled = true;
       $("btnDebugAce").disabled = true;
+      // BJ即決の演出リセット（前ラウンドのフラグが残るのを防ぐ）
+      winEffectDone = false;
+      chipEffectDone = false;
       setTimeout(()=>{ 
         lockUI(800); 
         callAction("debug_deal_ace"); 
@@ -4483,6 +4486,10 @@ $("btnPracToTitle").onclick = () => {
     $("btnDeal").onclick = ()=> {
       $("btnHit").disabled = true;
       $("btnStand").disabled = true;
+
+      // BJ即決の演出リセット（前ラウンドのwinEffectDoneが残るのを防ぐ）
+      winEffectDone = false;
+      chipEffectDone = false;
 
       // ディール前にベットを自動キャップ
       if (state && (state.phase === "betting" || state.phase === "roundOver")) {
