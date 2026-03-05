@@ -2933,10 +2933,10 @@ function goScreen(name){
   $("screenTitle").classList.toggle("active", name==="title");
   $("screenGame").classList.toggle("active", willGame);
   
-  // Hide title text in game
+  // ゲーム中のタイトルテキスト非表示
   document.querySelector(".topbar").classList.toggle("in-game", willGame);
 
-  // CrazyGames: ゲームプレイのオン/オフ
+  // CrazyGames: ゲームプレイ開始/終了の通知
   if (willGame && !wasGame) window.CG?.gameplayStart?.();
   if (!willGame && wasGame) window.CG?.gameplayStop?.();
 }
@@ -2983,6 +2983,7 @@ function setPause(paused) {
       // ── タイトル画面用UIリセット ──
       // startSession() が設定したインラインstyleを除去し、
       // CSSルール (.topbar:not(.in-game) .stat-round/time { display:none })
+      // （上記CSSルールが正しく適用されるようにする）
       // が正しく効くようにする
       const roundPill = $("round")?.parentElement;
       const timePill  = $("time")?.parentElement;
@@ -2997,7 +2998,7 @@ function setPause(paused) {
       const normalBank = getNormalBank();
       $("bank").textContent = String(normalBank);
 
-      // Round/Timeの値もリセット（CSSで非表示だが念のため）
+      // ラウンド/残り時間の表示もリセット（CSSで非表示ですが念のため）
       $("round").textContent = "-";
       $("time").textContent  = "-";
 
@@ -3426,7 +3427,7 @@ function beginSessionOverFlow(st){
         dWrap.appendChild(el);
         // dWrap.appendChild(el); //重複
       });
-      } // DealerJson チェック終了
+      } // ディーラーデータのチェック終了
       prevDealerCards = dealerCards.slice();
 
       prevDealerJson = dealerJson; // ディーラー状態をキャッシュ
@@ -3515,7 +3516,7 @@ const insMode = (state.phase === "offerInsurance");
 
 // === ドックのメインボタン ===
 if (insMode) {
-  // Insurance 中は DOCK = YES / NO 専用
+  // 保険の確認中は、ドックは「はい/いいえ」専用の状態になる
   setDis("btnDeal", true);
   setDis("btnDebugAce", true);
   setDis("btnHit", !can.insurance);
