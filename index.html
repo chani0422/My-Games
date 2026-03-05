@@ -4185,16 +4185,16 @@ $("btnPracToTitle").onclick = () => {
        if (mode === "challenge") {
            initialBank = 50000;
            roundLimit = 0; 
-           timeLimitSec = 300; // 5分
+           timeLimitSec = 300; // 5分(Challenge)
        } else if (mode === "normal") {
            initialBank = getNormalBank();
-           if (initialBank < MIN_BET) initialBank = 0; // 破産状態はそのまま保持
+           if (initialBank < MIN_BET) initialBank = 0; 
            roundLimit = 0;
            timeLimitSec = 0; // 無制限
        } else if (mode === "practice") {
            initialBank = 1000000; // 練習用: 十分な額
            roundLimit = 24;       // 24ラウンドで終了
-           timeLimitSec = 0;      // 時間無制限（ラウンド制）
+           timeLimitSec = 0;      // 練習は時間無制限
        }
 
        if (!apiReady()) {
@@ -4222,7 +4222,7 @@ $("btnPracToTitle").onclick = () => {
        mb.className = "badge"; // reset
        if (mode === "practice") {
           mb.textContent = t("mode.practice");
-          mb.classList.add("good"); // 緑色とか
+          mb.classList.add("good"); 
           mb.style.background = "#4caf50";
        } else if (mode === "challenge") {
           mb.textContent = t("mode.challenge");
@@ -4234,9 +4234,6 @@ $("btnPracToTitle").onclick = () => {
 
        // 開始
        const seed = seed64();
-       // ルール: Double, Split, Surrender, Insurance, EvenMoney, DAS
-       // Challenge/Practiceは固定、Normalは本来設定に従うが、今回は全部ONで実装簡略化
-       // または index.html の checkbox を読む (既存実装があればそれを使う)
        const mask = getRuleMaskFromUI();
        // Practice: Insurance OFFにする（ただしpeekは行われる）
        const finalMask = (mode === "practice") ? (mask & ~(1 << 3)) : mask;
@@ -4250,14 +4247,13 @@ $("btnPracToTitle").onclick = () => {
           return;
        }
 
-       // P0-1: 状態取得 — refresh() 方式で安全にポインタを処理
        refresh();
 
        // ベット入力欄をMIN_BETで初期化
        $("betInput").value = MIN_BET;
        callAction("set_bet", MIN_BET);
 
-       // body.dataset.mode を設定（CSS出し分け用）
+       // body.dataset.mode を設定
        document.body.dataset.mode = mode;
        
        // タイマースタート
@@ -4265,7 +4261,6 @@ $("btnPracToTitle").onclick = () => {
            startTick();
            sessionMs = timeLimitSec * 1000;
        } else {
-           // 時間無制限（Normalモード）: タイマー不要
            stopTick();
            sessionMs = Infinity;
        }
@@ -4274,15 +4269,17 @@ $("btnPracToTitle").onclick = () => {
            // 練習モード：Round表示（24ラウンド制）、Time非表示
            $("round").parentElement.style.display = "flex";
            $("time").parentElement.style.display = "none";
-           stopTick(); // タイマー不要
-       } else if (mode === "normal") {
-           // Normal: CSSの body[data-mode="normal"] で Round/Time を隠す
-           $("round").parentElement.style.display = "";
-           $("time").parentElement.style.display = "";
-       } else {
-           // Challenge: Round非表示（無制限）、Time表示
+           stopTick(); 
+       } else if (mode === "challenge") {
+           // Challenge: Round非表示、Time表示（5分）
            $("round").parentElement.style.display = "none";
            $("time").parentElement.style.display = "flex";
+           startTick();
+       } else {
+           // Normal: Round表示、Time非表示（∞）
+           $("round").parentElement.style.display = "flex";
+           $("time").parentElement.style.display = "none";
+           stopTick();
        }
 
        // セッションオーバー状態のリセット
@@ -4361,11 +4358,14 @@ $("btnPracToTitle").onclick = () => {
     $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
 
     $("btnInsNo").onclick = () => {
+      if(uiLocked) return;
+      lockUI(500);
       callAction("buy_insurance", 0);
       $("overlayInsurance").classList.remove("show");
     };
     $("btnInsYes").onclick = () => {
-      if(!state) return;
+      if(uiLocked || !state) return;
+      lockUI(500);
       // Insurance額は自動でmax固定（手入力不要）
       const mx = state.insurance?.max ?? 0;
       callAction("buy_insurance", mx);
@@ -4550,9 +4550,9 @@ $("btnQuit").onclick = ()=> doResetToTitle();
 
   </script>
 <!-- Last Build Scripts -->
-<script src="loc.js"></script>
-<script src="blackjack.js"></script>
-<script src="blackjack_ui.js"></script>
+<script src="loc.js?v=__BUILD_ID__"></script>
+<script src="blackjack.js?v=__BUILD_ID__"></script>
+<script src="blackjack_ui.js?v=__BUILD_ID__"></script>
 
 <style>
   #fxCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
