@@ -2522,6 +2522,8 @@ span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" dat
     /* ===== チップ演出制御 ===== */
     let isChipAnimating = false;
     let chipEffectDone = false;
+    let winEffectDone = false;
+    let lastDisplayedRound = -1;
     let chipCleanupTimer = null;
 
     function chipAbsorbCleanup(finalBank) {
@@ -3266,6 +3268,13 @@ function beginSessionOverFlow(st){
 
       if (!state) return;
 
+      // ラウンド番号が変わったら演出フラグをリセット
+      if (state.session && state.session.round !== lastDisplayedRound) {
+        winEffectDone = false;
+        chipEffectDone = false;
+        lastDisplayedRound = state.session.round;
+      }
+
       const phase = state.phase;
       // roundOver / sessionOver 以外のフェーズに移ったらフラグを解除
       if (phase !== "roundOver" && phase !== "sessionOver") {
@@ -3609,8 +3618,8 @@ if (insMode) {
             }
          }
       } else {
-         winEffectDone = false;
-         chipEffectDone = false;
+         // ROUND_OVER以外ではフラグをリセット（念のため）
+         // ただし、ラウンド番号検知があるのでここでは何もしなくても良い
       }
 
 
@@ -4474,9 +4483,6 @@ $("btnPracToTitle").onclick = () => {
     $("btnDebugAce").onclick = () => {
       $("btnDeal").disabled = true;
       $("btnDebugAce").disabled = true;
-      // BJ即決の演出リセット（前ラウンドのフラグが残るのを防ぐ）
-      winEffectDone = false;
-      chipEffectDone = false;
       setTimeout(()=>{ 
         lockUI(800); 
         callAction("debug_deal_ace"); 
@@ -4486,10 +4492,6 @@ $("btnPracToTitle").onclick = () => {
     $("btnDeal").onclick = ()=> {
       $("btnHit").disabled = true;
       $("btnStand").disabled = true;
-
-      // BJ即決の演出リセット（前ラウンドのwinEffectDoneが残るのを防ぐ）
-      winEffectDone = false;
-      chipEffectDone = false;
 
       // ディール前にベットを自動キャップ
       if (state && (state.phase === "betting" || state.phase === "roundOver")) {
