@@ -215,6 +215,7 @@ struct RoundResult {
 struct Shoe {
   int decks = 6;
   int cutSize = 78;
+  bool forceNextAce = false; // デバッグ用: 次のdrawでAを強制返却
 
   vector<Card> cards;
   std::mt19937 rng;
@@ -222,6 +223,7 @@ struct Shoe {
   void init(uint64_t seed, int decks_, int cutSize_) {
     decks = decks_;
     cutSize = cutSize_;
+    forceNextAce = false;
     rng.seed((uint32_t)(seed ^ (seed >> 32)));
     rebuild_and_shuffle();
   }
@@ -242,6 +244,20 @@ struct Shoe {
   Card draw() {
     if (cards.empty()) {
       rebuild_and_shuffle();
+    }
+    // デバッグ: forceNextAce が ON なら A♠ を返す（ワンショット）
+    if (forceNextAce) {
+      forceNextAce = false;
+      // デッキからAを探して返す（見つからなければ A♠ を生成）
+      for (int i = (int)cards.size() - 1; i >= 0; i--) {
+        if (cards[i].rank == 1) {
+          Card c = cards[i];
+          cards.erase(cards.begin() + i);
+          return c;
+        }
+      }
+      // デッキにAがない場合のフォールバック
+      return Card{1, 0}; // A♠
     }
     Card c = cards.back();
     cards.pop_back();
@@ -671,13 +687,29 @@ struct Engine {
     bool upIsTen = (!dealer.empty() && point_value(dealer[0]) == 10);
     bool dealerBJ = dealer_has_blackjack_now();
 
-    // ディーラーA表示時：Insurance設定に関わらずまずPeekしてBJなら即終了
+    // ディーラーA表示時
     if (upIsAce) {
+      // Insurance が有効なら、BJ有無に関わらずまず OFFER_INSURANCE に遷移
+      // → resolve_insurance_and_continue() 内で peek・精算される
+      if (rules.allowInsurance) {
+        ins.offered = true;
+        ins.max = std::min(baseBet / 2, bank);
+        ins.bet = 0;
+        ins.evenMoneyOffered = (rules.allowEvenMoney && hands[0].flags.blackjack);
+        ins.evenMoneyTaken = false;
+
+        dealerHoleKnown = false;
+        dealerPeekNoBJ = false; // まだ peek していない（resolve時に判定）
+
+        set_phase(Phase::OFFER_INSURANCE);
+        return OK;
+      }
+
+      // Insurance OFF の場合: peek して BJ なら即終了
       if (dealerBJ) {
         dealerHoleKnown = true;
-        // 自分もBJなら引き分け(Push)、そうでなければ負け
         if (hands[0].flags.blackjack) {
-          bank += hands[0].bet;
+          bank += hands[0].bet; // Push
         }
         int profitBeforeBonus = bank - bankAtRoundStart;
         int profitAfterBonus = apply_streak_bonus_if_needed(profitBeforeBonus);
@@ -687,21 +719,8 @@ struct Engine {
         if (session_over()) set_phase(Phase::SESSION_OVER);
         return OK;
       }
-      
-      // ディーラーBJでなかった場合、Insuranceのオファーフェーズへ（Late Surrender判定のため）
-      if (rules.allowInsurance) {
-        ins.offered = true;
-        ins.max = std::min(baseBet / 2, bank);
-        ins.bet = 0;
-        ins.evenMoneyOffered = (rules.allowEvenMoney && hands[0].flags.blackjack);
-        ins.evenMoneyTaken = false;
-
-        dealerHoleKnown = false;
-        dealerPeekNoBJ = true; // 既にチェック済み
-
-        set_phase(Phase::OFFER_INSURANCE);
-        return OK;
-      }
+      // Insurance OFF で BJ でもない → ゲーム継続（peek済み）
+      dealerPeekNoBJ = true;
     }
 
     // ディーラー10点札表示時：PeekしてBJなら即終了
@@ -1185,13 +1204,11 @@ struct Engine {
     }
   */
 
-  /*
-    // ★次のディールでディーラーにエースを強制する
+    // ★デバッグ: 次のdealで最初のカード（プレイヤー1枚目）をAにする
     int debug_deal_ace() {
-      // ...
+      shoe.forceNextAce = true;
       return deal();
     }
-  */
 
   string get_state_json() {
     update_all_caches();
@@ -1410,7 +1427,7 @@ int revive(int amount) { return bj::g.revive(amount); }
 EMSCRIPTEN_KEEPALIVE
 int add_funds(int amount) { return bj::g.add_funds(amount); }
 
-// EMSCRIPTEN_KEEPALIVE
-// int debug_deal_ace() { return bj::g.debug_deal_ace(); }
+EMSCRIPTEN_KEEPALIVE
+int debug_deal_ace() { return bj::g.debug_deal_ace(); }
 
 } // extern "C"

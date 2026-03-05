@@ -1716,9 +1716,7 @@ window.CG.p = new Promise((resolve) => {
   </div>
 
   <div class="row" style="margin-top:10px;">
-    <input id="insAmountSide" type="number" value="0" step="2" min="0">
-    <button class="btn" id="btnInsMaxSide" data-i18n="ins.max">MAX</button>
-    <button class="btn ghost" id="btnInsZeroSide">0</button>
+    <!-- Insurance額はmax固定（手入力不要） -->
   </div>
 
   <div class="muted small" style="margin-top:8px;" data-i18n="ins.dock_hint">
@@ -2039,14 +2037,7 @@ span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" dat
           <button class="btn danger big" id="btnInsNo" style="min-width:140px;" data-i18n="ins.no">NO</button>
         </div>
 
-        <!-- 入力行 -->
-        <div class="row" style="justify-content:center; gap:10px; margin-bottom:8px;">
-            <input id="insAmountOverlay" type="number" value="0" step="10" 
-                   style="width:100px; padding:8px; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.2); color:#fff; border-radius:8px; font-size:16px; text-align:center;">
-            <button class="btn ghost" id="btnInsMaxOverlay">MAX</button>
-        </div>
-        
-        <!-- ヒント -->
+        <!-- Insurance額はmax固定のため手入力不要 / ヒント -->
         <div class="muted small" id="insHintOverlay" style="opacity:0.8;">-</div>
 
       </div>
@@ -2579,14 +2570,14 @@ span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" dat
       const dx = endX - startX;
       const dy = endY - startY;
 
-      // 10個の粒子を生成
-      for (let i = 0; i < 10; i++) {
+      // 18個の粒子を生成（増量版）
+      for (let i = 0; i < 18; i++) {
         const p = document.createElement("div");
         p.className = "chip-particle";
         
-        // 中心から拡散する座標
-        const ox = (Math.random() - 0.5) * 140;
-        const oy = (Math.random() - 0.5) * 140;
+        // 中心から拡散する座標（拡散範囲を拡大）
+        const ox = (Math.random() - 0.5) * 200;
+        const oy = (Math.random() - 0.5) * 200;
         p.style.left = startX + "px";
         p.style.top = startY + "px";
         
@@ -3324,7 +3315,7 @@ function beginSessionOverFlow(st){
       // タイトル画面ではRound/Timeを更新しない（CSSで非表示だが値も保護）
       if (!isTitle) {
         const rl = state.session.roundLimit;
-        $("round").textContent = rl > 0 ? `${state.session.round}/${rl}` : `${state.session.round}/∞`;
+        $("round").textContent = rl > 0 ? `${state.session.round}/${rl}` : `${state.session.round}/—`;
         $("time").textContent = fmtTime(state.session.timeLeftMs);
       }
 
@@ -3701,24 +3692,10 @@ if (insMode){
   
   const mx = state.insurance.max|0;
   $("insHintOverlay").textContent = `${t("dyn.max")} ${mx} (bet/2)`;
-  
-  const a = $("insAmountOverlay");
-  a.max = mx;
-  a.step = 10;
-  
-  // フェーズに入ったばかりの場合のみデフォルト値を設定
-  if (prevPhase !== "offerInsurance"){
-    a.value = mx;
-  } else {
-    // ユーザー入力を維持しつつクランプ
-    a.value = Math.min(a.value, mx); // 単純クランプ
-  }
-
-  // 金額が0の場合にYESボタンの状態を更新（オプションだが良いUX）
-  // $("btnInsYes").disabled = (Number(a.value) <= 0);
+  // Insurance額はmax固定のため入力フォームは不要
 
 } else {
-  // オーバーレイを隠す
+  // offerInsurance以外: オーバーレイを隠す
   $("overlayInsurance").classList.remove("show");
 }
 
@@ -4207,8 +4184,8 @@ $("btnPracToTitle").onclick = () => {
            timeLimitSec = 0; // 無制限
        } else if (mode === "practice") {
            initialBank = 1000000; // 練習用: 十分な額
-           roundLimit = 0;
-           timeLimitSec = 300; // 5分
+           roundLimit = 24;       // 24ラウンドで終了
+           timeLimitSec = 0;      // 時間無制限（ラウンド制）
        }
 
        if (!apiReady()) {
@@ -4251,10 +4228,12 @@ $("btnPracToTitle").onclick = () => {
        // ルール: Double, Split, Surrender, Insurance, EvenMoney, DAS
        // Challenge/Practiceは固定、Normalは本来設定に従うが、今回は全部ONで実装簡略化
        // または index.html の checkbox を読む (既存実装があればそれを使う)
-       const mask = getRuleMaskFromUI(); // 後で定義確認
+       const mask = getRuleMaskFromUI();
+       // Practice: Insurance OFFにする（ただしpeekは行われる）
+       const finalMask = (mode === "practice") ? (mask & ~(1 << 3)) : mask;
 
        console.log("startSession:", mode, "initialBank=", initialBank);
-       const ret = bjApi.start_session(seed.lo, seed.hi, mask, timeLimitSec, roundLimit, initialBank);
+       const ret = bjApi.start_session(seed.lo, seed.hi, finalMask, timeLimitSec, roundLimit, initialBank);
        if (ret !== 0) {
           console.error("start_session failed", ret);
           toast("Error starting session");
@@ -4283,17 +4262,17 @@ $("btnPracToTitle").onclick = () => {
        }
 
        if (mode === "practice") {
-           // 練習モード：Round非表示
-           $("round").parentElement.style.display = "none";
-           // Timeは表示
-           $("time").parentElement.style.display = "flex";
+           // 練習モード：Round表示（24ラウンド制）、Time非表示
+           $("round").parentElement.style.display = "flex";
+           $("time").parentElement.style.display = "none";
+           stopTick(); // タイマー不要
        } else if (mode === "normal") {
            // Normal: CSSの body[data-mode="normal"] で Round/Time を隠す
            $("round").parentElement.style.display = "";
            $("time").parentElement.style.display = "";
        } else {
-           // Challenge: 両方表示
-           $("round").parentElement.style.display = "flex";
+           // Challenge: Round非表示（無制限）、Time表示
+           $("round").parentElement.style.display = "none";
            $("time").parentElement.style.display = "flex";
        }
 
@@ -4346,11 +4325,9 @@ $("btnPracToTitle").onclick = () => {
       if (uiLocked) return; 
 
       if (state.phase === "offerInsurance") {
+        // Insurance額はmax固定で買う
         const mx = state.insurance?.max ?? 0;
-        let v = floorEven($("insAmountSide").value);
-        v = Math.max(0, Math.min(v, mx));
-        $("insAmountSide").value = v;
-        return callAction("buy_insurance", v); 
+        return callAction("buy_insurance", mx); 
       }
 
       lockUI(600); 
@@ -4362,7 +4339,7 @@ $("btnPracToTitle").onclick = () => {
       if (uiLocked && state.phase !== "offerInsurance") return; 
 
       if (state.phase === "offerInsurance"){
-        $("insAmountSide").value = 0;
+        // Insuranceを買わない（0で購入）
         return callAction("buy_insurance", 0);   
       }
       lockUI(1000); 
@@ -4379,15 +4356,13 @@ $("btnPracToTitle").onclick = () => {
       $("overlayInsurance").classList.remove("show");
     };
     $("btnInsYes").onclick = () => {
-      const val = Number($("insAmountOverlay").value);
-      callAction("buy_insurance", val);
+      if(!state) return;
+      // Insurance額は自動でmax固定（手入力不要）
+      const mx = state.insurance?.max ?? 0;
+      callAction("buy_insurance", mx);
       $("overlayInsurance").classList.remove("show");
     };
-    $("btnInsMaxOverlay").onclick = () => {
-      if(!state) return;
-      const mx = state.insurance.max|0;
-      $("insAmountOverlay").value = mx;
-    };
+    // btnInsMaxOverlay は削除済み（手入力不要のため）
     
     $("btnRanking").onclick = ()=> {
       renderRankingOverlay();
@@ -4549,19 +4524,7 @@ $("btnPracToTitle").onclick = () => {
 $("btnQuit").onclick = ()=> doResetToTitle();
 // btnSORevive は削除済み
 
-    // ========= UI イベント (Insurance) =========
-    if ($("btnInsMaxSide")) {
-        $("btnInsMaxSide").onclick = () => {
-          if(!state) return;
-          $("insAmountSide").value = state.insurance.max;
-        };
-    }
-    if ($("btnInsZeroSide")) {
-        $("btnInsZeroSide").onclick = () => {
-          if(!state) return;
-          $("insAmountSide").value = 0;
-        };
-    }
+    // Insuranceのサイドパネル手入力ボタンは削除済み（max固定のため）
     
     $("btnEvenMoneyIns").onclick = () => {callAction("take_even_money");};
 
