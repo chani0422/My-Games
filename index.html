@@ -1576,11 +1576,11 @@ window.CG.p = new Promise((resolve) => {
             <!-- 既存のStartボタンを廃止し、2つのモードボタンを設置 -->
             <button class="btn ctaBig" id="btnModeChallenge">
               <div style="font-size:16px" data-i18n="mode.challenge">CHALLENGE</div>
-              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="prac.desc">Ranking Mode</div>
+              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="mode.challenge_desc">Ranking Mode</div>
             </button>
             <button class="btn ctaBig" id="btnModeNormal">
               <div style="font-size:16px" data-i18n="mode.normal">NORMAL</div>
-              <div class="small" style="font-weight:normal; opacity:.7">Save Bank</div>
+              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="mode.normal_desc">Save Bank</div>
             </button>
             <button class="btn ctaBig" id="btnNormalRevive" style="display:none; border-color:#ff9800;">
               <div style="font-size:14px">WATCH AD +50000</div>
@@ -4061,12 +4061,15 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
              if (!ps.freeUsed) {
                 desc.textContent = t("prac.start_free");
                 desc.style.color = "#37d67a";
+                desc.removeAttribute("data-i18n");
              } else if (ps.tickets > 0) {
                 desc.textContent = t("prac.start_ticket") + ` (${ps.tickets})`;
                 desc.style.color = "#ffcc66";
+                desc.removeAttribute("data-i18n");
              } else {
                 desc.textContent = t("prac.watch_ad");
                 desc.style.color = "#ffffff";
+                desc.removeAttribute("data-i18n");
              }
           }
        }

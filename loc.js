@@ -167,13 +167,10 @@ const RESOURCES = {
     "js.selectable": "Selectable",
 
     "mode.challenge": "CHALLENGE",
+    "mode.challenge_desc": "Ranking mode (5 mins).",
     "mode.normal": "NORMAL",
+    "mode.normal_desc": "Session progress is auto-saved.",
     "mode.practice": "PRACTICE",
-
-    "dev.add_chips": "DEV +1000",
-
-    // Practice Mode
-    "prac.title": "PRACTICE",
     "prac.desc": "Practice mode (24 rounds).",
     "prac.free_left": "Daily Free: ",
     "prac.ticket_left": "Tickets: ",
@@ -357,13 +354,10 @@ const RESOURCES = {
     "js.selectable": "選択できます",
 
     "mode.challenge": "チャレンジ",
+    "mode.challenge_desc": "5分間の集中ランキングモードです。",
     "mode.normal": "ノーマル",
+    "mode.normal_desc": "所持金が保存される通常モードです。",
     "mode.practice": "練習モード",
-
-    "dev.add_chips": "デバッグ +1000",
-
-    // Practice Mode
-    "prac.title": "練習モード",
     "prac.desc": "24ラウンドの練習モードです。Bankは変動しません。",
     "prac.free_left": "本日の無料枠: ",
     "prac.ticket_left": "所持チケット: ",
