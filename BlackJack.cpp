@@ -1,4 +1,4 @@
-// BlackJack.cpp
+// ブラックジャック C++ エンジン
 
 #include <algorithm>
 #include <cstdint>
@@ -215,6 +215,7 @@ struct RoundResult {
 struct Shoe {
   int decks = 6;
   int cutSize = 78;
+  bool forceNextAce = false; // デバッグ用: 次のdrawでAを強制返却
 
   vector<Card> cards;
   std::mt19937 rng;
@@ -222,6 +223,7 @@ struct Shoe {
   void init(uint64_t seed, int decks_, int cutSize_) {
     decks = decks_;
     cutSize = cutSize_;
+    forceNextAce = false;
     rng.seed((uint32_t)(seed ^ (seed >> 32)));
     rebuild_and_shuffle();
   }
@@ -242,6 +244,20 @@ struct Shoe {
   Card draw() {
     if (cards.empty()) {
       rebuild_and_shuffle();
+    }
+    // デバッグ: forceNextAce が ON なら A♠ を返す（ワンショット）
+    if (forceNextAce) {
+      forceNextAce = false;
+      // デッキからAを探して返す（見つからなければ A♠ を生成）
+      for (int i = (int)cards.size() - 1; i >= 0; i--) {
+        if (cards[i].rank == 1) {
+          Card c = cards[i];
+          cards.erase(cards.begin() + i);
+          return c;
+        }
+      }
+      // デッキにAがない場合のフォールバック
+      return Card{1, 0}; // A♠
     }
     Card c = cards.back();
     cards.pop_back();
@@ -495,7 +511,7 @@ struct Engine {
     }
 
     // ルール適用
-    rules = Rules(); // default
+    rules = Rules(); // デフォルト設定
     apply_rules_mask(rulesMask);
 
     round = 0;
@@ -557,15 +573,16 @@ struct Engine {
   // 破産復活: 広告視聴後に bank を付与してセッション継続
   int revive(int amount) {
     if (phase != Phase::SESSION_OVER)
-      return set_error(INVALID_STATE, "Not session over");
+      return set_error(INVALID_STATE, "セッションが終了していません");
     if (bank > 0)
-      return set_error(INVALID_STATE, "Not bankrupt");
+      return set_error(INVALID_STATE, "破産していません");
 
     // session_over() と同じ判定: 自然終了なら復活不可
     bool timeUp = (sessionMs > 0 && timeLeftMs <= 0);
     bool roundUp = (roundLimit > 0 && round >= roundLimit);
     if (timeUp || roundUp) {
-      return set_error(INVALID_STATE, "Session ended naturally");
+      return set_error(INVALID_STATE,
+                       "セッションは自然終了したため復活できません");
     }
 
     bank = amount;
@@ -633,22 +650,22 @@ struct Engine {
 
   int deal() {
     if (phase == Phase::PAUSED)
-      return set_error(INVALID_STATE, "Paused");
+      return set_error(INVALID_STATE, "一時停止中");
     if (!(phase == Phase::BETTING || phase == Phase::ROUND_OVER)) {
-      return set_error(INVALID_STATE, "Not ready to deal");
+      return set_error(INVALID_STATE, "ディール準備ができていません");
     }
     clear_error();
 
     if (session_over()) {
       set_phase(Phase::SESSION_OVER);
-      return set_error(INVALID_STATE, "Session over");
+      return set_error(INVALID_STATE, "セッション終了");
     }
     if (baseBet < minBet)
-      return set_error(INVALID_BET, "baseBet < minBet");
+      return set_error(INVALID_BET, "ベースベットが最小ベット未満です");
     if (baseBet % 2 != 0)
-      return set_error(INVALID_BET, "baseBet must be even");
+      return set_error(INVALID_BET, "ベースベットは偶数である必要があります");
     if (bank < baseBet)
-      return set_error(INSUFFICIENT_FUNDS, "Not enough bank for bet");
+      return set_error(INSUFFICIENT_FUNDS, "所持金が不足しています");
 
     if (shoe.size() <= shoe.cutSize) {
       shoe.rebuild_and_shuffle();
@@ -671,37 +688,42 @@ struct Engine {
     bool upIsTen = (!dealer.empty() && point_value(dealer[0]) == 10);
     bool dealerBJ = dealer_has_blackjack_now();
 
-    // ディーラーA表示時：Insurance設定に関わらずまずPeekしてBJなら即終了
+    // ディーラーA表示時
     if (upIsAce) {
+      // Insurance が有効なら、BJ有無に関わらずまず OFFER_INSURANCE に遷移
+      // → resolve_insurance_and_continue() 内で peek・精算される
+      if (rules.allowInsurance) {
+        ins.offered = true;
+        ins.max = std::min(baseBet / 2, bank);
+        ins.bet = 0;
+        ins.evenMoneyOffered =
+            (rules.allowEvenMoney && hands[0].flags.blackjack);
+        ins.evenMoneyTaken = false;
+
+        dealerHoleKnown = false;
+        dealerPeekNoBJ = false; // まだ peek していない（resolve時に判定）
+
+        set_phase(Phase::OFFER_INSURANCE);
+        return OK;
+      }
+
+      // Insurance OFF の場合: peek して BJ なら即終了
       if (dealerBJ) {
         dealerHoleKnown = true;
-        // 自分もBJなら引き分け(Push)、そうでなければ負け
         if (hands[0].flags.blackjack) {
-          bank += hands[0].bet;
+          bank += hands[0].bet; // Push
         }
         int profitBeforeBonus = bank - bankAtRoundStart;
         int profitAfterBonus = apply_streak_bonus_if_needed(profitBeforeBonus);
         finalize_round_and_update_streak(profitAfterBonus);
         set_phase(Phase::ROUND_OVER);
         round += 1;
-        if (session_over()) set_phase(Phase::SESSION_OVER);
+        if (session_over())
+          set_phase(Phase::SESSION_OVER);
         return OK;
       }
-      
-      // ディーラーBJでなかった場合、Insuranceのオファーフェーズへ（Late Surrender判定のため）
-      if (rules.allowInsurance) {
-        ins.offered = true;
-        ins.max = std::min(baseBet / 2, bank);
-        ins.bet = 0;
-        ins.evenMoneyOffered = (rules.allowEvenMoney && hands[0].flags.blackjack);
-        ins.evenMoneyTaken = false;
-
-        dealerHoleKnown = false;
-        dealerPeekNoBJ = true; // 既にチェック済み
-
-        set_phase(Phase::OFFER_INSURANCE);
-        return OK;
-      }
+      // Insurance OFF で BJ でもない → ゲーム継続（peek済み）
+      dealerPeekNoBJ = true;
     }
 
     // ディーラー10点札表示時：PeekしてBJなら即終了
@@ -715,7 +737,8 @@ struct Engine {
       finalize_round_and_update_streak(profitAfterBonus);
       set_phase(Phase::ROUND_OVER);
       round += 1;
-      if (session_over()) set_phase(Phase::SESSION_OVER);
+      if (session_over())
+        set_phase(Phase::SESSION_OVER);
       return OK;
     }
 
@@ -729,7 +752,8 @@ struct Engine {
       finalize_round_and_update_streak(profitAfterBonus);
       set_phase(Phase::ROUND_OVER);
       round += 1;
-      if (session_over()) set_phase(Phase::SESSION_OVER);
+      if (session_over())
+        set_phase(Phase::SESSION_OVER);
       return OK;
     }
 
@@ -739,19 +763,19 @@ struct Engine {
 
   int next_round() {
     if (phase == Phase::PAUSED)
-      return set_error(INVALID_STATE, "Paused");
+      return set_error(INVALID_STATE, "一時停止中");
     if (phase != Phase::ROUND_OVER)
-      return set_error(INVALID_STATE, "Not in roundOver");
+      return set_error(INVALID_STATE, "ラウンド終了中ではありません");
     clear_error();
 
     if (session_over()) {
       set_phase(Phase::SESSION_OVER);
-      return set_error(INVALID_STATE, "Session over");
+      return set_error(INVALID_STATE, "セッション終了");
     }
 
     if (bank <= 0) {
       set_phase(Phase::SESSION_OVER);
-      return set_error(INVALID_STATE, "Bankrupt");
+      return set_error(INVALID_STATE, "破産");
     }
 
     // 次ラウンド開始準備（bank/ルール/連勝は維持）
@@ -811,19 +835,20 @@ struct Engine {
 
   int buy_insurance(int amount) {
     if (phase == Phase::PAUSED)
-      return set_error(INVALID_STATE, "Paused");
+      return set_error(INVALID_STATE, "一時停止中");
     if (phase != Phase::OFFER_INSURANCE)
-      return set_error(INVALID_STATE, "Not offering insurance");
+      return set_error(INVALID_STATE, "保険のオファー中ではありません");
     clear_error();
 
     if (!ins.offered)
-      return set_error(INVALID_STATE, "Insurance not offered");
+      return set_error(INVALID_STATE, "保険のオファーがありません");
     if (amount < 0)
       amount = 0;
     if (amount > ins.max)
-      return set_error(INVALID_BET, "Insurance > max");
+      return set_error(INVALID_BET, "保険額が上限を超えています");
     if (bank < amount)
-      return set_error(INSUFFICIENT_FUNDS, "Not enough bank for insurance");
+      return set_error(INSUFFICIENT_FUNDS,
+                       "保険のための所持金が不足しています");
 
     ins.bet = amount;
     if (amount > 0)
@@ -835,16 +860,17 @@ struct Engine {
 
   int take_even_money() {
     if (phase == Phase::PAUSED)
-      return set_error(INVALID_STATE, "Paused");
+      return set_error(INVALID_STATE, "一時停止中");
     if (phase != Phase::OFFER_INSURANCE)
-      return set_error(INVALID_STATE, "Not offering insurance");
+      return set_error(INVALID_STATE, "保険のオファー中ではありません");
     clear_error();
 
     if (!ins.evenMoneyOffered)
-      return set_error(NOT_SUPPORTED, "Even Money not offered");
+      return set_error(NOT_SUPPORTED, "イーブンマネーのオファーがありません");
     int amount = ins.max;
     if (bank < amount)
-      return set_error(INSUFFICIENT_FUNDS, "Not enough bank for even money");
+      return set_error(INSUFFICIENT_FUNDS,
+                       "イーブンマネーのための所持金が不足しています");
     ins.bet = amount;
     bank -= amount;
     ins.evenMoneyTaken = true;
@@ -861,18 +887,18 @@ struct Engine {
 
   int hit() {
     if (phase == Phase::PAUSED)
-      return set_error(INVALID_STATE, "Paused");
+      return set_error(INVALID_STATE, "一時停止中");
     if (phase != Phase::IN_HAND)
-      return set_error(INVALID_STATE, "Not in hand");
+      return set_error(INVALID_STATE, "ハンドプレイ中ではありません");
     clear_error();
 
     Hand *h = active_hand();
     if (!h)
-      return set_error(INTERNAL_ERROR, "No active hand");
+      return set_error(INTERNAL_ERROR, "アクティブなハンドがありません");
     update_hand_cache(*h);
 
     if (h->flags.finished || h->flags.surrendered || h->flags.blackjack) {
-      return set_error(INVALID_STATE, "Cannot hit now");
+      return set_error(INVALID_STATE, "現在はヒットできません");
     }
 
     h->cards.push_back(shoe.draw());
@@ -904,27 +930,27 @@ struct Engine {
 
   int surrender() {
     if (phase == Phase::PAUSED)
-      return set_error(INVALID_STATE, "Paused");
+      return set_error(INVALID_STATE, "一時停止中");
     if (phase != Phase::IN_HAND)
-      return set_error(INVALID_STATE, "Not in hand");
+      return set_error(INVALID_STATE, "ハンドプレイ中ではありません");
     clear_error();
 
     if (!rules.allowSurrender)
-      return set_error(NOT_SUPPORTED, "Surrender is off");
+      return set_error(NOT_SUPPORTED, "サレンダーは無効です");
     if (!dealerPeekNoBJ)
       return set_error(INVALID_STATE,
-                       "Surrender allowed only after peek/no-BJ");
+                       "サレンダーはディーラーのチェック後にのみ可能です");
 
     Hand *h = active_hand();
     if (!h)
-      return set_error(INTERNAL_ERROR, "No active hand");
+      return set_error(INTERNAL_ERROR, "アクティブなハンドがありません");
 
     if (h->flags.fromSplit)
-      return set_error(INVALID_STATE, "No surrender after split");
+      return set_error(INVALID_STATE, "スプリット後にサレンダーはできません");
     if (h->cards.size() != 2)
-      return set_error(INVALID_STATE, "Surrender only on first 2 cards");
+      return set_error(INVALID_STATE, "サレンダーは最初の2枚でのみ可能です");
     if (h->flags.blackjack)
-      return set_error(INVALID_STATE, "Already blackjack");
+      return set_error(INVALID_STATE, "既にブラックジャックです");
 
     h->flags.surrendered = true;
     h->flags.finished = true;
@@ -940,31 +966,33 @@ struct Engine {
 
   int double_down() {
     if (phase == Phase::PAUSED)
-      return set_error(INVALID_STATE, "Paused");
+      return set_error(INVALID_STATE, "一時停止中");
     if (phase != Phase::IN_HAND)
-      return set_error(INVALID_STATE, "Not in hand");
+      return set_error(INVALID_STATE, "ハンドプレイ中ではありません");
     clear_error();
 
     if (!rules.allowDouble)
-      return set_error(NOT_SUPPORTED, "Double is off");
+      return set_error(NOT_SUPPORTED, "ダブルダウンは無効です");
 
     Hand *h = active_hand();
     if (!h)
-      return set_error(INTERNAL_ERROR, "No active hand");
+      return set_error(INTERNAL_ERROR, "アクティブなハンドがありません");
     update_hand_cache(*h);
 
     if (h->flags.finished || h->flags.blackjack || h->flags.surrendered)
-      return set_error(INVALID_STATE, "Cannot double now");
+      return set_error(INVALID_STATE, "現在はダブルダウンできません");
     if (h->cards.size() != 2)
-      return set_error(INVALID_STATE, "Double only on first 2 cards");
+      return set_error(INVALID_STATE, "ダブルダウンは最初の2枚でのみ可能です");
     if (h->flags.splitAces)
-      return set_error(INVALID_STATE, "No double on split aces hand");
+      return set_error(INVALID_STATE,
+                       "Aのスプリット後はダブルダウンできません");
 
     if (h->flags.fromSplit && !rules.allowDAS)
-      return set_error(NOT_SUPPORTED, "DAS is off");
+      return set_error(NOT_SUPPORTED, "DASは無効です");
 
     if (bank < h->bet)
-      return set_error(INSUFFICIENT_FUNDS, "Not enough bank for double");
+      return set_error(INSUFFICIENT_FUNDS,
+                       "ダブルダウンのための所持金が不足しています");
     bank -= h->bet;
     h->bet += h->bet;
     h->flags.doubled = true;
@@ -979,36 +1007,37 @@ struct Engine {
 
   int split() {
     if (phase == Phase::PAUSED)
-      return set_error(INVALID_STATE, "Paused");
+      return set_error(INVALID_STATE, "一時停止中");
     if (phase != Phase::IN_HAND)
-      return set_error(INVALID_STATE, "Not in hand");
+      return set_error(INVALID_STATE, "ハンドプレイ中ではありません");
     clear_error();
 
     if (!rules.allowSplit)
-      return set_error(NOT_SUPPORTED, "Split is off");
+      return set_error(NOT_SUPPORTED, "スプリットは無効です");
     if ((int)hands.size() >= 4)
-      return set_error(INVALID_STATE, "Max hands reached (4)");
+      return set_error(INVALID_STATE, "ハンドの最大数（4）に達しました");
 
     Hand *h = active_hand();
     if (!h)
-      return set_error(INTERNAL_ERROR, "No active hand");
+      return set_error(INTERNAL_ERROR, "アクティブなハンドがありません");
     update_hand_cache(*h);
 
     if (h->flags.finished || h->flags.blackjack || h->flags.surrendered)
-      return set_error(INVALID_STATE, "Cannot split now");
+      return set_error(INVALID_STATE, "現在はスプリットできません");
     if (h->cards.size() != 2)
-      return set_error(INVALID_STATE, "Split only on first 2 cards");
+      return set_error(INVALID_STATE, "スプリットは最初の2枚でのみ可能です");
 
     if (h->flags.splitAces)
-      return set_error(INVALID_STATE, "No resplit aces");
+      return set_error(INVALID_STATE, "Aの再スプリットはできません");
 
     int v0 = split_value(h->cards[0]);
     int v1 = split_value(h->cards[1]);
     if (v0 != v1)
-      return set_error(INVALID_STATE, "Cards not same value");
+      return set_error(INVALID_STATE, "カードの値が一致しません");
 
     if (bank < h->bet)
-      return set_error(INSUFFICIENT_FUNDS, "Not enough bank for split");
+      return set_error(INSUFFICIENT_FUNDS,
+                       "スプリットのための所持金が不足しています");
     bank -= h->bet;
 
     Card second = h->cards[1];
@@ -1185,13 +1214,11 @@ struct Engine {
     }
   */
 
-  /*
-    // ★次のディールでディーラーにエースを強制する
-    int debug_deal_ace() {
-      // ...
-      return deal();
-    }
-  */
+  // ★デバッグ: 次のdealで最初のカード（プレイヤー1枚目）をAにする
+  int debug_deal_ace() {
+    shoe.forceNextAce = true;
+    return deal();
+  }
 
   string get_state_json() {
     update_all_caches();
@@ -1410,7 +1437,7 @@ int revive(int amount) { return bj::g.revive(amount); }
 EMSCRIPTEN_KEEPALIVE
 int add_funds(int amount) { return bj::g.add_funds(amount); }
 
-// EMSCRIPTEN_KEEPALIVE
-// int debug_deal_ace() { return bj::g.debug_deal_ace(); }
+EMSCRIPTEN_KEEPALIVE
+int debug_deal_ace() { return bj::g.debug_deal_ace(); }
 
 } // extern "C"

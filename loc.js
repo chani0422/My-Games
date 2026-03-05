@@ -167,14 +167,11 @@ const RESOURCES = {
     "js.selectable": "Selectable",
 
     "mode.challenge": "CHALLENGE",
+    "mode.challenge_desc": "Ranking mode (5 mins).",
     "mode.normal": "NORMAL",
+    "mode.normal_desc": "Session progress is auto-saved.",
     "mode.practice": "PRACTICE",
-
-    "dev.add_chips": "DEV +1000",
-
-    // Practice Mode
-    "prac.title": "PRACTICE",
-    "prac.desc": "Free play (5 mins).",
+    "prac.desc": "Practice mode (24 rounds).",
     "prac.free_left": "Daily Free: ",
     "prac.ticket_left": "Tickets: ",
     "prac.start_free": "Start (Free)",
@@ -185,7 +182,7 @@ const RESOURCES = {
     "prac.session_over": "Practice Over",
     "prac.retry_free": "Retry (Free)",
     "prac.retry_ticket": "Retry (1 Ticket)",
-    "prac.time_up": "Time's up!",
+    "prac.time_up": "Practice Over!",
     "prac.confirm_ad": "Watch a video to get a play ticket?",
   },
 
@@ -357,14 +354,11 @@ const RESOURCES = {
     "js.selectable": "選択できます",
 
     "mode.challenge": "チャレンジ",
+    "mode.challenge_desc": "5分間の集中ランキングモードです。",
     "mode.normal": "ノーマル",
+    "mode.normal_desc": "所持金が保存される通常モードです。",
     "mode.practice": "練習モード",
-
-    "dev.add_chips": "デバッグ +1000",
-
-    // Practice Mode
-    "prac.title": "練習モード",
-    "prac.desc": "5分間無料で練習できます。",
+    "prac.desc": "24ラウンドの練習モードです。Bankは変動しません。",
     "prac.free_left": "本日の無料枠: ",
     "prac.ticket_left": "所持チケット: ",
     "prac.start_free": "スタート（無料）",
@@ -375,7 +369,7 @@ const RESOURCES = {
     "prac.session_over": "練習終了",
     "prac.retry_free": "もう一度（無料）",
     "prac.retry_ticket": "もう一度（チケット消費）",
-    "prac.time_up": "時間切れ！",
+    "prac.time_up": "24ラウンド終了！",
     "prac.confirm_ad": "動画広告を見て、プレイ権（チケット）を獲得しますか？",
   },
 };
