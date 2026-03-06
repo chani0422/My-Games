@@ -184,6 +184,31 @@ const RESOURCES = {
     "prac.retry_ticket": "Retry (1 Ticket)",
     "prac.time_up": "Practice Over!",
     "prac.confirm_ad": "Watch a video to get a play ticket?",
+
+    // JS localizable
+    "js.ins_hint": "💰 Insurance: {0} (bet/2)",
+    "js.xp_gain": "+{0} XP",
+    "js.reset_lvl_conf":
+      "Reset level to 1?\nXP and rewards history will also be reset.",
+    "js.lvl_reset_done": "Level reset complete",
+    "js.ticket_get": "Ticket +1 Get!",
+    "js.revive_done": "Revived! +50000",
+    "js.engine_not_ready": "Engine not ready!",
+    "js.session_start_err": "Error starting session",
+    "js.bet_hint_full": "Input={0} -> Even={1}",
+
+    // Mode Help
+    "mode.help_normal_tooltip":
+      "Basic mode to play freely while carrying over chips",
+    "mode.help_challenge_tooltip":
+      "Score attack mode to see how much you can increase chips within time limit",
+    "mode.help_practice_tooltip": "Practice mode with no chip fluctuations",
+    "mode.help_normal_detail":
+      "<b>Normal Mode</b><br>• No time limit<br>• Bank (chips) carrying over<br>• Level up possible<br>• Revive by watching ads on bankruptcy",
+    "mode.help_challenge_detail":
+      "<b>Challenge Mode</b><br>• Time limit: 5:00<br>• Fixed starting Bank (50K)<br>• Score attack mode<br>• Score tracked for ranking",
+    "mode.help_practice_detail":
+      "<b>Practice Mode</b><br>• Training only mode (24 rounds/play)<br>• No Bank fluctuation<br>• No impact on history/stats<br>• Insurance OFF<br>• Limited rounds (Future: add play by ads)",
   },
 
   ja: {
@@ -200,7 +225,7 @@ const RESOURCES = {
     "stats.time": "Time",
     "menu.menu": "MENU",
     "menu.history": "履歴",
-    "menu.ranking": "Rank",
+    "menu.ranking": "Ranking",
 
     // Titles & Home
     "title.payout": "🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1",
@@ -252,7 +277,7 @@ const RESOURCES = {
     "dock.stand": "STAND",
 
     // Overlays
-    "so.session_over": "SESSION OVER!!", // JA uses !!
+    "so.session_over": "SESSION OVER", // Match EN
     "so.calculating": "集計中…",
     "so.wait": "Please wait…",
     "so.sponsored": "Sponsored",
@@ -313,7 +338,7 @@ const RESOURCES = {
     "rank.msg": "セッション結果（Profit順）を保存しています（最大 50 件）。",
     "rank.name": "Name（任意）",
     "rank.none": "まだランキングがありません。",
-    "rank.saved": "Saved Ranking: ",
+    "rank.saved": "ランキングを保存しました: ",
 
     // Debug/Toasts
     "toast.good_luck": "Good luck!",
@@ -328,10 +353,10 @@ const RESOURCES = {
     "dyn.bonus": "bonus",
     "dyn.input": "入力",
     "dyn.even": "偶数化",
-    "dyn.hole_open": "hole open",
-    "dyn.hole_hidden": "hole hidden",
-    "dyn.playing": "playing",
-    "dyn.max": "max",
+    "dyn.hole_open": "ホールカード公開",
+    "dyn.hole_hidden": "ホールカード非公開",
+    "dyn.playing": "プレイ中",
+    "dyn.max": "最大",
 
     // Options Subtext
     "opt_sub.double": "Bet2倍で1枚引いて終了",
@@ -349,7 +374,7 @@ const RESOURCES = {
     "ad.load_fail": "広告の読み込みに失敗しました。もう一度お試しください。",
 
     // JS dynamic
-    "js.result_showing": "読み込み中…",
+    "js.result_showing": "結果を表示中…",
     "js.ad_waiting": "広告の終了を待っています…",
     "js.selectable": "選択できます",
 
@@ -371,6 +396,30 @@ const RESOURCES = {
     "prac.retry_ticket": "もう一度（チケット消費）",
     "prac.time_up": "24ラウンド終了！",
     "prac.confirm_ad": "動画広告を見て、プレイ権（チケット）を獲得しますか？",
+
+    // JS localizable
+    "js.ins_hint": "💰 保険: {0} (ベットの半分)",
+    "js.xp_gain": "+{0} XP",
+    "js.reset_lvl_conf":
+      "レベルを1にリセットしますか？\nXPと報酬付与履歴もリセットされます。",
+    "js.lvl_reset_done": "レベルをリセットしました",
+    "js.ticket_get": "チケットを1枚獲得しました！",
+    "js.revive_done": "復活しました！ +50000",
+    "js.engine_not_ready": "エンジンの準備ができていません",
+    "js.session_start_err": "セッション開始エラー",
+    "js.bet_hint_full": "入力={0} → 偶数化={1}",
+
+    // モードヘルプ
+    "mode.help_normal_tooltip": "チップを引き継いで自由に遊べる基本モード",
+    "mode.help_challenge_tooltip":
+      "制限時間内にどれだけ増やせるか挑戦するモード",
+    "mode.help_practice_tooltip": "チップ変動なしで練習できるモード",
+    "mode.help_normal_detail":
+      "<b>Normal Mode</b><br>・時間制限なし<br>・Bank（チップ）引き継ぎ<br>・レベルアップ可能<br>・破産時に広告視聴で復活可能",
+    "mode.help_challenge_detail":
+      "<b>Challenge Mode</b><br>・制限時間あり（5:00）<br>・初期Bank固定（50K）<br>・スコアアタックモード<br>・ランキング用スコア計測",
+    "mode.help_practice_detail":
+      "<b>Practice Mode</b><br>・練習専用モード（1プレイ24ラウンド）<br>・Bank変動なし<br>・履歴 / 統計に影響しない<br>・インシュランスOFF<br>・プレイ回数制限あり（将来的に広告で追加プレイ）",
   },
 };
 
@@ -386,9 +435,15 @@ window.LOC = {
   },
 };
 
-function t(key) {
+function t(key, ...args) {
   const dict = RESOURCES[currentLang] || RESOURCES.en;
-  return dict[key] || key;
+  let s = dict[key] || key;
+  if (args.length > 0) {
+    args.forEach((val, i) => {
+      s = s.replace(`{${i}}`, val);
+    });
+  }
+  return s;
 }
 
 function updateDOM() {
@@ -446,19 +501,9 @@ function setLanguage(lang) {
   }
 }
 
-// Auto init
-// If not set/valid, default to english (or user logic)
+// デフォルトは英語（保存されている設定がない場合）
 const saved = localStorage.getItem("bj_lang");
 if (!saved) {
-  const navLang = (
-    navigator.language ||
-    navigator.userLanguage ||
-    "en"
-  ).toLowerCase();
-  if (navLang.startsWith("ja")) {
-    currentLang = "ja";
-  } else if (RESOURCES[navLang.slice(0, 2)]) {
-    currentLang = navLang.slice(0, 2);
-  }
+  currentLang = "en";
 }
 setLanguage(currentLang);
