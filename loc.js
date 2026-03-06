@@ -192,11 +192,11 @@ const RESOURCES = {
       "Score attack mode to see how much you can increase chips within time limit",
     "mode.help_practice_tooltip": "Practice mode with no chip fluctuations",
     "mode.help_normal_detail":
-      "<b>Normal Mode</b><br>• No time limit<br>• Bank (chips) carrying over<br>• Level up possible<br>• Revive by watching ads on bankruptcy<br>• Results recorded in history",
+      "<b>Normal Mode</b><br>• No time limit<br>• Bank (chips) carrying over<br>• Level up possible<br>• Revive by watching ads on bankruptcy",
     "mode.help_challenge_detail":
       "<b>Challenge Mode</b><br>• Time limit: 5:00<br>• Fixed starting Bank (50K)<br>• Score attack mode<br>• Score tracked for ranking",
     "mode.help_practice_detail":
-      "<b>Practice Mode</b><br>• Training only mode<br>• No Bank fluctuation<br>• No impact on history/stats<br>• Insurance OFF<br>• Limited rounds (Future: add play by ads)",
+      "<b>Practice Mode</b><br>• Training only mode (24 rounds/play)<br>• No Bank fluctuation<br>• No impact on history/stats<br>• Insurance OFF<br>• Limited rounds (Future: add play by ads)",
   },
 
   ja: {
@@ -391,11 +391,11 @@ const RESOURCES = {
       "制限時間内にどれだけ増やせるか挑戦するモード",
     "mode.help_practice_tooltip": "チップ変動なしで練習できるモード",
     "mode.help_normal_detail":
-      "<b>Normal Mode</b><br>・時間制限なし<br>・Bank（チップ）引き継ぎ<br>・レベルアップ可能<br>・破産時に広告視聴で復活可能<br>・プレイ結果は履歴に記録される",
+      "<b>Normal Mode</b><br>・時間制限なし<br>・Bank（チップ）引き継ぎ<br>・レベルアップ可能<br>・破産時に広告視聴で復活可能",
     "mode.help_challenge_detail":
       "<b>Challenge Mode</b><br>・制限時間あり（5:00）<br>・初期Bank固定（50K）<br>・スコアアタックモード<br>・ランキング用スコア計測",
     "mode.help_practice_detail":
-      "<b>Practice Mode</b><br>・練習専用モード<br>・Bank変動なし<br>・履歴 / 統計に影響しない<br>・インシュランスOFF<br>・プレイ回数制限あり（将来的に広告で追加プレイ）",
+      "<b>Practice Mode</b><br>・練習専用モード（1プレイ24ラウンド）<br>・Bank変動なし<br>・履歴 / 統計に影響しない<br>・インシュランスOFF<br>・プレイ回数制限あり（将来的に広告で追加プレイ）",
   },
 };
 
