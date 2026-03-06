@@ -2791,7 +2791,7 @@ span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" dat
       if (!box) return;
       const hist = loadHistory();
       if (!hist.length){
-        box.innerHTML = '<div class="small muted">まだ履歴がありません。</div>';
+        box.innerHTML = `<div class="small muted">${t("hist.none")}</div>`;
         return;
       }
 
@@ -3733,13 +3733,13 @@ if (insMode) {
       } else if (isRoundOver && currentMode === "practice") {
         // 練習モード: 勝敗のみ表示（金額は非表示）
         if (net > 0) {
-          msgEl.textContent = "WIN!";
+          msgEl.textContent = t("dyn.win");
           msgEl.className = "msg win";
         } else if (net < 0) {
-          msgEl.textContent = "LOSE";
+          msgEl.textContent = t("dyn.lose");
           msgEl.className = "msg lose";
         } else {
-          msgEl.textContent = "PUSH";
+          msgEl.textContent = t("dyn.push");
           msgEl.className = "msg neutral";
         }
         metaEl.textContent = "";
@@ -3786,7 +3786,7 @@ if (insMode){
   $("overlayInsurance").classList.add("show");
   
   const mx = state.insurance.max|0;
-  $("insHintOverlay").textContent = `💰 Insurance: ${mx} (bet/2)`;
+  $("insHintOverlay").textContent = t("js.ins_hint", mx);
   // Insurance額はmax固定のため入力フォームは不要
 
 } else {
@@ -4090,19 +4090,19 @@ if ($("btnAddXP")) {
   $("btnAddXP").onclick = () => {
     addXP(10);
     updateLevelUI();
-    toast("+10 XP");
+    toast(t("js.xp_gain", 10));
   };
 }
 
 if ($("btnResetLevel")) {
   $("btnResetLevel").onclick = () => {
-    if (!confirm("レベルを1にリセットしますか？\nXPと報酬付与履歴もリセットされます。")) return;
+    if (!confirm(t("js.reset_lvl_conf"))) return;
     localStorage.setItem(XP_KEY, "0");
     localStorage.removeItem(LEVEL_KEY);
     localStorage.setItem(LEVEL_REWARDED_KEY, "1");
     clearPendingLevelReward();
     updateLevelUI();
-    toast("レベルをリセットしました");
+    toast(t("js.lvl_reset_done"));
   };
 }
 
@@ -4131,7 +4131,7 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
          adFinished: () => {
             isAdRequesting = false;
             addPracTicket(1);
-            toast("Ticket +1 Get!");
+            toast(t("js.ticket_get"));
             // オーバーレイを閉じる
             $("overlayAdConfirm").classList.remove("show");
             // 呼び出し元が「広告後に続行したい」場合はコールバック
@@ -4210,7 +4210,7 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
                     btn.disabled = false;
                     // bank=50000 で保存し、Normal自動再開
                     localStorage.setItem(BANK_KEY_NORMAL, "50000");
-                    toast("復活しました！ +50000");
+                    toast(t("js.revive_done"));
                     startSession("normal");
                 },
                 adError: (error) => {
@@ -4308,7 +4308,7 @@ $("btnPracToTitle").onclick = () => {
        }
 
        if (!apiReady()) {
-           toast("Engine not ready!");
+           toast(t("js.engine_not_ready"));
            return;
        }
 
@@ -4352,7 +4352,7 @@ $("btnPracToTitle").onclick = () => {
        const ret = bjApi.start_session(seed.lo, seed.hi, finalMask, timeLimitSec, roundLimit, initialBank);
        if (ret !== 0) {
           console.error("start_session failed", ret);
-          toast("Error starting session");
+          toast(t("js.session_start_err"));
           doResetToTitle();
           return;
        }
@@ -4582,7 +4582,7 @@ $("btnPracToTitle").onclick = () => {
       const el = $("betInputTitle") || $("betInput");
       if (!el) return;
       const v = floorEven(el.value);
-      if ($("betHint")) $("betHint").textContent = `入力=${el.value} → 偶数化=${v}`;
+      if ($("betHint")) $("betHint").textContent = t("js.bet_hint_full", el.value, v);
     }
     if ($("betInputTitle")) $("betInputTitle").addEventListener("input", updateBetHintPreEngine);
     else if ($("betInput")) $("betInput").addEventListener("input", updateBetHintPreEngine);
