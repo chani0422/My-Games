@@ -475,6 +475,66 @@
     .btn:hover{ box-shadow: 0 22px 60px rgba(0,0,0,.32); filter: brightness(1.06); }
     .btn:active{ transform: translateY(1px) scale(.99); }
     .btn[disabled]{ opacity:.40; cursor:not-allowed; box-shadow:none; filter:saturate(.2); }
+
+    /* ===== Help Icon & Tooltip & Modal ===== */
+    .help-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid var(--gold);
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--gold);
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s, background 0.2s;
+      z-index: 10;
+    }
+    .help-icon:hover {
+      opacity: 1;
+      background: rgba(216, 177, 90, 0.2);
+    }
+    
+    .mode-tooltip {
+      position: absolute;
+      bottom: 120%;
+      right: 0;
+      background: rgba(0, 0, 0, 0.9);
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #fff;
+      width: 200px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      text-align: left;
+      line-height: 1.4;
+    }
+    .help-icon:hover .mode-tooltip {
+      opacity: 1;
+    }
+    /* Hide tooltip on mobile/touch */
+    @media (hover: none) {
+      .mode-tooltip { display: none !important; }
+    }
+
+    /* Adjust button for icon */
+    .btn.ctaBig {
+      position: relative;
+      padding-right: 44px; /* Space for help icon */
+    }
     .btn.primary{
       border-color: rgba(216,177,90,.45);
       background:
@@ -1577,10 +1637,16 @@ window.CG.p = new Promise((resolve) => {
             <button class="btn ctaBig" id="btnModeChallenge">
               <div style="font-size:16px" data-i18n="mode.challenge">CHALLENGE</div>
               <div class="small" style="font-weight:normal; opacity:.7" data-i18n="mode.challenge_desc">Ranking Mode</div>
+              <div class="help-icon" data-mode-help="challenge">?
+                <div class="mode-tooltip" data-i18n="mode.help_challenge_tooltip">Ranking Mode (5 min)</div>
+              </div>
             </button>
             <button class="btn ctaBig" id="btnModeNormal">
               <div style="font-size:16px" data-i18n="mode.normal">NORMAL</div>
               <div class="small" style="font-weight:normal; opacity:.7" data-i18n="mode.normal_desc">Save Bank</div>
+              <div class="help-icon" data-mode-help="normal">?
+                <div class="mode-tooltip" data-i18n="mode.help_normal_tooltip">Chip storage enabled</div>
+              </div>
             </button>
             <button class="btn ctaBig" id="btnNormalRevive" style="display:none; border-color:#ff9800;">
               <div style="font-size:14px">WATCH AD +50000</div>
@@ -1589,6 +1655,9 @@ window.CG.p = new Promise((resolve) => {
             <button class="btn ctaBig" id="btnModePractice">
               <div style="font-size:16px" data-i18n="mode.practice">PRACTICE</div>
               <div class="small" style="font-weight:normal; opacity:.7" data-i18n="prac.desc">Free Play</div>
+              <div class="help-icon" data-mode-help="practice">?
+                <div class="mode-tooltip" data-i18n="mode.help_practice_tooltip">Free practice mode</div>
+              </div>
             </button>
           </div>
           <div class="ctaRow" style="margin-top:12px; justify-content:center;">
@@ -1982,6 +2051,22 @@ span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" dat
            style="max-height:320px; overflow:auto; margin-top:10px;">
         <div class="small muted">まだ履歴がありません。</div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- モード詳細説明オーバーレイ -->
+<div class="overlay" id="overlayModeDesc">
+  <div class="modal">
+    <div class="hd">
+      <b data-i18n="how.title">HOW TO PLAY</b>
+      <button class="btn ghost" id="btnCloseModeDesc" data-i18n="how.close">Close</button>
+    </div>
+    <div class="bd" id="modeDescBody" style="line-height:1.6; padding: 10px 0;">
+      <!-- 動的にコンテンツが挿入される -->
+    </div>
+    <div class="ctaRow" style="justify-content:center; margin-top:10px;">
+      <button class="btn primary" id="btnModeDescClose">OK</button>
     </div>
   </div>
 </div>
@@ -3809,6 +3894,27 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
       $("overlayHistory").classList.add("show");
     };
     $("btnCloseHistory").onclick = ()=> $("overlayHistory").classList.remove("show");
+
+    // モードヘルプ詳細表示
+    document.querySelectorAll(".help-icon").forEach(icon => {
+      icon.onclick = (e) => {
+        e.stopPropagation(); // ボタン自体のクリックイベントを防ぐ
+        const mode = icon.getAttribute("data-mode-help");
+        const body = $("modeDescBody");
+        if (body) {
+           body.innerHTML = t(`mode.help_${mode}_detail`);
+        }
+        $("overlayModeDesc").classList.add("show");
+      };
+    });
+    $("btnCloseModeDesc").onclick = $("btnModeDescClose").onclick = () => {
+      $("overlayModeDesc").classList.remove("show");
+    };
+    $("overlayModeDesc").onclick = (e) => {
+      if (e.target === $("overlayModeDesc")) {
+        $("overlayModeDesc").classList.remove("show");
+      }
+    };
 
 // ========= ランキング (localStorage) =========
 const RANK_KEY = "bjRanking_v1";
