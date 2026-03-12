@@ -3127,20 +3127,28 @@ function setPause(paused) {
     let initialDealTimer = null;
 
     // カード文字列からスコアを計算するヘルパー関数
-    function calcCardScore(cards) {
+    function calcCardScore(cards, asString = false) {
       let total = 0;
       let aces = 0;
       for (const c of cards) {
-        if (c === "?") continue; // 裏向きカードは無視
-        // カード文字列から数値を抽出（例: "A♠", "10♥", "K♦"）
+        if (c === "?") continue;
         const rank = c.replace(/[♠♥♦♣]/g, "").trim();
         if (rank === "A") { aces++; total += 11; }
         else if (["K", "Q", "J"].includes(rank)) { total += 10; }
         else { total += parseInt(rank, 10) || 0; }
       }
-      // バスト防止: Aを11→1に変換
-      while (total > 21 && aces > 0) { total -= 10; aces--; }
-      return total;
+      
+      let hardTotal = total;
+      let tempAces = aces;
+      while (hardTotal > 21 && tempAces > 0) { hardTotal -= 10; tempAces--; }
+
+      if (asString && hardTotal < total && total <= 21) {
+        // Aceを11として数えてもバストしない（Softな）状態。
+        // totalがSoftスコア（11含む）、hardTotalがHardスコア（1として数えた最小値）。
+        // 厳密には "HardTotal / SoftTotal" 形式を返す
+        return `${hardTotal} / ${total}`;
+      }
+      return asString ? String(hardTotal) : hardTotal;
     }
 
 
@@ -3497,9 +3505,8 @@ function beginSessionOverFlow(st){
         totalText = "-";
       } else {
         const visibleFaceCards = dealerCards.filter(c => c !== "?");
-        const currentScore = visibleFaceCards.length > 0 ? calcCardScore(visibleFaceCards) : 0;
-        // 常に計算した合計値を表示（「?」は出さない）
-        totalText = currentScore || "-";
+        // 常に計算した合計値を表示（Aceがあれば文字列形式で取得）
+        totalText = calcCardScore(visibleFaceCards, true) || "-";
       }
 
       $("dealerScoreLine").innerHTML = `
@@ -3563,13 +3570,18 @@ function beginSessionOverFlow(st){
         ? (initialDealStep >= 1 ? (initialDealStep >= 3 ? 2 : 1) : 0)
         : undefined; // undefined = 全表示
 
-      // 初回Deal段階中はカード枚数を制限したコピーを作成
-      if (playerVisibleCount !== undefined && hands.length > 0) {
+      // 初期配布中または通常時におけるハンドデータの調整
+      if (initialDealStep > 0 && hands.length > 0) {
         hands = hands.map(h => {
           const limitedCards = (h.cards || []).slice(0, playerVisibleCount);
-          // 表示中カードからスコアを再計算
-          const limitedScore = calcCardScore(limitedCards);
-          return { ...h, cards: limitedCards, score: limitedScore };
+          // 表示中カードからスコアを再計算（Soft/Hard形式の文字列を取得）
+          const limitedScoreStr = calcCardScore(limitedCards, true);
+          return { ...h, cards: limitedCards, score: limitedScoreStr };
+        });
+      } else if (hands.length > 0) {
+        // 通常の状態でも、Aceが含まれる場合は "X / Y" 形式にしたいので再計算
+        hands = hands.map(h => {
+          return { ...h, score: calcCardScore(h.cards || [], true) };
         });
       }
 
