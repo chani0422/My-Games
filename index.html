@@ -209,6 +209,7 @@
       display: none; /* JSで制御 */
       align-items: center;
       justify-content: center;
+      perspective: 1200px; /* 3D効果用 */
     }
     #shuffleWrap.active { display: flex; }
 
@@ -217,10 +218,11 @@
       width: 60px;
       height: 84px;
       background: #fff;
-      border: 1px solid rgba(0,0,0,0.2);
+      border: 1px solid rgba(0,0,0,0.15);
       border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-      background-image: repeating-linear-gradient(0deg, #fff, #fff 2px, #eee 2px, #eee 4px); /* カードの積層感 */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      background-image: repeating-linear-gradient(0deg, #fff, #fff 2px, #f5f5f5 2px, #f5f5f5 4px); /* カードの積層感 */
+      transform-style: preserve-3d;
     }
 
     /* 束A（左/上） */
@@ -229,42 +231,49 @@
     .stack-b { animation: none; transform: translate(0, 0); }
 
     @keyframes shuffleGather {
-      0% { transform: translate(-200px, -100px) scale(0.5); opacity: 0; }
-      100% { transform: translate(0, 0) scale(1); opacity: 1; }
+      0% { transform: translate(-200px, -100px) rotateX(40deg) rotateY(-20deg) scale(0.5); opacity: 0; }
+      100% { transform: translate(0, 0) rotateX(0) rotateY(0) scale(1); opacity: 1; }
     }
 
     @keyframes shuffleSplitA {
       0% { transform: translate(0, 0) rotate(0); }
-      100% { transform: translate(-40px, -20px) rotate(-10deg); }
+      100% { transform: translate(-50px, -30px) rotateX(15deg) rotateY(-15deg); box-shadow: 10px 10px 20px rgba(0,0,0,0.3); }
     }
     @keyframes shuffleSplitB {
       0% { transform: translate(0, 0) rotate(0); }
-      100% { transform: translate(40px, 20px) rotate(10deg); }
+      100% { transform: translate(50px, 30px) rotateX(-15deg) rotateY(15deg); box-shadow: -10px -10px 20px rgba(0,0,0,0.3); }
     }
 
     @keyframes shuffleInterleaveA {
-      0% { transform: translate(-40px, -20px) rotate(-10deg); z-index: 1; }
-      25% { transform: translate(10px, 0) rotate(0); z-index: 2; }
-      50% { transform: translate(-40px, -20px) rotate(-10deg); z-index: 1; }
-      75% { transform: translate(10px, 0) rotate(0); z-index: 2; }
-      100% { transform: translate(0, 0) rotate(0); z-index: 1; }
+      0% { transform: translate(-50px, -30px) rotateX(15deg) rotateY(-15deg); z-index: 1; }
+      15% { transform: translate(5px, -5px) rotateX(5deg) rotateY(0); z-index: 5; }
+      30% { transform: translate(-50px, -30px) rotateX(15deg) rotateY(-15deg); z-index: 1; }
+      45% { transform: translate(5px, -5px) rotateX(5deg) rotateY(0); z-index: 5; }
+      60% { transform: translate(-50px, -30px) rotateX(15deg) rotateY(-15deg); z-index: 1; }
+      75% { transform: translate(5px, -5px) rotateX(5deg) rotateY(0); z-index: 5; }
+      100% { transform: translate(0, 0) rotateX(0) rotateY(0); z-index: 1; }
     }
     @keyframes shuffleInterleaveB {
-      0% { transform: translate(40px, 20px) rotate(10deg); z-index: 2; }
-      25% { transform: translate(-10px, 0) rotate(0); z-index: 1; }
-      50% { transform: translate(40px, 20px) rotate(10deg); z-index: 2; }
-      75% { transform: translate(-10px, 0) rotate(0); z-index: 1; }
-      100% { transform: translate(0, 0) rotate(0); z-index: 2; }
+      0% { transform: translate(50px, 30px) rotateX(-15deg) rotateY(15deg); z-index: 5; }
+      15% { transform: translate(-5px, 5px) rotateX(-5deg) rotateY(0); z-index: 1; }
+      30% { transform: translate(50px, 30px) rotateX(-15deg) rotateY(15deg); z-index: 5; }
+      45% { transform: translate(-5px, 5px) rotateX(-5deg) rotateY(0); z-index: 1; }
+      60% { transform: translate(50px, 30px) rotateX(-15deg) rotateY(15deg); z-index: 5; }
+      75% { transform: translate(-5px, 5px) rotateX(-5deg) rotateY(0); z-index: 1; }
+      100% { transform: translate(0, 0) rotateX(0) rotateY(0); z-index: 5; }
     }
 
     @keyframes shuffleCutA {
-      0% { transform: translate(0, 0); z-index: 1; }
-      100% { transform: translate(20px, 10px); z-index: 2; }
+      0% { transform: translate(0, 0) rotateX(0); z-index: 1; }
+      50% { transform: translate(30px, 15px) rotateX(10deg) rotateY(5deg); z-index: 10; }
+      100% { transform: translate(0, 0); z-index: 10; }
     }
     @keyframes shuffleCutB {
-      0% { transform: translate(0, 0); z-index: 2; }
-      100% { transform: translate(-20px, -10px); z-index: 1; }
+      0% { transform: translate(0, 0) rotateX(0); z-index: 10; }
+      50% { transform: translate(-30px, -15px) rotateX(-10deg) rotateY(-5deg); z-index: 1; }
+      100% { transform: translate(0, 0); z-index: 1; }
     }
+
 
     @keyframes shuffleSettle {
       0% { transform: scale(1); opacity: 1; }
