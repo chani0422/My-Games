@@ -3581,7 +3581,7 @@ function beginSessionOverFlow(st){
       } else if (hands.length > 0) {
         hands = hands.map((h, i) => {
           // 現在操作中のハンドかつプレイヤーターン中のみ「Soft / Hard」形式にする
-          const isActive = (i === state.player.activeHandIndex && state.phase === "playerTurn");
+          const isActive = (i === state.player.activeHandIndex && state.phase === "inHand");
           // ユーザー要望：Stand（確定）後は有利な数値に一本化
           const scoreStr = calcCardScore(h.cards || [], isActive);
           return { ...h, score: scoreStr };
