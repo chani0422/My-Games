@@ -151,6 +151,55 @@
       100% { left: 200%; opacity: 0; }
     }
 
+    /* ===== デッキ残数ゲージ (Shoe Gauge) ===== */
+    .shoe-gauge-container {
+      position: absolute;
+      left: -24px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 120px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .shoe-gauge-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.05);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .shoe-gauge-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0%; /* Dynamic */
+      background: linear-gradient(0deg, #1a237e, #3f51b5);
+      border-radius: 0 0 2px 2px;
+      transition: height 0.4s ease;
+    }
+    .shoe-gauge-cut {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: #ff1744;
+      box-shadow: 0 0 4px rgba(255,23,68,0.6);
+      z-index: 2;
+      bottom: 0%; /* Dynamic */
+    }
+    @media (max-width: 600px) {
+      .shoe-gauge-container { left: -18px; width: 10px; height: 100px; }
+    }
+
     /* ===== シャッフル演出 (Shuffle Animation) ===== */
     #shuffleWrap {
       position: absolute;
@@ -1936,6 +1985,14 @@ window.CG.p = new Promise((resolve) => {
                         </div>
                         <div class="cards" id="dealerCards"></div>
                       </div>
+
+                      <!-- デッキ残数ゲージ -->
+                      <div class="shoe-gauge-container" id="shoeGaugeContainer" title="Remain Cards">
+                        <div class="shoe-gauge-inner">
+                          <div class="shoe-gauge-fill" id="shoeGaugeFill"></div>
+                          <div class="shoe-gauge-cut" id="shoeGaugeCut"></div>
+                        </div>
+                      </div>
                     </div>
 
                     <!-- プレイヤー -->
@@ -3682,6 +3739,27 @@ function beginSessionOverFlow(st){
       prevDealerCards = dealerCards.slice();
 
       prevDealerJson = dealerJson; // ディーラー状態をキャッシュ
+
+
+      // --- 4. デッキ残数ゲージの更新 ---
+      if (state.shoe) {
+        const shoe = state.shoe;
+        const totalCards = (shoe.decks || 6) * 52;
+        const fillPercent = Math.max(0, Math.min(100, (shoe.deckSize / totalCards) * 100));
+        const cutPercent = Math.max(0, Math.min(100, (shoe.cutSize / totalCards) * 100));
+
+        const fillEl = $("shoeGaugeFill");
+        const cutEl = $("shoeGaugeCut");
+
+        if (fillEl) fillEl.style.height = `${fillPercent}%`;
+        if (cutEl) cutEl.style.bottom = `${cutPercent}%`;
+        
+        if (shoe.reshuffleSoon) {
+          if (fillEl) fillEl.style.background = "linear-gradient(0deg, #b71c1c, #ff5252)";
+        } else {
+          if (fillEl) fillEl.style.background = "linear-gradient(0deg, #1a237e, #3f51b5)";
+        }
+      }
 
 
       // プレイヤーのハンド
