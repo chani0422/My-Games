@@ -1870,7 +1870,6 @@ window.CG.p = new Promise((resolve) => {
   <nav class="dock full" aria-label="main controls">
     <!-- 行1 (モバイル) / 左 (デスクトップ) -->
     <button class="btn primary" id="btnDeal" disabled><span data-i18n="dock.deal">DEAL</span></button>
-    <button class="btn secondary small" id="btnDebugAce" disabled style="margin-left:4px; font-size:10px; padding:0 8px;">ACE</button>
     <button class="btn" id="btnHit" disabled><span data-i18n="dock.hit">HIT</span></button>
     <button class="btn" id="btnStand" disabled><span data-i18n="dock.stand">STAND</span></button>
     
@@ -1970,6 +1969,7 @@ window.CG.p = new Promise((resolve) => {
           セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。
         </p>
         <div class="row" style="justify-content:flex-end; gap:10px;">
+          <button class="btn secondary small" id="btnDebugAce" style="font-size:10px; padding:4px 8px;">ACE</button>
           <button class="btn" id="btnHowPause" data-i18n="title.how">遊び方</button>
           <button class="btn primary" id="btnContinue" data-i18n="pause.continue">Continue</button>
           <button class="btn danger" id="btnQuit" data-i18n="pause.quit">Quit to Title</button>
@@ -2022,19 +2022,6 @@ window.CG.p = new Promise((resolve) => {
       </div>
     </div>
   </div>
-span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" data-i18n="how.pay_win">Win 1:1</span>
-            <span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" data-i18n="how.pay_ins">Ins 2:1</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="muted small" style="margin-top:16px; border-top:1px solid rgba(255,255,255,.1); padding-top:10px;">
-        <span data-i18n="how.note">Note...</span>
-      </div>
-
-    </div>
-  </div>
-</div>
 
 <!-- 履歴 -->
 <div class="overlay" id="overlayHistory">
@@ -3105,6 +3092,8 @@ function setPause(paused) {
       prevBank = null;
       dealerShowCount = 0;
       if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+      initialDealStep = 0;
+      if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
     }
 
     // ========= アニメーションキャッシュ =========
@@ -3118,6 +3107,36 @@ function setPause(paused) {
     // ディーラー描画アニメーション状態
     let dealerShowCount = 0;
     let dealerAnimTimer = null;
+
+    // 初回Deal段階表示のステップ（0=非アクティブ, 1〜4=各カードの段階）
+    // 1: プレイヤー1枚目, 2: ディーラー1枚目, 3: プレイヤー2枚目, 4: ディーラー2枚目(完了)
+    let initialDealStep = 0;
+    let initialDealTimer = null;
+
+    // カード文字列からスコアを計算するヘルパー関数
+    function calcCardScore(cards, asString = false) {
+      let hardTotal = 0;
+      let aceCount = 0;
+      for (const c of cards) {
+        if (c === "?") continue;
+        const rank = c.replace(/[♠♥♦♣]/g, "").trim();
+        if (rank === "A") { aceCount++; hardTotal += 1; }
+        else if (["K", "Q", "J"].includes(rank)) { hardTotal += 10; }
+        else { hardTotal += parseInt(rank, 10) || 0; }
+      }
+      
+      let softTotal = hardTotal;
+      if (aceCount > 0 && hardTotal + 10 <= 21) {
+        softTotal = hardTotal + 10;
+      }
+
+      if (asString && softTotal > hardTotal) {
+        // Aceを11として数えてもバストしない（Softな）状態
+        if (softTotal === 21) return "21"; // 21の場合は固定表示
+        return `${hardTotal} / ${softTotal}`;
+      }
+      return asString ? String(softTotal) : softTotal;
+    }
 
 
 
@@ -3426,60 +3445,68 @@ function beginSessionOverFlow(st){
         state.rules.dealerHitSoft17 ? "H17" : "S17"
       ].filter(Boolean).join(" • ") || "-";
 
-      // ディーラー
-      const totalText = hideBoard
-        ? "-"
-        : (state.dealer.holeKnown ? String(state.dealer.score) : "?");
+      // ディーラー描画とスコアの同期ロジック
+      const dWrap = $("dealerCards");
+      const rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
+      const targetCount = rawDealerCards.length;
+      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
 
-      const shownText = hideBoard ? "-" : state.dealer.scoreShown;
+      // --- 1. アニメーションカウンタの更新 ---
+      if (!isRoundOver) {
+        // ラウンド終了以外は即座に全カード表示（ただし初回配布中は除く）
+        if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        dealerShowCount = targetCount;
+      } else {
+        // ラウンド終了時はアニメーションが必要か確認
+        if (dealerShowCount === 0 && targetCount > 0 && !dealerAnimTimer) {
+             dealerShowCount = targetCount;
+        } else if (dealerShowCount < targetCount) {
+             if (!dealerAnimTimer) {
+                 dealerAnimTimer = setTimeout(() => {
+                     dealerShowCount++;
+                     dealerAnimTimer = null;
+                     render(); 
+                 }, 600);
+             }
+        } else {
+             if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        }
+      }
+
+      // --- 2. 視覚的な表示枚数 (visibleCount) の決定 ---
+      let visibleCount = targetCount;
+      if (initialDealStep > 0) {
+        // 初回配布中
+        visibleCount = (initialDealStep >= 2 ? (initialDealStep >= 4 ? 2 : 1) : 0);
+      } else if (isRoundOver) {
+        // 終了後のドロー演出中
+        visibleCount = dealerShowCount;
+      }
+
+      const dealerCards = rawDealerCards.slice(0, visibleCount);
+      const isDealerAnimating = (visibleCount < targetCount) || (initialDealStep > 0);
+
+      // --- 3. スコア表示の計算 (表示されているカードのみに基づく) ---
+      let totalText;
+      if (hideBoard || visibleCount === 0) {
+        totalText = "-";
+      } else {
+        const visibleFaceCards = dealerCards.filter(c => c !== "?");
+        // ディーラーは常に最善の合計値を単一で表示（UI簡略化）
+        totalText = calcCardScore(visibleFaceCards, false) || "-";
+      }
 
       $("dealerScoreLine").innerHTML = `
         <span class="metaLine">
-          <span class="kv"><span class="k">Shown</span><b class="v">${shownText}</b></span>
           <span class="kv"><span class="k">Total</span><b class="v">${totalText}</b></span>
         </span>
       `;
 
       $("dealerHole").textContent = hideBoard
         ? "-"
-        : (state.dealer.holeKnown ? t("dyn.hole_open") : t("dyn.hole_hidden"));
-
-
-      const dWrap = $("dealerCards");
-      let rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
-
-      // --- ディーラーアニメーションロジック ---
-      const targetCount = rawDealerCards.length;
-      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
-      //const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
-
-      if (!isRoundOver) {
-        // ラウンド終了以外は即座に全カード表示（同期）
-        if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
-        dealerShowCount = targetCount;
-      } else {
-        // ラウンド終了時はアニメーションが必要か確認
-        if (dealerShowCount === 0 && targetCount > 0 && !dealerAnimTimer) {
-             // 初回ロードでいきなり roundOver だった場合などは早送り
-             dealerShowCount = targetCount;
-        } else if (dealerShowCount < targetCount) {
-             // アニメーション必要
-             if (!dealerAnimTimer) {
-                 dealerAnimTimer = setTimeout(() => {
-                     dealerShowCount++;
-                     dealerAnimTimer = null;
-                     render(); // 次のカードを表示するため再描画トリガー
-                 }, 600);
-             }
-        } else {
-            // アニメーション完了
-             if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
-        }
-      }
-      
-      const isDealerAnimating = (dealerShowCount < targetCount);
-      // カウントに基づいてカードを切り出す
-      const dealerCards = rawDealerCards.slice(0, dealerShowCount);
+        : (initialDealStep > 0 || (isRoundOver && !state.dealer.holeKnown))
+          ? t("dyn.hole_hidden")
+          : (state.dealer.holeKnown ? t("dyn.hole_open") : t("dyn.hole_hidden"));
 
       // ディーラーのキャッシュチェック
 
@@ -3520,10 +3547,33 @@ function beginSessionOverFlow(st){
 
       // プレイヤーのハンド
       const ph = $("playerHands");
-      const hands =
+      let hands =
         (!hideBoard && state.player && state.player.hands)
           ? state.player.hands
           : [];
+
+      // 初回Deal段階でのプレイヤーカード表示枚数を決定
+      const playerVisibleCount = (initialDealStep > 0)
+        ? (initialDealStep >= 1 ? (initialDealStep >= 3 ? 2 : 1) : 0)
+        : undefined; // undefined = 全表示
+
+      // 初期配布中または通常時におけるハンドデータの調整
+      if (initialDealStep > 0 && hands.length > 0) {
+        hands = hands.map(h => {
+          const limitedCards = (h.cards || []).slice(0, playerVisibleCount);
+          // 配布中も変化を見せるためSoft/Hard形式の文字列を取得
+          const limitedScoreStr = calcCardScore(limitedCards, true);
+          return { ...h, cards: limitedCards, score: limitedScoreStr };
+        });
+      } else if (hands.length > 0) {
+        hands = hands.map((h, i) => {
+          // 現在操作中のハンドかつプレイヤーターン中のみ「Soft / Hard」形式にする
+          const isActive = (i === state.player.activeHandIndex && state.phase === "inHand");
+          // ユーザー要望：Stand（確定）後は有利な数値に一本化
+          const scoreStr = calcCardScore(h.cards || [], isActive);
+          return { ...h, score: scoreStr };
+        });
+      }
 
 
       
@@ -3542,17 +3592,24 @@ function beginSessionOverFlow(st){
         const box = document.createElement("div");
         box.className = "handBox" + (i === state.player.activeHandIndex ? " active" : "");
 
-        const flags = [];
-        if (h.flags.blackjack) flags.push("BJ");
-        if (h.flags.bust) flags.push("BUST");
-        if (h.flags.doubled) flags.push("DBL");
-        if (h.flags.surrendered) flags.push("SUR");
-        if (h.flags.fromSplit) flags.push("SPLIT");
-        if (h.flags.splitAces) flags.push("A-SPLIT");
+        let flags = [];
+        let badgeClass = "";
+        
+        // 初期配布中はフラグ（BJ等）とバッジ演出を隠す
+        if (initialDealStep > 0) {
+          // 何もしない（空のまま = playing表示）
+        } else {
+          if (h.flags.blackjack) flags.push("BJ");
+          if (h.flags.bust) flags.push("BUST");
+          if (h.flags.doubled) flags.push("DBL");
+          if (h.flags.surrendered) flags.push("SUR");
+          if (h.flags.fromSplit) flags.push("SPLIT");
+          if (h.flags.splitAces) flags.push("A-SPLIT");
 
-        const badgeClass =
-          h.flags.blackjack ? "good" :
-          (h.flags.bust || h.flags.surrendered) ? "bad" : "";
+          badgeClass =
+            h.flags.blackjack ? "good" :
+            (h.flags.bust || h.flags.surrendered) ? "bad" : "";
+        }
 
         const header = document.createElement("div");
         header.className = "row";
@@ -3603,7 +3660,6 @@ const insMode = (state.phase === "offerInsurance");
 if (insMode) {
   // 保険の確認中は、ドックは「はい/いいえ」専用の状態になる
   setDis("btnDeal", true);
-  setDis("btnDebugAce", true);
   setDis("btnHit", !can.insurance);
   setDis("btnStand", !can.insurance);
   setDis("btnDouble", true);
@@ -3613,7 +3669,6 @@ if (insMode) {
   // ベッティングフェーズのロジック
   const forceEnableDeal = ((state.phase === "betting" || state.phase === "roundOver") && state.bank > 0);
   setDis("btnDeal", (!can.deal && !forceEnableDeal) || uiLocked);
-  setDis("btnDebugAce", (!can.deal && !forceEnableDeal) || uiLocked);
 
   setDis("btnHit", !can.hit || uiLocked);
   setDis("btnStand", !can.stand || uiLocked); // Stand もレースコンディション防止でロック？ ユーザーは既にDeal/Hitしてる。
@@ -3818,6 +3873,8 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     prevDealerJson = "";
     prevPlayerLens = [];
     prevPlayerJson = "";
+    initialDealStep = 0;
+    if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
 }
     // K表記フォーマッター
     function fmtK(n) {
@@ -4419,6 +4476,8 @@ $("btnPracToTitle").onclick = () => {
        prevPlayerLens = [];
        prevBank = null;
        hideBoardAfterSet = false;
+       initialDealStep = 0;
+       if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
 
        render(); // 初回描画
        
@@ -4591,11 +4650,20 @@ $("btnPracToTitle").onclick = () => {
 
     // Deal / DebugAce
     $("btnDebugAce").onclick = () => {
+      // ポーズメニューを閉じてからDealを実行
+      if(state) callAction("set_paused", 0);
+      if (pausedAt) {
+        pausedTotal += performance.now() - pausedAt;
+        pausedAt = 0;
+      }
+      setPause(false);
+
       $("btnDeal").disabled = true;
       $("btnDebugAce").disabled = true;
       setTimeout(()=>{ 
         lockUI(800); 
-        callAction("debug_deal_ace"); 
+        callAction("debug_deal_ace");
+        $("btnDebugAce").disabled = false; // 再度有効化
       }, 50);
     };
 
@@ -4618,8 +4686,53 @@ $("btnPracToTitle").onclick = () => {
       }
 
       setTimeout(()=>{ 
-        lockUI(800); 
-        callAction("deal"); 
+        // UIロック（アニメーション全体の時間分）
+        const DEAL_STEP_MS = 450; // 各ステップの間隔
+        lockUI(DEAL_STEP_MS * 4 + 200);
+
+        // アニメーションキャッシュをリセット（新しいラウンド用）
+        prevDealerCards = [];
+        prevDealerJson = "";
+        prevPlayerLens = [];
+        prevPlayerJson = "";
+
+        // エンジンにDealを送信（4枚一括で配られる）
+        callAction("deal");
+
+        // 初回Deal段階アニメーション開始
+        // 順序: プレイヤー1枚目 → ディーラー1枚目 → プレイヤー2枚目 → ディーラー2枚目
+        initialDealStep = 1;
+        // キャッシュを無効化して再描画を強制
+        prevDealerJson = "";
+        prevPlayerJson = "";
+        render(); // Step 1: プレイヤー1枚目
+
+        if (initialDealTimer) clearTimeout(initialDealTimer);
+        initialDealTimer = setTimeout(() => {
+          initialDealStep = 2;
+          prevDealerJson = "";
+          prevPlayerJson = "";
+          render(); // Step 2: ディーラー1枚目
+
+          initialDealTimer = setTimeout(() => {
+            initialDealStep = 3;
+            prevDealerJson = "";
+            prevPlayerJson = "";
+            render(); // Step 3: プレイヤー2枚目
+
+            initialDealTimer = setTimeout(() => {
+              initialDealStep = 4; // Step 4: ディーラー2枚目表示
+              prevDealerJson = "";
+              render();
+
+              initialDealTimer = setTimeout(() => {
+                initialDealStep = 0; // 完了: 演出許可
+                initialDealTimer = null;
+                render(); 
+              }, DEAL_STEP_MS);
+            }, DEAL_STEP_MS);
+          }, DEAL_STEP_MS);
+        }, DEAL_STEP_MS);
       }, 50);
     };
 
