@@ -1870,7 +1870,6 @@ window.CG.p = new Promise((resolve) => {
   <nav class="dock full" aria-label="main controls">
     <!-- 行1 (モバイル) / 左 (デスクトップ) -->
     <button class="btn primary" id="btnDeal" disabled><span data-i18n="dock.deal">DEAL</span></button>
-    <button class="btn secondary small" id="btnDebugAce" disabled style="margin-left:4px; font-size:10px; padding:0 8px;">ACE</button>
     <button class="btn" id="btnHit" disabled><span data-i18n="dock.hit">HIT</span></button>
     <button class="btn" id="btnStand" disabled><span data-i18n="dock.stand">STAND</span></button>
     
@@ -1970,6 +1969,7 @@ window.CG.p = new Promise((resolve) => {
           セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。
         </p>
         <div class="row" style="justify-content:flex-end; gap:10px;">
+          <button class="btn secondary small" id="btnDebugAce" style="font-size:10px; padding:4px 8px;">ACE</button>
           <button class="btn" id="btnHowPause" data-i18n="title.how">遊び方</button>
           <button class="btn primary" id="btnContinue" data-i18n="pause.continue">Continue</button>
           <button class="btn danger" id="btnQuit" data-i18n="pause.quit">Quit to Title</button>
@@ -3105,6 +3105,8 @@ function setPause(paused) {
       prevBank = null;
       dealerShowCount = 0;
       if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+      initialDealStep = 0;
+      if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
     }
 
     // ========= アニメーションキャッシュ =========
@@ -3118,6 +3120,28 @@ function setPause(paused) {
     // ディーラー描画アニメーション状態
     let dealerShowCount = 0;
     let dealerAnimTimer = null;
+
+    // 初回Deal段階表示のステップ（0=非アクティブ, 1〜4=各カードの段階）
+    // 1: プレイヤー1枚目, 2: ディーラー1枚目, 3: プレイヤー2枚目, 4: ディーラー2枚目(完了)
+    let initialDealStep = 0;
+    let initialDealTimer = null;
+
+    // カード文字列からスコアを計算するヘルパー関数
+    function calcCardScore(cards) {
+      let total = 0;
+      let aces = 0;
+      for (const c of cards) {
+        if (c === "?") continue; // 裏向きカードは無視
+        // カード文字列から数値を抽出（例: "A♠", "10♥", "K♦"）
+        const rank = c.replace(/[♠♥♦♣]/g, "").trim();
+        if (rank === "A") { aces++; total += 11; }
+        else if (["K", "Q", "J"].includes(rank)) { total += 10; }
+        else { total += parseInt(rank, 10) || 0; }
+      }
+      // バスト防止: Aを11→1に変換
+      while (total > 21 && aces > 0) { total -= 10; aces--; }
+      return total;
+    }
 
 
 
@@ -3427,11 +3451,39 @@ function beginSessionOverFlow(st){
       ].filter(Boolean).join(" • ") || "-";
 
       // ディーラー
-      const totalText = hideBoard
-        ? "-"
-        : (state.dealer.holeKnown ? String(state.dealer.score) : "?");
+      // 初回Deal段階でのディーラーカード表示枚数を決定
+      const dealerVisibleCount = (initialDealStep > 0)
+        ? (initialDealStep >= 2 ? (initialDealStep >= 4 ? 2 : 1) : 0)
+        : undefined; // undefined = 全表示
 
-      const shownText = hideBoard ? "-" : state.dealer.scoreShown;
+      const dWrap = $("dealerCards");
+      let rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
+
+      // 初回Deal段階中はカード枚数を制限
+      if (dealerVisibleCount !== undefined) {
+        rawDealerCards = rawDealerCards.slice(0, dealerVisibleCount);
+      }
+
+      // スコア表示: 初回Deal段階中は表示カードに基づいて計算
+      let shownText, totalText;
+      if (hideBoard) {
+        shownText = "-";
+        totalText = "-";
+      } else if (initialDealStep > 0) {
+        // 段階表示中: 実際に表示中のカードからスコアを計算
+        if (rawDealerCards.length === 0) {
+          shownText = "-";
+          totalText = "-";
+        } else {
+          // 表示中のカード（?を除く）のスコアを計算
+          const visibleCards = rawDealerCards.filter(c => c !== "?");
+          shownText = visibleCards.length > 0 ? calcCardScore(visibleCards) : "-";
+          totalText = state.dealer.holeKnown ? String(state.dealer.score) : "?";
+        }
+      } else {
+        shownText = state.dealer.scoreShown;
+        totalText = state.dealer.holeKnown ? String(state.dealer.score) : "?";
+      }
 
       $("dealerScoreLine").innerHTML = `
         <span class="metaLine">
@@ -3442,11 +3494,9 @@ function beginSessionOverFlow(st){
 
       $("dealerHole").textContent = hideBoard
         ? "-"
-        : (state.dealer.holeKnown ? t("dyn.hole_open") : t("dyn.hole_hidden"));
-
-
-      const dWrap = $("dealerCards");
-      let rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
+        : (initialDealStep > 0 && rawDealerCards.length === 0)
+          ? "-"
+          : (state.dealer.holeKnown ? t("dyn.hole_open") : t("dyn.hole_hidden"));
 
       // --- ディーラーアニメーションロジック ---
       const targetCount = rawDealerCards.length;
@@ -3520,10 +3570,25 @@ function beginSessionOverFlow(st){
 
       // プレイヤーのハンド
       const ph = $("playerHands");
-      const hands =
+      let hands =
         (!hideBoard && state.player && state.player.hands)
           ? state.player.hands
           : [];
+
+      // 初回Deal段階でのプレイヤーカード表示枚数を決定
+      const playerVisibleCount = (initialDealStep > 0)
+        ? (initialDealStep >= 1 ? (initialDealStep >= 3 ? 2 : 1) : 0)
+        : undefined; // undefined = 全表示
+
+      // 初回Deal段階中はカード枚数を制限したコピーを作成
+      if (playerVisibleCount !== undefined && hands.length > 0) {
+        hands = hands.map(h => {
+          const limitedCards = (h.cards || []).slice(0, playerVisibleCount);
+          // 表示中カードからスコアを再計算
+          const limitedScore = calcCardScore(limitedCards);
+          return { ...h, cards: limitedCards, score: limitedScore };
+        });
+      }
 
 
       
@@ -3818,6 +3883,8 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     prevDealerJson = "";
     prevPlayerLens = [];
     prevPlayerJson = "";
+    initialDealStep = 0;
+    if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
 }
     // K表記フォーマッター
     function fmtK(n) {
@@ -4419,6 +4486,8 @@ $("btnPracToTitle").onclick = () => {
        prevPlayerLens = [];
        prevBank = null;
        hideBoardAfterSet = false;
+       initialDealStep = 0;
+       if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
 
        render(); // 初回描画
        
@@ -4618,8 +4687,49 @@ $("btnPracToTitle").onclick = () => {
       }
 
       setTimeout(()=>{ 
-        lockUI(800); 
-        callAction("deal"); 
+        // UIロック（アニメーション全体の時間分）
+        const DEAL_STEP_MS = 450; // 各ステップの間隔
+        lockUI(DEAL_STEP_MS * 4 + 200);
+
+        // アニメーションキャッシュをリセット（新しいラウンド用）
+        prevDealerCards = [];
+        prevDealerJson = "";
+        prevPlayerLens = [];
+        prevPlayerJson = "";
+
+        // エンジンにDealを送信（4枚一括で配られる）
+        callAction("deal");
+
+        // 初回Deal段階アニメーション開始
+        // 順序: プレイヤー1枚目 → ディーラー1枚目 → プレイヤー2枚目 → ディーラー2枚目
+        initialDealStep = 1;
+        // キャッシュを無効化して再描画を強制
+        prevDealerJson = "";
+        prevPlayerJson = "";
+        render(); // Step 1: プレイヤー1枚目
+
+        if (initialDealTimer) clearTimeout(initialDealTimer);
+        initialDealTimer = setTimeout(() => {
+          initialDealStep = 2;
+          prevDealerJson = "";
+          prevPlayerJson = "";
+          render(); // Step 2: ディーラー1枚目
+
+          initialDealTimer = setTimeout(() => {
+            initialDealStep = 3;
+            prevDealerJson = "";
+            prevPlayerJson = "";
+            render(); // Step 3: プレイヤー2枚目
+
+            initialDealTimer = setTimeout(() => {
+              initialDealStep = 0; // 完了: 全カード表示
+              initialDealTimer = null;
+              prevDealerJson = "";
+              prevPlayerJson = "";
+              render(); // Step 4: ディーラー2枚目（完了）
+            }, DEAL_STEP_MS);
+          }, DEAL_STEP_MS);
+        }, DEAL_STEP_MS);
       }, 50);
     };
 
