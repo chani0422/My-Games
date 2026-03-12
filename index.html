@@ -2060,6 +2060,7 @@ window.CG.p = new Promise((resolve) => {
         </p>
         <div class="row" style="justify-content:flex-end; gap:10px;">
           <button class="btn secondary small" id="btnDebugAce" style="font-size:10px; padding:4px 8px;">ACE</button>
+          <button class="btn secondary small" id="btnShuffle" style="font-size:10px; padding:4px 8px;">SHUFFLE</button>
           <button class="btn" id="btnHowPause" data-i18n="title.how">遊び方</button>
           <button class="btn primary" id="btnContinue" data-i18n="pause.continue">Continue</button>
           <button class="btn danger" id="btnQuit" data-i18n="pause.quit">Quit to Title</button>
@@ -4074,7 +4075,24 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
 
     $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
-    $("btnHowPause").onclick = ()=> $("overlayHow").classList.add("show");
+    $("btnHowPause").onclick = () => $("overlayHow").classList.add("show");
+
+    $("btnShuffle").onclick = async () => {
+      // 演出開始前にメニューを閉じる
+      $("overlayPause").classList.remove("active");
+      
+      // UIロック
+      lockUI(1500);
+      
+      // 演出実行
+      await performShuffleAnimation();
+      
+      // エンジン実行
+      callAction("force_shuffle");
+      
+      toast("Deck Re-shuffled");
+      render();
+    };
     $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
     
     $("btnLangToggle").onclick = () => {
