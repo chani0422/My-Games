@@ -151,6 +151,90 @@
       100% { left: 200%; opacity: 0; }
     }
 
+    /* ===== シャッフル演出 (Shuffle Animation) ===== */
+    #shuffleWrap {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      display: none; /* JSで制御 */
+      align-items: center;
+      justify-content: center;
+    }
+    #shuffleWrap.active { display: flex; }
+
+    .shuffle-stack {
+      position: absolute;
+      width: 60px;
+      height: 84px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.2);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      background-image: repeating-linear-gradient(0deg, #fff, #fff 2px, #eee 2px, #eee 4px); /* カードの積層感 */
+    }
+
+    /* 束A（左/上） */
+    .stack-a { animation: none; transform: translate(0, 0); }
+    /* 束B（右/下） */
+    .stack-b { animation: none; transform: translate(0, 0); }
+
+    @keyframes shuffleGather {
+      0% { transform: translate(-200px, -100px) scale(0.5); opacity: 0; }
+      100% { transform: translate(0, 0) scale(1); opacity: 1; }
+    }
+
+    @keyframes shuffleSplitA {
+      0% { transform: translate(0, 0) rotate(0); }
+      100% { transform: translate(-40px, -20px) rotate(-10deg); }
+    }
+    @keyframes shuffleSplitB {
+      0% { transform: translate(0, 0) rotate(0); }
+      100% { transform: translate(40px, 20px) rotate(10deg); }
+    }
+
+    @keyframes shuffleInterleaveA {
+      0% { transform: translate(-40px, -20px) rotate(-10deg); z-index: 1; }
+      25% { transform: translate(10px, 0) rotate(0); z-index: 2; }
+      50% { transform: translate(-40px, -20px) rotate(-10deg); z-index: 1; }
+      75% { transform: translate(10px, 0) rotate(0); z-index: 2; }
+      100% { transform: translate(0, 0) rotate(0); z-index: 1; }
+    }
+    @keyframes shuffleInterleaveB {
+      0% { transform: translate(40px, 20px) rotate(10deg); z-index: 2; }
+      25% { transform: translate(-10px, 0) rotate(0); z-index: 1; }
+      50% { transform: translate(40px, 20px) rotate(10deg); z-index: 2; }
+      75% { transform: translate(-10px, 0) rotate(0); z-index: 1; }
+      100% { transform: translate(0, 0) rotate(0); z-index: 2; }
+    }
+
+    @keyframes shuffleCutA {
+      0% { transform: translate(0, 0); z-index: 1; }
+      100% { transform: translate(20px, 10px); z-index: 2; }
+    }
+    @keyframes shuffleCutB {
+      0% { transform: translate(0, 0); z-index: 2; }
+      100% { transform: translate(-20px, -10px); z-index: 1; }
+    }
+
+    @keyframes shuffleSettle {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0; }
+    }
+
+    #shufflingText {
+      position: absolute;
+      bottom: 20%;
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--gold);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    #shuffleWrap.active #shufflingText { opacity: 0.8; }
+
     .wrap{
       max-width:1100px;
       margin:0 auto;
@@ -1808,6 +1892,12 @@ window.CG.p = new Promise((resolve) => {
               <div class="tableTilt">
                 <div class="tableFrame">
                   <div class="tableSurface">
+                    <!-- シャッフル演出用ラップ -->
+                    <div id="shuffleWrap">
+                      <div class="shuffle-stack stack-a" id="shuffleStackA"></div>
+                      <div class="shuffle-stack stack-b" id="shuffleStackB"></div>
+                      <div id="shufflingText">Shuffling...</div>
+                    </div>
 
                     <!-- マーキング (②C) -->
                     <svg class="markings" viewBox="0 0 1000 650" preserveAspectRatio="none">
@@ -2589,6 +2679,54 @@ window.CG.p = new Promise((resolve) => {
       t.textContent = text;
       b.classList.remove("good","bad");
       if (kind) b.classList.add(kind);
+    }
+
+    // ===== シャッフル演出制御 =====
+    async function performShuffleAnimation() {
+      const wrap = $("shuffleWrap");
+      const stackA = $("shuffleStackA");
+      const stackB = $("shuffleStackB");
+      if (!wrap || !stackA || !stackB) return;
+
+      wrap.classList.add("active");
+      
+      const setAnim = (el, name, duration, timing = "ease-in-out") => {
+        el.style.animation = "none";
+        el.offsetHeight; // reflow
+        el.style.animation = `${name} ${duration}ms ${timing} forwards`;
+      };
+
+      // 1. Gather (0.2s)
+      setAnim(stackA, "shuffleGather", 200);
+      setAnim(stackB, "shuffleGather", 200);
+      await new Promise(r => setTimeout(r, 200));
+
+      // 2. Split (0.2s)
+      setAnim(stackA, "shuffleSplitA", 200);
+      setAnim(stackB, "shuffleSplitB", 200);
+      await new Promise(r => setTimeout(r, 200));
+
+      // 3. Interleave (0.4s)
+      setAnim(stackA, "shuffleInterleaveA", 400);
+      setAnim(stackB, "shuffleInterleaveB", 400);
+      await new Promise(r => setTimeout(r, 400));
+
+      // 4. Cut (0.15s)
+      setAnim(stackA, "shuffleCutA", 150);
+      setAnim(stackB, "shuffleCutB", 150);
+      await new Promise(r => setTimeout(r, 150));
+
+      // 5. Settle & Hide (0.15s)
+      setAnim(stackA, "shuffleSettle", 150);
+      setAnim(stackB, "shuffleSettle", 150);
+      await new Promise(r => setTimeout(r, 150));
+
+      wrap.classList.remove("active");
+      stackA.style.animation = "none";
+      stackB.style.animation = "none";
+      
+      // 最後に少しだけ静止 (0.1s)
+      await new Promise(r => setTimeout(r, 100));
     }
 
     /* ===== チップ演出制御 ===== */
@@ -4685,10 +4823,19 @@ $("btnPracToTitle").onclick = () => {
         }
       }
 
-      setTimeout(()=>{ 
-        // UIロック（アニメーション全体の時間分）
+      setTimeout(async ()=>{ 
+        // エンジンからリシャッフルが必要かを確認
+        const shoe = state.shoe || {};
+        if (shoe.reshuffleSoon) {
+          // UIロックを延長
+          lockUI(1200 + 450 * 4 + 200);
+          await performShuffleAnimation();
+        } else {
+          // 通常のUIロック（アニメーション全体の時間分）
+          lockUI(450 * 4 + 200);
+        }
+
         const DEAL_STEP_MS = 450; // 各ステップの間隔
-        lockUI(DEAL_STEP_MS * 4 + 200);
 
         // アニメーションキャッシュをリセット（新しいラウンド用）
         prevDealerCards = [];
