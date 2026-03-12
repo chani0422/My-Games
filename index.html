@@ -3128,27 +3128,26 @@ function setPause(paused) {
 
     // カード文字列からスコアを計算するヘルパー関数
     function calcCardScore(cards, asString = false) {
-      let total = 0;
-      let aces = 0;
+      let hardTotal = 0;
+      let aceCount = 0;
       for (const c of cards) {
         if (c === "?") continue;
         const rank = c.replace(/[♠♥♦♣]/g, "").trim();
-        if (rank === "A") { aces++; total += 11; }
-        else if (["K", "Q", "J"].includes(rank)) { total += 10; }
-        else { total += parseInt(rank, 10) || 0; }
+        if (rank === "A") { aceCount++; hardTotal += 1; }
+        else if (["K", "Q", "J"].includes(rank)) { hardTotal += 10; }
+        else { hardTotal += parseInt(rank, 10) || 0; }
       }
       
-      let hardTotal = total;
-      let tempAces = aces;
-      while (hardTotal > 21 && tempAces > 0) { hardTotal -= 10; tempAces--; }
-
-      if (asString && hardTotal < total && total <= 21) {
-        // Aceを11として数えてもバストしない（Softな）状態。
-        // totalがSoftスコア（11含む）、hardTotalがHardスコア（1として数えた最小値）。
-        // 厳密には "HardTotal / SoftTotal" 形式を返す
-        return `${hardTotal} / ${total}`;
+      let softTotal = hardTotal;
+      if (aceCount > 0 && hardTotal + 10 <= 21) {
+        softTotal = hardTotal + 10;
       }
-      return asString ? String(hardTotal) : hardTotal;
+
+      if (asString && softTotal > hardTotal) {
+        // Aceを11として数えてもバストしない（Softな）状態
+        return `${hardTotal} / ${softTotal}`;
+      }
+      return asString ? String(softTotal) : softTotal;
     }
 
 
@@ -4731,11 +4730,15 @@ $("btnPracToTitle").onclick = () => {
             render(); // Step 3: プレイヤー2枚目
 
             initialDealTimer = setTimeout(() => {
-              initialDealStep = 0; // 完了: 全カード表示
-              initialDealTimer = null;
+              initialDealStep = 4; // Step 4: ディーラー2枚目表示
               prevDealerJson = "";
-              prevPlayerJson = "";
-              render(); // Step 4: ディーラー2枚目（完了）
+              render();
+
+              initialDealTimer = setTimeout(() => {
+                initialDealStep = 0; // 完了: 演出許可
+                initialDealTimer = null;
+                render(); 
+              }, DEAL_STEP_MS);
             }, DEAL_STEP_MS);
           }, DEAL_STEP_MS);
         }, DEAL_STEP_MS);
