@@ -3145,6 +3145,7 @@ function setPause(paused) {
 
       if (asString && softTotal > hardTotal) {
         // Aceを11として数えてもバストしない（Softな）状態
+        if (softTotal === 21) return "21"; // 21の場合は固定表示
         return `${hardTotal} / ${softTotal}`;
       }
       return asString ? String(softTotal) : softTotal;
