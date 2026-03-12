@@ -596,6 +596,12 @@ struct Engine {
     bank += amount;
     return OK;
   }
+
+  int force_shuffle() {
+    shoe.rebuild_and_shuffle();
+    return OK;
+  }
+
   // 変更するかもーーーー
   static int floor_to_even(int x) {
     if (x < 0)
@@ -1439,5 +1445,8 @@ int add_funds(int amount) { return bj::g.add_funds(amount); }
 
 EMSCRIPTEN_KEEPALIVE
 int debug_deal_ace() { return bj::g.debug_deal_ace(); }
+
+EMSCRIPTEN_KEEPALIVE
+int force_shuffle() { return bj::g.force_shuffle(); }
 
 } // extern "C"
