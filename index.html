@@ -3505,8 +3505,8 @@ function beginSessionOverFlow(st){
         totalText = "-";
       } else {
         const visibleFaceCards = dealerCards.filter(c => c !== "?");
-        // 常に計算した合計値を表示（Aceがあれば文字列形式で取得）
-        totalText = calcCardScore(visibleFaceCards, true) || "-";
+        // ディーラーは常に最善の合計値を単一で表示（UI簡略化）
+        totalText = calcCardScore(visibleFaceCards, false) || "-";
       }
 
       $("dealerScoreLine").innerHTML = `
@@ -3574,14 +3574,17 @@ function beginSessionOverFlow(st){
       if (initialDealStep > 0 && hands.length > 0) {
         hands = hands.map(h => {
           const limitedCards = (h.cards || []).slice(0, playerVisibleCount);
-          // 表示中カードからスコアを再計算（Soft/Hard形式の文字列を取得）
+          // 配布中も変化を見せるためSoft/Hard形式の文字列を取得
           const limitedScoreStr = calcCardScore(limitedCards, true);
           return { ...h, cards: limitedCards, score: limitedScoreStr };
         });
       } else if (hands.length > 0) {
-        // 通常の状態でも、Aceが含まれる場合は "X / Y" 形式にしたいので再計算
-        hands = hands.map(h => {
-          return { ...h, score: calcCardScore(h.cards || [], true) };
+        hands = hands.map((h, i) => {
+          // 現在操作中のハンドかつプレイヤーターン中のみ「Soft / Hard」形式にする
+          const isActive = (i === state.player.activeHandIndex && state.phase === "playerTurn");
+          // ユーザー要望：Stand（確定）後は有利な数値に一本化
+          const scoreStr = calcCardScore(h.cards || [], isActive);
+          return { ...h, score: scoreStr };
         });
       }
 
