@@ -3470,15 +3470,18 @@ function beginSessionOverFlow(st){
         shownText = "-";
         totalText = "-";
       } else if (initialDealStep > 0) {
-        // 段階表示中: 実際に表示中のカードからスコアを計算
+        // 段階表示中: 実際に表示中のカードだけでスコアを計算
         if (rawDealerCards.length === 0) {
           shownText = "-";
           totalText = "-";
         } else {
           // 表示中のカード（?を除く）のスコアを計算
           const visibleCards = rawDealerCards.filter(c => c !== "?");
+          const hasHidden = rawDealerCards.some(c => c === "?");
           shownText = visibleCards.length > 0 ? calcCardScore(visibleCards) : "-";
-          totalText = state.dealer.holeKnown ? String(state.dealer.score) : "?";
+          // 裏向きカードがまだ配られていなければTotal=Shownと同じ値
+          // 裏向きカードが含まれていればTotal="?"
+          totalText = hasHidden ? "?" : shownText;
         }
       } else {
         shownText = state.dealer.scoreShown;
@@ -3494,8 +3497,8 @@ function beginSessionOverFlow(st){
 
       $("dealerHole").textContent = hideBoard
         ? "-"
-        : (initialDealStep > 0 && rawDealerCards.length === 0)
-          ? "-"
+        : (initialDealStep > 0)
+          ? t("dyn.hole_hidden") // 初期配布中は常に「Hidden」にする
           : (state.dealer.holeKnown ? t("dyn.hole_open") : t("dyn.hole_hidden"));
 
       // --- ディーラーアニメーションロジック ---
@@ -3527,7 +3530,7 @@ function beginSessionOverFlow(st){
         }
       }
       
-      const isDealerAnimating = (dealerShowCount < targetCount);
+      const isDealerAnimating = (dealerShowCount < targetCount) || (initialDealStep > 0);
       // カウントに基づいてカードを切り出す
       const dealerCards = rawDealerCards.slice(0, dealerShowCount);
 
@@ -3607,17 +3610,24 @@ function beginSessionOverFlow(st){
         const box = document.createElement("div");
         box.className = "handBox" + (i === state.player.activeHandIndex ? " active" : "");
 
-        const flags = [];
-        if (h.flags.blackjack) flags.push("BJ");
-        if (h.flags.bust) flags.push("BUST");
-        if (h.flags.doubled) flags.push("DBL");
-        if (h.flags.surrendered) flags.push("SUR");
-        if (h.flags.fromSplit) flags.push("SPLIT");
-        if (h.flags.splitAces) flags.push("A-SPLIT");
+        let flags = [];
+        let badgeClass = "";
+        
+        // 初期配布中はフラグ（BJ等）とバッジ演出を隠す
+        if (initialDealStep > 0) {
+          // 何もしない（空のまま = playing表示）
+        } else {
+          if (h.flags.blackjack) flags.push("BJ");
+          if (h.flags.bust) flags.push("BUST");
+          if (h.flags.doubled) flags.push("DBL");
+          if (h.flags.surrendered) flags.push("SUR");
+          if (h.flags.fromSplit) flags.push("SPLIT");
+          if (h.flags.splitAces) flags.push("A-SPLIT");
 
-        const badgeClass =
-          h.flags.blackjack ? "good" :
-          (h.flags.bust || h.flags.surrendered) ? "bad" : "";
+          badgeClass =
+            h.flags.blackjack ? "good" :
+            (h.flags.bust || h.flags.surrendered) ? "bad" : "";
+        }
 
         const header = document.createElement("div");
         header.className = "row";
@@ -3668,7 +3678,6 @@ const insMode = (state.phase === "offerInsurance");
 if (insMode) {
   // 保険の確認中は、ドックは「はい/いいえ」専用の状態になる
   setDis("btnDeal", true);
-  setDis("btnDebugAce", true);
   setDis("btnHit", !can.insurance);
   setDis("btnStand", !can.insurance);
   setDis("btnDouble", true);
@@ -3678,7 +3687,6 @@ if (insMode) {
   // ベッティングフェーズのロジック
   const forceEnableDeal = ((state.phase === "betting" || state.phase === "roundOver") && state.bank > 0);
   setDis("btnDeal", (!can.deal && !forceEnableDeal) || uiLocked);
-  setDis("btnDebugAce", (!can.deal && !forceEnableDeal) || uiLocked);
 
   setDis("btnHit", !can.hit || uiLocked);
   setDis("btnStand", !can.stand || uiLocked); // Stand もレースコンディション防止でロック？ ユーザーは既にDeal/Hitしてる。
@@ -4660,11 +4668,20 @@ $("btnPracToTitle").onclick = () => {
 
     // Deal / DebugAce
     $("btnDebugAce").onclick = () => {
+      // ポーズメニューを閉じてからDealを実行
+      if(state) callAction("set_paused", 0);
+      if (pausedAt) {
+        pausedTotal += performance.now() - pausedAt;
+        pausedAt = 0;
+      }
+      setPause(false);
+
       $("btnDeal").disabled = true;
       $("btnDebugAce").disabled = true;
       setTimeout(()=>{ 
         lockUI(800); 
-        callAction("debug_deal_ace"); 
+        callAction("debug_deal_ace");
+        $("btnDebugAce").disabled = false; // 再度有効化
       }, 50);
     };
 
