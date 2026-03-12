@@ -3503,8 +3503,8 @@ function beginSessionOverFlow(st){
         const visibleFaceCards = dealerCards.filter(c => c !== "?");
         const hasHidden = dealerCards.some(c => c === "?");
         shownText = visibleFaceCards.length > 0 ? calcCardScore(visibleFaceCards) : "-";
-        // 穴カード（?）がリスト内にあればTotalは"?"。なければTotal=Shown。
-        totalText = hasHidden ? "?" : (state.dealer.holeKnown ? String(state.dealer.score) : shownText);
+        // 穴カード（?）がリスト内にあればTotalは"?"。なければTotal=Shownと同じにする（視覚的な同期を優先）。
+        totalText = hasHidden ? "?" : shownText;
       }
 
       $("dealerScoreLine").innerHTML = `
