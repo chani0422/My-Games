@@ -3497,10 +3497,9 @@ function beginSessionOverFlow(st){
         totalText = "-";
       } else {
         const visibleFaceCards = dealerCards.filter(c => c !== "?");
-        const hasHidden = dealerCards.some(c => c === "?");
         const currentScore = visibleFaceCards.length > 0 ? calcCardScore(visibleFaceCards) : 0;
-        // 穴カード（?）がリスト内にあればTotalは"?"。なければ計算した合計値を表示。
-        totalText = hasHidden ? "?" : (currentScore || "-");
+        // 常に計算した合計値を表示（「?」は出さない）
+        totalText = currentScore || "-";
       }
 
       $("dealerScoreLine").innerHTML = `
