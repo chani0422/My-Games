@@ -3492,24 +3492,19 @@ function beginSessionOverFlow(st){
       const isDealerAnimating = (visibleCount < targetCount) || (initialDealStep > 0);
 
       // --- 3. スコア表示の計算 (表示されているカードのみに基づく) ---
-      let shownText, totalText;
-      if (hideBoard) {
-        shownText = "-";
-        totalText = "-";
-      } else if (visibleCount === 0) {
-        shownText = "-";
+      let totalText;
+      if (hideBoard || visibleCount === 0) {
         totalText = "-";
       } else {
         const visibleFaceCards = dealerCards.filter(c => c !== "?");
         const hasHidden = dealerCards.some(c => c === "?");
-        shownText = visibleFaceCards.length > 0 ? calcCardScore(visibleFaceCards) : "-";
-        // 穴カード（?）がリスト内にあればTotalは"?"。なければTotal=Shownと同じにする（視覚的な同期を優先）。
-        totalText = hasHidden ? "?" : shownText;
+        const currentScore = visibleFaceCards.length > 0 ? calcCardScore(visibleFaceCards) : 0;
+        // 穴カード（?）がリスト内にあればTotalは"?"。なければ計算した合計値を表示。
+        totalText = hasHidden ? "?" : (currentScore || "-");
       }
 
       $("dealerScoreLine").innerHTML = `
         <span class="metaLine">
-          <span class="kv"><span class="k">Shown</span><b class="v">${shownText}</b></span>
           <span class="kv"><span class="k">Total</span><b class="v">${totalText}</b></span>
         </span>
       `;
