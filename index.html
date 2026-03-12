@@ -3450,42 +3450,61 @@ function beginSessionOverFlow(st){
         state.rules.dealerHitSoft17 ? "H17" : "S17"
       ].filter(Boolean).join(" • ") || "-";
 
-      // ディーラー
-      // 初回Deal段階でのディーラーカード表示枚数を決定
-      const dealerVisibleCount = (initialDealStep > 0)
-        ? (initialDealStep >= 2 ? (initialDealStep >= 4 ? 2 : 1) : 0)
-        : undefined; // undefined = 全表示
-
+      // ディーラー描画とスコアの同期ロジック
       const dWrap = $("dealerCards");
-      let rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
+      const rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
+      const targetCount = rawDealerCards.length;
+      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
 
-      // 初回Deal段階中はカード枚数を制限
-      if (dealerVisibleCount !== undefined) {
-        rawDealerCards = rawDealerCards.slice(0, dealerVisibleCount);
+      // --- 1. アニメーションカウンタの更新 ---
+      if (!isRoundOver) {
+        // ラウンド終了以外は即座に全カード表示（ただし初回配布中は除く）
+        if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        dealerShowCount = targetCount;
+      } else {
+        // ラウンド終了時はアニメーションが必要か確認
+        if (dealerShowCount === 0 && targetCount > 0 && !dealerAnimTimer) {
+             dealerShowCount = targetCount;
+        } else if (dealerShowCount < targetCount) {
+             if (!dealerAnimTimer) {
+                 dealerAnimTimer = setTimeout(() => {
+                     dealerShowCount++;
+                     dealerAnimTimer = null;
+                     render(); 
+                 }, 600);
+             }
+        } else {
+             if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        }
       }
 
-      // スコア表示: 初回Deal段階中は表示カードに基づいて計算
+      // --- 2. 視覚的な表示枚数 (visibleCount) の決定 ---
+      let visibleCount = targetCount;
+      if (initialDealStep > 0) {
+        // 初回配布中
+        visibleCount = (initialDealStep >= 2 ? (initialDealStep >= 4 ? 2 : 1) : 0);
+      } else if (isRoundOver) {
+        // 終了後のドロー演出中
+        visibleCount = dealerShowCount;
+      }
+
+      const dealerCards = rawDealerCards.slice(0, visibleCount);
+      const isDealerAnimating = (visibleCount < targetCount) || (initialDealStep > 0);
+
+      // --- 3. スコア表示の計算 (表示されているカードのみに基づく) ---
       let shownText, totalText;
       if (hideBoard) {
         shownText = "-";
         totalText = "-";
-      } else if (initialDealStep > 0) {
-        // 段階表示中: 実際に表示中のカードだけでスコアを計算
-        if (rawDealerCards.length === 0) {
-          shownText = "-";
-          totalText = "-";
-        } else {
-          // 表示中のカード（?を除く）のスコアを計算
-          const visibleCards = rawDealerCards.filter(c => c !== "?");
-          const hasHidden = rawDealerCards.some(c => c === "?");
-          shownText = visibleCards.length > 0 ? calcCardScore(visibleCards) : "-";
-          // 裏向きカードがまだ配られていなければTotal=Shownと同じ値
-          // 裏向きカードが含まれていればTotal="?"
-          totalText = hasHidden ? "?" : shownText;
-        }
+      } else if (visibleCount === 0) {
+        shownText = "-";
+        totalText = "-";
       } else {
-        shownText = state.dealer.scoreShown;
-        totalText = state.dealer.holeKnown ? String(state.dealer.score) : "?";
+        const visibleFaceCards = dealerCards.filter(c => c !== "?");
+        const hasHidden = dealerCards.some(c => c === "?");
+        shownText = visibleFaceCards.length > 0 ? calcCardScore(visibleFaceCards) : "-";
+        // 穴カード（?）がリスト内にあればTotalは"?"。なければTotal=Shown。
+        totalText = hasHidden ? "?" : (state.dealer.holeKnown ? String(state.dealer.score) : shownText);
       }
 
       $("dealerScoreLine").innerHTML = `
@@ -3497,42 +3516,9 @@ function beginSessionOverFlow(st){
 
       $("dealerHole").textContent = hideBoard
         ? "-"
-        : (initialDealStep > 0)
-          ? t("dyn.hole_hidden") // 初期配布中は常に「Hidden」にする
+        : (initialDealStep > 0 || (isRoundOver && !state.dealer.holeKnown))
+          ? t("dyn.hole_hidden")
           : (state.dealer.holeKnown ? t("dyn.hole_open") : t("dyn.hole_hidden"));
-
-      // --- ディーラーアニメーションロジック ---
-      const targetCount = rawDealerCards.length;
-      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
-      //const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
-
-      if (!isRoundOver) {
-        // ラウンド終了以外は即座に全カード表示（同期）
-        if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
-        dealerShowCount = targetCount;
-      } else {
-        // ラウンド終了時はアニメーションが必要か確認
-        if (dealerShowCount === 0 && targetCount > 0 && !dealerAnimTimer) {
-             // 初回ロードでいきなり roundOver だった場合などは早送り
-             dealerShowCount = targetCount;
-        } else if (dealerShowCount < targetCount) {
-             // アニメーション必要
-             if (!dealerAnimTimer) {
-                 dealerAnimTimer = setTimeout(() => {
-                     dealerShowCount++;
-                     dealerAnimTimer = null;
-                     render(); // 次のカードを表示するため再描画トリガー
-                 }, 600);
-             }
-        } else {
-            // アニメーション完了
-             if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
-        }
-      }
-      
-      const isDealerAnimating = (dealerShowCount < targetCount) || (initialDealStep > 0);
-      // カウントに基づいてカードを切り出す
-      const dealerCards = rawDealerCards.slice(0, dealerShowCount);
 
       // ディーラーのキャッシュチェック
 
