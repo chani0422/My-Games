@@ -1095,14 +1095,15 @@
       box-shadow: 0 16px 30px rgba(0,0,0,.28);
       border: 1px solid rgba(255,255,255,.14);
       display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 950;
-      letter-spacing:.02em;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 5px;
       user-select:none;
       position:relative;
       overflow:hidden;
       transform: translate3d(0,0,0);
+      box-sizing: border-box;
+      font-family: "Georgia", serif;
     }
     .cardFace{
       background:
@@ -1111,6 +1112,22 @@
       color:#0e0e10;
       border-color: rgba(0,0,0,.10);
     }
+    .cardFace.red { color: #d32f2f !important; }
+
+    .cardFace .corner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 0.85;
+    }
+    .cardFace .corner.top-left { align-self: flex-start; }
+    .cardFace .corner.bottom-right { 
+      align-self: flex-end; 
+      transform: rotate(180deg);
+    }
+    .cardFace .r { font-size: 15px; font-weight: 900; }
+    .cardFace .s { font-size: 14px; margin-top: -1px; }
+
     .cardFace::after{
       content:"";
       position:absolute;
@@ -3741,8 +3758,14 @@ function beginSessionOverFlow(st){
         if (c === "?"){
           el.className = "cardBack";
         } else {
-          el.className = "cardFace";
-          el.textContent = c;
+          const suitStr = c.slice(-1);
+          const rankStr = c.slice(0, -1);
+          const isRed = (suitStr === "♥" || suitStr === "♦");
+          el.className = "cardFace" + (isRed ? " red" : "");
+          el.innerHTML = `
+            <div class="corner top-left"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+            <div class="corner bottom-right"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+          `;
         }
 
         const isNew = idx >= prevDealerCards.length;
@@ -3871,8 +3894,14 @@ header.innerHTML = `
 
         (h.cards||[]).forEach((cc, idx)=>{
           const ce = document.createElement("div");
-          ce.className = "cardFace";
-          ce.textContent = cc;
+          const suitStr = cc.slice(-1);
+          const rankStr = cc.slice(0, -1);
+          const isRed = (suitStr === "♥" || suitStr === "♦");
+          ce.className = "cardFace" + (isRed ? " red" : "");
+          ce.innerHTML = `
+            <div class="corner top-left"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+            <div class="corner bottom-right"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+          `;
           if (idx >= prevLen) ce.classList.add("dealIn"); // ④A スライド
 
           // B1-2: 階段状に少しずつ上にずらす (2pxずつ)
