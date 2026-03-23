@@ -1050,6 +1050,16 @@
       flex-wrap: wrap; /* 画面が狭い場合は折り返す */
       min-height: 140px; /* カードがない時も高さを確保してレイアウトガタつき防止 */
     }
+    
+    /* Split数に応じた幅調整 */
+    .handArea.split-2 .handBox { flex: 0 1 45%; min-width: 140px; }
+    .handArea.split-3 .handBox { flex: 0 1 30%; min-width: 120px; }
+    .handArea.split-4 .handBox { flex: 0 1 22%; min-width: 100px; }
+
+    @media (max-width: 600px) {
+      .handArea.split-3 .handBox { flex: 0 1 45%; } /* モバイル3枚は2+1 */
+      .handArea.split-4 .handBox { flex: 0 1 45%; } /* モバイル4枚は2x2 */
+    }
 
     /* 練習モード用スタイル */
     #modeBadge {
@@ -1132,7 +1142,7 @@
       transform: rotate(90deg) !important;
       z-index: 5;
       margin-left: -12px !important; /* スケッチと実機のバランスを見て再調整 (半分重なるように) */
-      margin-top: -8px !important;   /* 前のカードのインデックスを避けつつ重ねる */
+      margin-top: -11px !important;   /* 前のカードのインデックスを避けつつ重ねる */
     }
 
     .cardFace::after{
@@ -3819,6 +3829,14 @@ function beginSessionOverFlow(st){
         (!hideBoard && state.player && state.player.hands)
           ? state.player.hands
           : [];
+
+      // B3: Split数に応じたクラス付与
+      if (ph) {
+          ph.classList.remove("split-2", "split-3", "split-4");
+          if (hands.length >= 2) {
+              ph.classList.add("split-" + Math.min(hands.length, 4));
+          }
+      }
 
       // 初回Deal段階でのプレイヤーカード表示枚数を決定
       const playerVisibleCount = (initialDealStep > 0)
