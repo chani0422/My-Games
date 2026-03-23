@@ -1128,6 +1128,11 @@
     .cardFace .r { font-size: 15px; font-weight: 900; }
     .cardFace .s { font-size: 14px; margin-top: 1px; }
 
+    .cardFace.rotated {
+      transform: rotate(90deg) !important;
+      z-index: 5;
+    }
+
     .cardFace::after{
       content:"";
       position:absolute;
@@ -3902,6 +3907,12 @@ header.innerHTML = `
             <div class="corner top-left"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
             <div class="corner bottom-right"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
           `;
+          
+          // B2: Doubleカードの回転 (3枚目)
+          if (h.flags.doubled && idx === 2) {
+            ce.classList.add("rotated");
+          }
+
           if (idx >= prevLen) ce.classList.add("dealIn"); // ④A スライド
 
           // B1-2: 階段状に少しずつ上にずらす (2pxずつ)
