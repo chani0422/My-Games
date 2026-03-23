@@ -3750,6 +3750,9 @@ function beginSessionOverFlow(st){
         if (isNew) el.classList.add("dealIn");
         if (reveal) el.classList.add("flipIn");
 
+        // B1-2: 階段状に少しずつ上にずらす (2pxずつ)
+        el.style.top = (idx * -2) + "px";
+
         dWrap.appendChild(el);
         // dWrap.appendChild(el); //重複
       });
@@ -3871,6 +3874,10 @@ header.innerHTML = `
           ce.className = "cardFace";
           ce.textContent = cc;
           if (idx >= prevLen) ce.classList.add("dealIn"); // ④A スライド
+
+          // B1-2: 階段状に少しずつ上にずらす (2pxずつ)
+          ce.style.top = (idx * -2) + "px";
+
           cards.appendChild(ce);
         });
 
