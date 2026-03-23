@@ -1176,7 +1176,7 @@ struct Engine {
       return false;
     if (!rules.allowSplit)
       return false;
-    if ((int)hands.size() >= 4)
+    if ((int)hands.size() >= 3)
       return false;
     if (hands.empty())
       return false;

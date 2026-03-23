@@ -155,8 +155,7 @@
     .shoe-gauge-container {
       position: absolute;
       left: -24px;
-      top: 50%;
-      transform: translateY(-50%);
+      top: 0;
       width: 14px;
       height: 120px;
       background: rgba(0,0,0,0.4);
@@ -184,7 +183,7 @@
       height: 0%; /* Dynamic */
       background: linear-gradient(0deg, #1a237e, #3f51b5);
       border-radius: 0 0 2px 2px;
-      transition: height 0.4s ease;
+      /* transition無し: アクションごとのレイアウトシフト防止 */
     }
     .shoe-gauge-cut {
       position: absolute;
@@ -1051,6 +1050,16 @@
       flex-wrap: wrap; /* 画面が狭い場合は折り返す */
       min-height: 140px; /* カードがない時も高さを確保してレイアウトガタつき防止 */
     }
+    
+    /* Split数に応じた幅調整 */
+    .handArea.split-2 .handBox { flex: 0 1 45%; min-width: 140px; }
+    .handArea.split-3 .handBox { flex: 0 1 30%; min-width: 120px; }
+    .handArea.split-4 .handBox { flex: 0 1 22%; min-width: 100px; }
+
+    @media (max-width: 600px) {
+      .handArea.split-3 .handBox { flex: 0 1 45%; } /* モバイル3枚は2+1 */
+      .handArea.split-4 .handBox { flex: 0 1 45%; } /* モバイル4枚は2x2 */
+    }
 
     /* 練習モード用スタイル */
     #modeBadge {
@@ -1073,9 +1082,19 @@
 
     .cards{
       display:flex;
-      gap:10px;
-      flex-wrap:wrap;
+      gap:0;
+      flex-wrap:nowrap;
       margin-top:10px;
+      padding-left: 0;
+    }
+
+    .cards > .cardFace,
+    .cards > .cardBack {
+      margin-left: -24px; /* カード幅48pxの半分重ねる */
+    }
+    .cards > .cardFace:first-child,
+    .cards > .cardBack:first-child {
+      margin-left: 0;
     }
 
     /* カードの見た目: ⑧A (写真風) */
@@ -1086,14 +1105,15 @@
       box-shadow: 0 16px 30px rgba(0,0,0,.28);
       border: 1px solid rgba(255,255,255,.14);
       display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 950;
-      letter-spacing:.02em;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 5px;
       user-select:none;
       position:relative;
       overflow:hidden;
       transform: translate3d(0,0,0);
+      box-sizing: border-box;
+      font-family: "Georgia", serif;
     }
     .cardFace{
       background:
@@ -1102,6 +1122,29 @@
       color:#0e0e10;
       border-color: rgba(0,0,0,.10);
     }
+    .cardFace.red { color: #d32f2f !important; }
+
+    .cardFace .corner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.0;
+    }
+    .cardFace .corner.top-left { align-self: flex-start; }
+    .cardFace .corner.bottom-right { 
+      align-self: flex-end; 
+      transform: rotate(180deg);
+    }
+    .cardFace .r { font-size: 15px; font-weight: 900; }
+    .cardFace .s { font-size: 14px; margin-top: 1px; }
+
+    .cardFace.rotated {
+      transform: rotate(90deg) !important;
+      z-index: 5;
+      margin-left: -12px !important; /* スケッチと実機のバランスを見て再調整 (半分重なるように) */
+      margin-top: -11px !important;   /* 前のカードのインデックスを避けつつ重ねる */
+    }
+
     .cardFace::after{
       content:"";
       position:absolute;
@@ -3732,14 +3775,23 @@ function beginSessionOverFlow(st){
         if (c === "?"){
           el.className = "cardBack";
         } else {
-          el.className = "cardFace";
-          el.textContent = c;
+          const suitStr = c.slice(-1);
+          const rankStr = c.slice(0, -1);
+          const isRed = (suitStr === "♥" || suitStr === "♦");
+          el.className = "cardFace" + (isRed ? " red" : "");
+          el.innerHTML = `
+            <div class="corner top-left"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+            <div class="corner bottom-right"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+          `;
         }
 
         const isNew = idx >= prevDealerCards.length;
         const reveal = (prev === "?" && c !== "?");
         if (isNew) el.classList.add("dealIn");
         if (reveal) el.classList.add("flipIn");
+
+        // B1-2: 階段状に少しずつ上にずらす (2pxずつ)
+        el.style.top = (idx * -2) + "px";
 
         dWrap.appendChild(el);
         // dWrap.appendChild(el); //重複
@@ -3777,6 +3829,14 @@ function beginSessionOverFlow(st){
         (!hideBoard && state.player && state.player.hands)
           ? state.player.hands
           : [];
+
+      // B3: Split数に応じたクラス付与
+      if (ph) {
+          ph.classList.remove("split-2", "split-3", "split-4");
+          if (hands.length >= 2) {
+              ph.classList.add("split-" + Math.min(hands.length, 4));
+          }
+      }
 
       // 初回Deal段階でのプレイヤーカード表示枚数を決定
       const playerVisibleCount = (initialDealStep > 0)
@@ -3859,9 +3919,25 @@ header.innerHTML = `
 
         (h.cards||[]).forEach((cc, idx)=>{
           const ce = document.createElement("div");
-          ce.className = "cardFace";
-          ce.textContent = cc;
+          const suitStr = cc.slice(-1);
+          const rankStr = cc.slice(0, -1);
+          const isRed = (suitStr === "♥" || suitStr === "♦");
+          ce.className = "cardFace" + (isRed ? " red" : "");
+          ce.innerHTML = `
+            <div class="corner top-left"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+            <div class="corner bottom-right"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+          `;
+          
+          // B2: Doubleカードの回転 (3枚目)
+          if (h.flags.doubled && idx === 2) {
+            ce.classList.add("rotated");
+          }
+
           if (idx >= prevLen) ce.classList.add("dealIn"); // ④A スライド
+
+          // B1-2: 階段状に少しずつ上にずらす (2pxずつ)
+          ce.style.top = (idx * -2) + "px";
+
           cards.appendChild(ce);
         });
 
@@ -3922,8 +3998,13 @@ if (insMode) {
       if(btnSur) { btnSur.style.display = "flex"; btnSur.disabled = !can.surrender; }
       if(btnEven) btnEven.style.display = "none";
   }
+} else {
+  // insMode以外: Even Moneyボタンを非表示に戻し、サレンダーを復元
+  const btnSur = $("btnSurrender");
+  const btnEven = $("btnEvenMoney");
+  if(btnEven) { btnEven.style.display = "none"; btnEven.disabled = true; }
+  if(btnSur) btnSur.style.display = "flex";
 }
-// サイドパネルロジック削除済
 
       // ラウンドが終わった瞬間だけ履歴に追加
       pushHistoryEntry(state);
@@ -4068,11 +4149,15 @@ if (insMode){
   
   const mx = state.insurance.max|0;
   $("insHintOverlay").textContent = t("js.ins_hint", mx);
-  // Insurance額はmax固定のため入力フォームは不要
+
+  // Even Moneyが可能な場合のみサイドパネルのボタンを表示
+  const showEvenIns = !!can.evenMoney;
+  if($("insSideBox")) $("insSideBox").style.display = showEvenIns ? "block" : "none";
 
 } else {
   // offerInsurance以外: オーバーレイを隠す
   $("overlayInsurance").classList.remove("show");
+  if($("insSideBox")) $("insSideBox").style.display = "none";
 }
 
 
