@@ -155,8 +155,7 @@
     .shoe-gauge-container {
       position: absolute;
       left: -24px;
-      top: 50%;
-      transform: translateY(-50%);
+      top: 0;
       width: 14px;
       height: 120px;
       background: rgba(0,0,0,0.4);
@@ -184,7 +183,7 @@
       height: 0%; /* Dynamic */
       background: linear-gradient(0deg, #1a237e, #3f51b5);
       border-radius: 0 0 2px 2px;
-      transition: height 0.4s ease;
+      /* transition無し: アクションごとのレイアウトシフト防止 */
     }
     .shoe-gauge-cut {
       position: absolute;
@@ -1073,9 +1072,19 @@
 
     .cards{
       display:flex;
-      gap:10px;
-      flex-wrap:wrap;
+      gap:0;
+      flex-wrap:nowrap;
       margin-top:10px;
+      padding-left: 0;
+    }
+
+    .cards > .cardFace,
+    .cards > .cardBack {
+      margin-left: -24px; /* カード幅48pxの半分重ねる */
+    }
+    .cards > .cardFace:first-child,
+    .cards > .cardBack:first-child {
+      margin-left: 0;
     }
 
     /* カードの見た目: ⑧A (写真風) */
@@ -3922,8 +3931,13 @@ if (insMode) {
       if(btnSur) { btnSur.style.display = "flex"; btnSur.disabled = !can.surrender; }
       if(btnEven) btnEven.style.display = "none";
   }
+} else {
+  // insMode以外: Even Moneyボタンを非表示に戻し、サレンダーを復元
+  const btnSur = $("btnSurrender");
+  const btnEven = $("btnEvenMoney");
+  if(btnEven) { btnEven.style.display = "none"; btnEven.disabled = true; }
+  if(btnSur) btnSur.style.display = "flex";
 }
-// サイドパネルロジック削除済
 
       // ラウンドが終わった瞬間だけ履歴に追加
       pushHistoryEntry(state);
@@ -4068,11 +4082,15 @@ if (insMode){
   
   const mx = state.insurance.max|0;
   $("insHintOverlay").textContent = t("js.ins_hint", mx);
-  // Insurance額はmax固定のため入力フォームは不要
+
+  // Even Moneyが可能な場合のみサイドパネルのボタンを表示
+  const showEvenIns = !!can.evenMoney;
+  if($("insSideBox")) $("insSideBox").style.display = showEvenIns ? "block" : "none";
 
 } else {
   // offerInsurance以外: オーバーレイを隠す
   $("overlayInsurance").classList.remove("show");
+  if($("insSideBox")) $("insSideBox").style.display = "none";
 }
 
 
