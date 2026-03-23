@@ -1131,8 +1131,8 @@
     .cardFace.rotated {
       transform: rotate(90deg) !important;
       z-index: 5;
-      margin-left: 8px !important;  /* スケッチに合わせて大幅に右へ (デフォルト-24) */
-      margin-top: -18px !important; /* スケッチに合わせてより上へ */
+      margin-left: -12px !important; /* スケッチと実機のバランスを見て再調整 (半分重なるように) */
+      margin-top: -8px !important;   /* 前のカードのインデックスを避けつつ重ねる */
     }
 
     .cardFace::after{
