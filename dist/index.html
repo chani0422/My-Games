@@ -42,17 +42,82 @@
 
     body{
       margin:0;
+      /* Safe Area & Touch Action */
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      touch-action: manipulation;
+      
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
       color:var(--text);
       overflow-x:hidden;
 
-      /* casino ambience */
+      /* カジノの雰囲気 */
       background:
         radial-gradient(1400px 920px at 50% -25%, rgba(255,223,138,.22), transparent 62%),
         radial-gradient(980px 760px at 15% 10%, rgba(55,214,122,.12), transparent 62%),
         radial-gradient(980px 760px at 85% 12%, rgba(216,177,90,.12), transparent 64%),
         radial-gradient(1200px 900px at 50% 120%, rgba(0,0,0,.62), transparent 62%),
         linear-gradient(180deg, #03120a, #052414 40%, #07351a);
+    }
+
+    /* ===== チップ吸い込み演出用 CSS ===== */
+    .chip-particle {
+      position: fixed;
+      width: 18px;
+      height: 18px;
+      background: var(--gold);
+      border: 2px solid var(--gold2);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1000;
+      box-shadow: 0 0 6px var(--gold);
+      will-change: transform, opacity;
+      opacity: 0;
+    }
+
+    @keyframes chipFly {
+      0% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+        transform: translate(var(--ox), var(--oy)) scale(1.1);
+      }
+      /* 0.0s - 0.5s: テーブル中心であふれる (滞留) */
+      50% {
+        transform: translate(calc(var(--ox) * 1.2), calc(var(--oy) * 1.2)) scale(1);
+        opacity: 1;
+      }
+      /* 0.5s - 0.85s: Bankへ移動 */
+      85% {
+        transform: translate(var(--dx), calc(var(--dy) - var(--arc))) scale(1);
+        opacity: 1;
+      }
+      95% {
+        transform: translate(var(--dx), var(--dy)) scale(0.3);
+        opacity: 0.5;
+      }
+      100% {
+        transform: translate(var(--dx), var(--dy)) scale(0.2);
+        opacity: 0;
+      }
+    }
+
+    .bank-pounce {
+      animation: bankBounce 150ms ease-out;
+    }
+
+    @keyframes bankBounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); filter: brightness(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .chip-particle { display: none !important; }
+      .bank-pounce { animation: none !important; }
     }
 
     body::before, body::after{
@@ -85,6 +150,147 @@
       50% { opacity: 0.5; }
       100% { left: 200%; opacity: 0; }
     }
+
+    /* ===== デッキ残数ゲージ (Shoe Gauge) ===== */
+    .shoe-gauge-container {
+      position: absolute;
+      left: -24px;
+      top: 0;
+      width: 14px;
+      height: 120px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .shoe-gauge-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.05);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .shoe-gauge-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0%; /* Dynamic */
+      background: linear-gradient(0deg, #1a237e, #3f51b5);
+      border-radius: 0 0 2px 2px;
+      /* transition無し: アクションごとのレイアウトシフト防止 */
+    }
+    .shoe-gauge-cut {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: #ff1744;
+      box-shadow: 0 0 4px rgba(255,23,68,0.6);
+      z-index: 2;
+      bottom: 0%; /* Dynamic */
+    }
+    @media (max-width: 600px) {
+      .shoe-gauge-container { left: -18px; width: 10px; height: 100px; }
+    }
+
+    /* ===== シャッフル演出 (Shuffle Animation) ===== */
+    #shuffleWrap {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      display: none; /* JSで制御 */
+      align-items: center;
+      justify-content: center;
+      perspective: 1200px; /* 3D効果用 */
+    }
+    #shuffleWrap.active { display: flex; }
+
+    .shuffle-stack {
+      position: absolute;
+      width: 60px;
+      height: 84px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      background-image: repeating-linear-gradient(0deg, #fff, #fff 2px, #f5f5f5 2px, #f5f5f5 4px); /* カードの積層感 */
+      transform-style: preserve-3d;
+    }
+
+    /* 束A（左/上） */
+    .stack-a { animation: none; transform: translate(0, 0); }
+    /* 束B（右/下） */
+    .stack-b { animation: none; transform: translate(0, 0); }
+
+    @keyframes shuffleGather {
+      0% { transform: translate(-200px, -100px) rotateX(40deg) rotateY(-20deg) scale(0.5); opacity: 0; }
+      100% { transform: translate(0, 0) rotateX(0) rotateY(0) scale(1); opacity: 1; }
+    }
+
+    @keyframes shuffleSplitA {
+      0% { transform: translate(0, 0) rotate(0); }
+      100% { transform: translate(-50px, -30px) rotateX(15deg) rotateY(-15deg); box-shadow: 10px 10px 20px rgba(0,0,0,0.3); }
+    }
+    @keyframes shuffleSplitB {
+      0% { transform: translate(0, 0) rotate(0); }
+      100% { transform: translate(50px, 30px) rotateX(-15deg) rotateY(15deg); box-shadow: -10px -10px 20px rgba(0,0,0,0.3); }
+    }
+
+    @keyframes shuffleInterleaveA {
+      0% { transform: translate(-50px, -30px) rotateX(15deg) rotateY(-15deg); z-index: 1; }
+      15% { transform: translate(5px, -5px) rotateX(5deg) rotateY(0); z-index: 5; }
+      30% { transform: translate(-50px, -30px) rotateX(15deg) rotateY(-15deg); z-index: 1; }
+      45% { transform: translate(5px, -5px) rotateX(5deg) rotateY(0); z-index: 5; }
+      60% { transform: translate(-50px, -30px) rotateX(15deg) rotateY(-15deg); z-index: 1; }
+      75% { transform: translate(5px, -5px) rotateX(5deg) rotateY(0); z-index: 5; }
+      100% { transform: translate(0, 0) rotateX(0) rotateY(0); z-index: 1; }
+    }
+    @keyframes shuffleInterleaveB {
+      0% { transform: translate(50px, 30px) rotateX(-15deg) rotateY(15deg); z-index: 5; }
+      15% { transform: translate(-5px, 5px) rotateX(-5deg) rotateY(0); z-index: 1; }
+      30% { transform: translate(50px, 30px) rotateX(-15deg) rotateY(15deg); z-index: 5; }
+      45% { transform: translate(-5px, 5px) rotateX(-5deg) rotateY(0); z-index: 1; }
+      60% { transform: translate(50px, 30px) rotateX(-15deg) rotateY(15deg); z-index: 5; }
+      75% { transform: translate(-5px, 5px) rotateX(-5deg) rotateY(0); z-index: 1; }
+      100% { transform: translate(0, 0) rotateX(0) rotateY(0); z-index: 5; }
+    }
+
+    @keyframes shuffleCutA {
+      0% { transform: translate(0, 0) rotateX(0); z-index: 1; }
+      50% { transform: translate(30px, 15px) rotateX(10deg) rotateY(5deg); z-index: 10; }
+      100% { transform: translate(0, 0); z-index: 10; }
+    }
+    @keyframes shuffleCutB {
+      0% { transform: translate(0, 0) rotateX(0); z-index: 10; }
+      50% { transform: translate(-30px, -15px) rotateX(-10deg) rotateY(-5deg); z-index: 1; }
+      100% { transform: translate(0, 0); z-index: 1; }
+    }
+
+
+    @keyframes shuffleSettle {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0; }
+    }
+
+    #shufflingText {
+      position: absolute;
+      bottom: 20%;
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--gold);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    #shuffleWrap.active #shufflingText { opacity: 0.8; }
 
     .wrap{
       max-width:1100px;
@@ -144,6 +350,197 @@
       text-overflow:ellipsis;
       text-shadow: 0 18px 40px rgba(0,0,0,.45);
       font-family: var(--font-serif);
+      transition: opacity 0.3s;
+    }
+    .topbar.in-game .brandTxt h1 { display:none; }
+    
+    /* Title screen: hide Round/Time */
+    .topbar:not(.in-game) .stat-round,
+    .topbar:not(.in-game) .stat-time {
+      display: none;
+    }
+
+    /* ========= レベル pill ========= */
+    .pill.stat-level {
+      position: relative;
+      min-width: 90px;
+      overflow: hidden;
+    }
+    .pill.stat-level .xp-bar-bg {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: rgba(255,255,255,.15);
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+    .pill.stat-level .xp-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd700, #ff9800);
+      border-radius: 0 0 var(--radius) var(--radius);
+      transition: width .5s ease;
+    }
+
+    /* タイトル画面のレベル情報カード */
+    .level-info-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,152,0,.08));
+      border: 1px solid rgba(255,215,0,.3);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+    }
+    .level-info-card .level-badge {
+      font-size: 24px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 2px 8px rgba(255,215,0,.4);
+      font-family: var(--font-serif);
+    }
+    .level-info-card .level-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .level-info-card .xp-text {
+      font-size: 12px;
+      color: rgba(255,255,255,.7);
+    }
+    .level-info-card .xp-progress {
+      height: 6px;
+      background: rgba(255,255,255,.12);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .level-info-card .xp-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd700, #ff9800);
+      border-radius: 3px;
+      transition: width .5s ease;
+    }
+
+    /* ポーズメニューのレベル情報 */
+    .pause-level-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      background: rgba(255,215,0,.08);
+      border: 1px solid rgba(255,215,0,.2);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+    }
+    .pause-level-info .level-badge {
+      font-size: 18px;
+      font-weight: 900;
+      color: #ffd700;
+      font-family: var(--font-serif);
+    }
+    .pause-level-info .level-details {
+      flex: 1;
+      font-size: 12px;
+      color: rgba(255,255,255,.7);
+    }
+    .pause-level-info .xp-progress {
+      height: 4px;
+      background: rgba(255,255,255,.12);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .pause-level-info .xp-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd700, #ff9800);
+      border-radius: 2px;
+      transition: width .5s ease;
+    }
+
+    /* レベルアップ演出オーバーレイ */
+    .overlay-levelup {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+    .overlay-levelup.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .overlay-levelup .levelup-modal {
+      text-align: center;
+      animation: levelupBounce .6s ease-out;
+    }
+    .overlay-levelup .levelup-title {
+      font-size: 42px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 4px 20px rgba(255,215,0,.5);
+      font-family: var(--font-serif);
+      letter-spacing: .1em;
+    }
+    .overlay-levelup .levelup-level {
+      font-size: 64px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 4px 20px rgba(255,255,255,.3);
+      font-family: var(--font-serif);
+      margin: 8px 0;
+    }
+    .overlay-levelup .levelup-reward {
+      font-size: 20px;
+      color: #4caf50;
+      font-weight: 700;
+    }
+    @keyframes levelupBounce {
+      0% { transform: scale(.3); opacity: 0; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    /* コンフェッティ */
+    .confetti-piece {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      z-index: 201;
+      pointer-events: none;
+      animation: confettiFall 2s ease-in forwards;
+    }
+    @keyframes confettiFall {
+      0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+    }
+    
+    /* Stats Layout */
+    .stats-container {
+      display:flex; flex-direction:column; align-items:flex-end; gap:2px;
+    }
+    .stats-row {
+      display:flex; gap:6px; align-items:center;
+    }
+    .stats-row.bottom {
+      margin-top:2px;
+    }
+    /* モバイル用2行調整 */
+    @media(max-width:600px){
+      .stats-container { gap:1px; }
+      /* モバイルで過剰なmin-widthを削除 */
+      .pill { min-width:0; width:auto; flex:0 0 auto; padding:4px 6px; justify-content:center; }
+      .pill span { font-size:10px; }
+      .pill b { font-size:11px; }
+      
+      /* コンパクトメニューボタン */
+      .btn.ghost { padding:4px 6px; font-size:10px; flex:1 1 auto; min-width:0; }
+      .stats-row { width:100%; justify-content:flex-end; }
     }
     .sub{
       font-size:12px;
@@ -185,7 +582,7 @@
       border:1px solid var(--border);
       border-radius:999px;
       background: rgba(0,0,0,.20);
-      min-width: 140px;
+      min-width: 100px;
       box-shadow: 0 18px 40px rgba(0,0,0,.22);
     }
     .pill span{font-size:12px;color:var(--muted)}
@@ -214,10 +611,71 @@
       box-shadow: 0 14px 35px rgba(0,0,0,.25);
       font-weight: 900;
       letter-spacing:.06em;
+      touch-action: manipulation;
     }
     .btn:hover{ box-shadow: 0 22px 60px rgba(0,0,0,.32); filter: brightness(1.06); }
     .btn:active{ transform: translateY(1px) scale(.99); }
     .btn[disabled]{ opacity:.40; cursor:not-allowed; box-shadow:none; filter:saturate(.2); }
+
+    /* ===== Help Icon & Tooltip & Modal ===== */
+    .help-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid var(--gold);
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--gold);
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s, background 0.2s;
+      z-index: 10;
+    }
+    .help-icon:hover {
+      opacity: 1;
+      background: rgba(216, 177, 90, 0.2);
+    }
+    
+    .mode-tooltip {
+      position: absolute;
+      bottom: 120%;
+      right: 0;
+      background: rgba(0, 0, 0, 0.9);
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #fff;
+      width: 200px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      text-align: left;
+      line-height: 1.4;
+    }
+    .help-icon:hover .mode-tooltip {
+      opacity: 1;
+    }
+    /* Hide tooltip on mobile/touch */
+    @media (hover: none) {
+      .mode-tooltip { display: none !important; }
+    }
+
+    /* Adjust button for icon */
+    .btn.ctaBig {
+      position: relative;
+      padding-right: 44px; /* Space for help icon */
+    }
     .btn.primary{
       border-color: rgba(216,177,90,.45);
       background:
@@ -295,7 +753,7 @@
       letter-spacing:.02em;
     }
 
-    /* chips = aligned (③A) */
+    /* チップ整列 (③A) */
     .chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-start }
     .chipbtn{
       border:1px solid rgba(216,177,90,.35);
@@ -314,7 +772,7 @@
     .chipbtn:hover{ filter: brightness(1.06) }
     .chipbtn:active{ transform: translateY(1px) scale(.99) }
 
-    /* ===== Screens ===== */
+    /* ===== スクリーン ===== */
     .screen{ display:none; animation: fadeIn .20s ease; }
     .screen.active{ display:block; }
     @keyframes fadeIn{
@@ -322,7 +780,7 @@
       to{ opacity:1; transform:none }
     }
 
-    /* ===== Title hero ===== */
+    /* ===== タイトルヒーロー ===== */
     .titleHero{
       padding:22px 16px;
       text-align:center;
@@ -364,7 +822,7 @@
       letter-spacing:.14em;
     }
 
-    /* ===== Options ===== */
+    /* ===== オプション ===== */
     .optGrid{
       display:grid;
       grid-template-columns: repeat(2, 1fr);
@@ -377,14 +835,68 @@
       border:1px solid rgba(255,255,255,.12);
       border-radius:16px;
       background: rgba(0,0,0,.16);
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      display:flex; flex-direction:column; align-items:flex-start; gap:4px;
     }
-    .opt label{display:flex; gap:10px; align-items:center; cursor:pointer; width:100%}
+    .opt label{display:flex; gap:10px; align-items:center; cursor:pointer; width:100%; font-weight:800; font-size:13px;}
+    .opt .opt-desc{font-size:11px; color:var(--muted2); margin-left:26px;}
     .opt input{ transform: scale(1.1) }
 
-    /* ===== Casino Table (★ここが見た目の本体) ===== */
+    /* ===== モーダル調整 ===== */
+    .modal {
+      max-height: calc(100dvh - 80px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: #0a1f14; /* ダークなフェルトカラー */
+      border: 1px solid var(--gold);
+    }
+    .modal-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+    }
+    .modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1;
+    }
+
+    /* アコーディオン (details/summary) */
+    details {
+      margin-bottom: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+    }
+    summary {
+      padding: 12px;
+      cursor: pointer;
+      font-weight: 900;
+      color: var(--gold2);
+      user-select: none;
+      outline: none;
+    }
+    summary:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    .details-content {
+      padding: 0 12px 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    .details-content b {
+      color: var(--text);
+    }
+
+    /* ===== カジノテーブル (★ここが見た目の本体) ===== */
     .tableStage{
-      perspective: 900px; /* ①B: moderate */
+      perspective: 900px; /* ①B: 控えめに */
     }
     .tableTilt{
       transform: rotateX(12deg); /* ①B */
@@ -393,7 +905,7 @@
 
     .tableFrame{
       padding:14px;
-      border-radius: 28px 28px 380px 380px; /* ②A: half-ish */
+      border-radius: 28px 28px 380px 380px; /* ②A: 半分くらい */
       background:
         radial-gradient(1200px 500px at 50% 0%, rgba(255,223,138,.08), transparent 70%),
         linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.20));
@@ -403,7 +915,7 @@
       overflow:hidden;
     }
 
-    /* matte black rail */
+    /* マットブラックのレール */
     .tableFrame::before{
       content:"";
       position:absolute; inset:0;
@@ -425,7 +937,7 @@
       pointer-events:none;
     }
     .tableFrame::after{
-      /* subtle stitched highlight */
+      /* 微妙なステッチハイライト */
       content:"";
       position:absolute;
       inset:10px 10px 18px 10px;
@@ -449,7 +961,7 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,.30) inset;
     }
 
-    /* felt grain */
+    /* フェルトの質感 */
     .tableSurface::before{
       content:"";
       position:absolute; inset:0;
@@ -461,7 +973,7 @@
       pointer-events:none;
     }
 
-    /* Markings: ②C (B + small rule text) but keep moderate overall (⑤B) */
+    /* マーキング: ②C (B + 小さいルールテキスト) だが全体的に控えめに (⑤B) */
     .markings{
       position:absolute;
       inset:0;
@@ -491,10 +1003,12 @@
       fill:none;
     }
 
-    /* Zones on table */
+    #screenTitle #debugPhase { display:none; }
+
+    /* テーブル上のゾーン */
     .dealerZone{
       position:absolute;
-      top: 70px; /* Shifted down */
+      top: 70px; /* 下にずらす */
       left: 50%;
       transform: translateX(-50%);
       width: min(720px, 92%);
@@ -502,12 +1016,12 @@
     .playerZone{
       position:absolute;
       left: 50%;
-      bottom: 110px; /* Shifted up significantly */
+      bottom: 110px; /* 大幅に上にずらす */
       transform: translateX(-50%);
       width: min(860px, 94%);
     }
 
-    /* boxes */
+    /* ボックス */
     .handBox{
       border:1px solid rgba(255,255,255,.12);
       border-radius:16px;
@@ -518,24 +1032,70 @@
       backdrop-filter: blur(2px);
     }
     .handBox.active{
-      border-color: rgba(55,214,122,.55);
+      /* border-color: rgba(55,214,122,.55); ディーラーに合わせるため削除 */
+      border-color: rgba(255,255,255,.35); /* 緑の代わりに微妙な白ハイライト */
       box-shadow:
-        0 0 0 2px rgba(55,214,122,.12) inset,
+        0 0 0 1px rgba(255,255,255,.10) inset,
         0 26px 70px rgba(0,0,0,.25);
       transform: translateY(-1px);
-      filter: brightness(1.03);
+      /* filter: brightness(1.10); ディーラー色と完全に一致させるため削除 */
     }
 
-    .handArea{ display:flex; flex-direction:column; gap:12px }
+    .handArea{
+      display:flex;
+      flex-direction:row; /* Split時に横に並べる */
+      gap:12px;
+      justify-content: center;
+      align-items: flex-end; /* 底揃え */
+      flex-wrap: wrap; /* 画面が狭い場合は折り返す */
+      min-height: 140px; /* カードがない時も高さを確保してレイアウトガタつき防止 */
+    }
+    
+    /* Split数に応じた幅調整 */
+    .handArea.split-2 .handBox { flex: 0 1 45%; min-width: 140px; }
+    .handArea.split-3 .handBox { flex: 0 1 30%; min-width: 120px; }
+
+    @media (max-width: 600px) {
+      .handArea.split-3 .handBox { flex: 0 1 45%; } /* モバイル3枚は2+1 */
+    }
+
+    /* 練習モード用スタイル */
+    #modeBadge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #fff;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    #modeBadge.practice {
+      background: #4caf50;
+      border-color: #81c784;
+    }
+
 
     .cards{
       display:flex;
-      gap:10px;
-      flex-wrap:wrap;
+      gap:0;
+      flex-wrap:nowrap;
       margin-top:10px;
+      padding-left: 0;
     }
 
-    /* card look: ⑧A (photo-ish) */
+    .cards > .cardFace,
+    .cards > .cardBack {
+      margin-left: -24px; /* カード幅48pxの半分重ねる */
+    }
+    .cards > .cardFace:first-child,
+    .cards > .cardBack:first-child {
+      margin-left: 0;
+    }
+
+    /* カードの見た目: ⑧A (写真風) */
     .cardFace, .cardBack{
       width: 48px;
       height: 68px;
@@ -543,14 +1103,15 @@
       box-shadow: 0 16px 30px rgba(0,0,0,.28);
       border: 1px solid rgba(255,255,255,.14);
       display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 950;
-      letter-spacing:.02em;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 5px;
       user-select:none;
       position:relative;
       overflow:hidden;
       transform: translate3d(0,0,0);
+      box-sizing: border-box;
+      font-family: "Georgia", serif;
     }
     .cardFace{
       background:
@@ -559,6 +1120,29 @@
       color:#0e0e10;
       border-color: rgba(0,0,0,.10);
     }
+    .cardFace.red { color: #d32f2f !important; }
+
+    .cardFace .corner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.0;
+    }
+    .cardFace .corner.top-left { align-self: flex-start; }
+    .cardFace .corner.bottom-right { 
+      align-self: flex-end; 
+      transform: rotate(180deg);
+    }
+    .cardFace .r { font-size: 15px; font-weight: 900; }
+    .cardFace .s { font-size: 14px; margin-top: 1px; }
+
+    .cardFace.rotated {
+      transform: rotate(90deg) !important;
+      z-index: 5;
+      margin-left: -12px !important; /* スケッチと実機のバランスを見て再調整 (半分重なるように) */
+      margin-top: -11px !important;   /* 前のカードのインデックスを避けつつ重ねる */
+    }
+
     .cardFace::after{
       content:"";
       position:absolute;
@@ -577,7 +1161,7 @@
       border-color: rgba(216,177,90,.28);
     }
     .cardBack::before{
-      /* back pattern */
+      /* 裏面パターン */
       content:"";
       position:absolute; inset:10px;
       border-radius: 10px;
@@ -588,7 +1172,7 @@
       opacity:.85;
     }
 
-    /* ④A: slide deal + flip (no extra spin/glow) */
+    /* ④A: スライドディール + フリップ (余分な回転/発光なし) */
     .dealIn{
       animation: dealIn .42s cubic-bezier(.2,.8,.2,1) both;
     }
@@ -633,7 +1217,7 @@
     .banner .msg.lose{ color:#ffd1d1 }
     .banner .msg.neutral{ color:#fff1cc }
 
-    /* ===== Dock (⑩A) ===== */
+    /* ===== ドック (⑩A) ===== */
     .dock{
       position:fixed;
       left: 12px;
@@ -656,7 +1240,7 @@
       border-radius: 14px;
       font-size: 13px;
       display:flex;
-      flex-direction:column; /* Stack text and key hint */
+      flex-direction:column; /* テキストとキーヒントをスタック */
       align-items:center;
       justify-content:center;
       gap:2px;
@@ -668,47 +1252,50 @@
       padding: 2px 6px;
       margin-top:2px;
     }
-    /* Compact grid for 6 buttons -> Dynamic Flex */
+    /* 6ボタン用のコンパクトグリッド -> ダイナミックフレックス */
     .dock.full{
       display: flex !important;
       flex-wrap: wrap !important;
       align-content: stretch !important;
       height: auto !important;
       min-height: 90px;
-      /* Allow growing up to a limit */
+      /* 上限まで拡大許可 */
       max-height: 40vh;
       bottom: calc(12px + env(safe-area-inset-bottom, 0px));
       gap: 12px;
     }
     .dock .btn {
-      flex: 1 1 45%; /* Default: 2 per row. Use 45% to allow gap */
+      flex: 1 1 45%; /* デフォルト: 行あたり2つ。ギャップを考慮して45%を使用 */
       min-height: 72px;
       font-size: 18px !important; /* Larger text */
       font-weight: 800;
-      /* Ensure hidden if disabled per user request */
+      /* ユーザー要望により無効時は非表示にする */
     }
     .dock .btn:disabled {
-      display: none !important;
+      /* display: none !important; */
+      opacity: 0.3 !important;
+      pointer-events: none !important;
+      filter: grayscale(1) !important;
     }
     
     @media (min-width: 600px) {
       .dock.full{
-        /* Desktop: keep showing all? Or follow same logic? 
-           User said "This case" referencing mobile. 
-           But consistency is good. Let's apply dynamic button sizing to desktop too
-           or keep row of 6? 
-           If desktop has plenty of width, 6 buttons in 1 row is fine.
-           But "Selectable only" is a strong request.
+        /* デスクトップ：全て表示し続ける？それとも同じロジックに従う？
+           ユーザーはモバイルを参照して「このケース」と言った。
+           しかし一貫性は良いことだ。デスクトップにも動的ボタンサイズを適用しようか、
+           それとも6つ並びを維持するか？
+           デスクトップに十分な幅があれば、1行に6ボタンで問題ない。
+           しかし「選択可能のみ」は強い要望だ。
         */
         height: 100px;
       }
       .dock .btn {
-        flex: 1 1 auto; /* Fit content on desktop */
+        flex: 1 1 auto; /* デスクトップではコンテンツに合わせる */
         max-width: 300px;
       }
     }
 
-    /* === Insurance dock mode === */
+    /* === インシュランスドックモード === */
 .dock.insMode{
   grid-template-columns: 1fr 1fr;
 }
@@ -729,7 +1316,16 @@
       z-index:60;
       backdrop-filter: blur(10px);
     }
+    .overlay.no-blur{
+      backdrop-filter: none !important;
+      background: rgba(0,0,0,0.20);
+    }
     .overlay.show{ display:flex }
+    .overlay.no-blur .modal {
+      background: rgba(0,0,0,0.80);
+      /* 80%の不透明度が認識できるようにシンプルな背景を使用 */
+      box-shadow: 0 30px 90px rgba(0,0,0,.65);
+    }
     .modal{
       width:min(620px, 100%);
       border-radius: 18px;
@@ -772,9 +1368,24 @@
       left:50%; transform:translateX(-50%);
       bottom: calc(var(--dockH) + 18px + env(safe-area-inset-bottom, 0px));
       display:flex; flex-direction:column; gap:8px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      padding-left: calc(12px + env(safe-area-inset-left));
+      padding-right: calc(12px + env(safe-area-inset-right));
       z-index:99;
       pointer-events:none;
     }
+    /* Normal Mode: Round/Time 非表示 */
+    body[data-mode="normal"] .stat-round,
+    body[data-mode="normal"] .stat-time {
+      display: none !important;
+    }
+    /* CrazyGames SDK "Result not served" 等を非表示 */
+    .overlay .crazygames-error,
+    .overlay [class*="crazygames"] { display: none !important; }
+    /* Touch Targets */
+    .toastWrap .btn, .toastWrap .chipbtn { min-height:44px; min-width:44px; }
+    .toastWrap .opt { min-height:44px; }
+    .toastWrap .opt label { padding:8px 0; }
     .toast{
       pointer-events:none;
       padding:10px 12px;
@@ -799,11 +1410,11 @@
       background: linear-gradient(90deg, rgba(255,223,138,.95), rgba(55,214,122,.90));
     }
     /* =========================
-   VISIBILITY FIX PACK
-   - sharper text
-   - markings behind content
-   - content stays inside frame
-   ========================= */
+       視認性修正パック
+       - テキストをシャープに
+       - マーキングをコンテンツの背面に
+       - コンテンツをフレーム内に収める
+       ========================= */
 
 /* 文字の滲みを減らす（全体） */
 body{
@@ -831,62 +1442,124 @@ body{
 }
 
 /* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める */
-/* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める -> CANCELLED */
+/* absolute配置だと丸枠で見切れがち → 通常フロー + paddingで中に収める -> キャンセル */
 .tableSurface{
-  display: block !important; /* Back to block for absolute children */
+  display: block !important; /* absoluteの子要素のためにブロックに戻す */
   /* flex-direction: column !important; */
   /* justify-content: space-between !important; */
   overflow: hidden;
   position: relative !important;
 }
 
-@media (max-width: 600px) {
-  .tableSurface {
-    /* padding is less relevant for absolute children but keeps frame size */
-    padding: 0 !important; 
-    height: 520px !important; /* Ensure height */
-  }
-}
-    
+    /* ==========================================
+       MOBILE LAYOUT REFACTOR (<= 600px)
+       ========================================== */
     @media (max-width: 600px) {
+      /* テーブル表面を縦並びの通常フローに変更 */
       .tableSurface {
-        padding: 40px 12px 180px !important; /* Increased bottom padding for multi-row dock */
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+        height: auto !important;
+        min-height: 480px !important;
+        padding: 20px 10px 140px !important; /* 下部にドック用の余白 */
+        overflow-y: auto !important;
+        position: relative !important;
       }
+
+      /* ゾーンの絶対配置を解除 */
       .dealerZone, .playerZone {
+        position: relative !important;
+        top: auto !important;
+        bottom: auto !important;
+        left: auto !important;
+        right: auto !important;
+        transform: none !important;
+        width: 100% !important;
         max-width: 100% !important;
+        margin: 0 auto !important;
+      }
+
+      /* ディーラーとプレイヤーの間隔 */
+      .dealerZone {
+        order: 1;
+        margin-bottom: 10px;
+      }
+      .playerZone {
+        order: 3;
+      }
+
+      /* 中央のバナーやエフェクト用スペース */
+      .banner {
+        order: 2;
+        margin: 10px 0;
+        position: relative !important;
+        z-index: 5;
+      }
+
+      /* ハンドエリアの調整 */
+      .handArea {
+        gap: 8px !important;
+      }
+      .handArea.split-3 .handBox { flex: 0 1 45% !important; }
+
+      /* コンパクト表示設定 */
+      .card .bd { padding: 8px !important; }
+      .card .hd { display: none !important; }
+      .divider { margin: 6px 0 !important; }
+
+      /* 操作ドックの安定化 */
+      .dock.full {
+        position: fixed !important;
+        left: 8px !important;
+        right: 8px !important;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+        height: auto !important;
+        min-height: 80px !important;
+        max-height: 35vh !important;
+        padding: 8px !important;
+        gap: 8px !important;
+        z-index: 100 !important;
+      }
+      .dock .btn {
+        min-height: 54px !important;
+        font-size: 16px !important;
+        flex: 1 1 45% !important;
+      }
+      .dock .btn .k { display: none !important; }
+
+      /* 全体ラッパーの底面余白（ドックと重ならないように） */
+      .wrap {
+        padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+      }
+      
+      /* シューゲージを少し調整 */
+      .shoe-gauge-container {
+        left: 4px !important;
+        top: 10px !important;
+        height: 80px !important;
       }
     }
+    /* デスクトップ向けの絶対配置設定 (モバイル以外) */
+    @media (min-width: 600px) {
+      .dealerZone, .playerZone {
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 86% !important;
+        max-width: 800px !important;
+      }
+      .dealerZone { top: 110px !important; }
+      .playerZone { bottom: 90px !important; }
 
-/* absolute を解除してセンターに収める */
-/* absolute を解除してセンターに収める -> CANCELLED to restore absolute positioning */
-/* 
-.dealerZone, .playerZone{
-  position: relative !important;
-  top: auto !important; bottom: auto !important; left: auto !important;
-  transform: none !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
-*/
-/* Instead, use absolute but constraint width */
-.dealerZone, .playerZone{
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  width: 86% !important; /* Allow some margin */
-  max-width: 600px !important;
-}
-.dealerZone{ top: 110px !important; } /* Lowered from 70px */
-.playerZone{ bottom: 90px !important; }
-
-/* テーブルの曲率が強すぎると見切れやすい → 少し緩める */
-.tableFrame{
-  border-radius: 28px 28px 280px 280px !important;
-}
-.tableSurface{
-  border-radius: 18px 18px 240px 240px !important;
-  min-height: 620px !important;            /* 余白不足による下切れを防ぐ */
-}
+      .tableFrame {
+        border-radius: 28px 28px 280px 280px !important;
+      }
+      .tableSurface {
+        border-radius: 18px 18px 240px 240px !important;
+        min-height: 620px !important;
+      }
+    }
 
 /* backdrop-filter が文字を滲ませる時があるのでテーブル内は切る */
 .handBox{
@@ -947,7 +1620,7 @@ body{
 #btnMore{ display:none; }
 
   
-    /* ===== Session Over Flow ===== */
+    /* ===== セッション終了フロー ===== */
     .soSplash{
       display:flex;
       flex-direction:column;
@@ -1004,7 +1677,7 @@ body{
       background: rgba(0,0,0,.12);
       padding:10px;
     }
-    /* Must have non-null size for responsive banner */
+    /* レスポンシブバナー用にサイズが必要 */
     #cg-so-banner{
       width: min(520px, 100%);
       height: 90px;
@@ -1017,11 +1690,11 @@ body{
   </style>
 </head>
 
-<!-- CrazyGames SDK v3 (safe init) -->
+<!-- CrazyGames SDK v3 (安全な初期化) -->
 <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script>
-  // Safe wrapper so local development / non-CrazyGames domains won't crash.
-  // Config: Set to false for CrazyGames "Basic Launch" submission.
+  // ローカル開発やCrazyGames以外のドメインでクラッシュしないための安全なラッパー。
+  // 設定: CrazyGames "Basic Launch" 提出用にはfalseに設定。
   const ENABLE_ADS = false;
 
   window.CG = window.CG || {};
@@ -1039,7 +1712,7 @@ body{
       return false;
     }
   };
-// Init on DOMContentLoaded
+// DOMContentLoadedで初期化
 window.CG.p = new Promise((resolve) => {
   window.addEventListener("DOMContentLoaded", async () => {
     const ok = await window.CG.init();
@@ -1050,7 +1723,7 @@ window.CG.p = new Promise((resolve) => {
 </script>
 
 <script>
-  // ---- Idempotent event helpers ----
+  // ---- 冪等イベントヘルパー ----
   window.CG._loadingDepth = 0;
   window.CG._inGameplay = false;
 
@@ -1092,7 +1765,7 @@ window.CG.p = new Promise((resolve) => {
 
 
 </script>
-<script src="loc.js"></script>
+
 
 
 <body>
@@ -1111,49 +1784,105 @@ window.CG.p = new Promise((resolve) => {
     </div>
   </div>
 
-  <div class="stats">
-    <div class="pill"><span data-i18n="stats.bank">Bank</span><b id="bank">-</b></div>
-    <div class="pill"><span data-i18n="stats.round">Round</span><b id="round">-</b></div>
-    <div class="pill"><span data-i18n="stats.time">Time</span><b id="time">-</b></div>
-
-    <button class="btn ghost" id="btnPause" title="Menu" data-i18n="menu.menu">MENU</button>
-    <button class="btn ghost" id="btnHistory" title="History" data-i18n="menu.history">History</button>
-
-    <button class="btn ghost" id="btnRanking" title="Leaderboard" data-i18n="menu.ranking">Ranking</button>
+  <div class="stats-container">
+    <div class="stats-row top">
+      <div class="pill stat-level"><span>Lv</span><b id="levelPill">1</b>
+        <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div></div>
+      </div>
+      <div class="pill"><span data-i18n="stats.bank">Bank</span><b id="bank">-</b></div>
+      <div class="pill stat-round"><span data-i18n="stats.round">Round</span><b id="round">-</b></div>
+      <div class="pill stat-time"><span data-i18n="stats.time">Time</span><b id="time">-</b></div>
+    </div>
+    <div class="stats-row bottom">
+      <button class="btn ghost" id="btnPause" title="Menu" data-i18n="menu.menu">MENU</button>
+      <button class="btn ghost" id="btnHistory" title="History" data-i18n="menu.history">History</button>
+      <button class="btn ghost" id="btnRanking" title="Leaderboard" data-i18n="menu.ranking">Ranking</button>
+    </div>
   </div>
 </div>
 
 
     <!-- TITLE -->
-    <div class="screen active" id="screenTitle">
+    
+  <!-- 練習モード終了オーバーレイ -->
+  <div class="overlay" id="overlayPracticeOver" style="z-index: 100;">
+    <div class="modal" style="text-align:center;">
+      <h2 data-i18n="prac.session_over" style="margin-top:0">Practice Over</h2>
+      <p data-i18n="prac.time_up">Time's up!</p>
+      
+      <div class="ctaRow" style="flex-direction:column; gap:10px; margin-top:20px;">
+<button class="btn" id="btnPracWatchAd">
+          <span data-i18n="prac.ad_again">Watch Ad (+1 Ticket)</span>
+        </button>
+        <button class="btn ghost" id="btnPracToTitle">
+          <span data-i18n="so.to_title">To Title</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 広告確認オーバーレイ -->
+  <div class="overlay" id="overlayAdConfirm" style="z-index: 101;">
+    <div class="modal" style="text-align:center;">
+      <h3 data-i18n="prac.confirm_ad">Watch a video to get a play ticket?</h3>
+      <div class="ctaRow" style="margin-top:20px;">
+        <button class="btn primary" id="btnAdYes" data-i18n="ins.yes">YES</button>
+        <button class="btn ghost" id="btnAdNo" data-i18n="ins.no">NO</button>
+      </div>
+    </div>
+  </div>
+
+<div class="screen active" id="screenTitle">
       <div class="card">
         <div class="titleHero">
           <div class="chipline" data-i18n="title.payout">🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1</div>
           <h2 data-i18n="title.main">Blackjack</h2>
           <p data-i18n="title.sub">ランキングで自己ベスト更新を目指せ！！</p>
 
+          <!-- レベル情報カード -->
+          <div class="level-info-card" id="titleLevelCard">
+            <div class="level-badge" id="titleLevelBadge">Lv 1</div>
+            <div class="level-details">
+              <div class="xp-text" id="titleXpText">XP: 0 / 100 (次のLvまで 100)</div>
+              <div class="xp-progress"><div class="xp-progress-fill" id="titleXpFill" style="width:0%"></div></div>
+            </div>
+          </div>
+
           <div class="ctaRow">
-            <button class="btn primary ctaBig" id="btnStart" disabled data-i18n="title.deal_start">DEAL / START</button>
-            <button class="btn ghost" id="btnHowTitle" data-i18n="title.how">遊び方</button>
+            <!-- 既存のStartボタンを廃止し、2つのモードボタンを設置 -->
+            <button class="btn ctaBig" id="btnModeChallenge">
+              <div style="font-size:16px" data-i18n="mode.challenge">CHALLENGE</div>
+              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="mode.challenge_desc">Ranking Mode</div>
+              <div class="help-icon" data-mode-help="challenge">?
+                <div class="mode-tooltip" data-i18n="mode.help_challenge_tooltip">Ranking Mode (5 min)</div>
+              </div>
+            </button>
+            <button class="btn ctaBig" id="btnModeNormal">
+              <div style="font-size:16px" data-i18n="mode.normal">NORMAL</div>
+              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="mode.normal_desc">Save Bank</div>
+              <div class="help-icon" data-mode-help="normal">?
+                <div class="mode-tooltip" data-i18n="mode.help_normal_tooltip">Chip storage enabled</div>
+              </div>
+            </button>
+            <button class="btn ctaBig" id="btnNormalRevive" style="display:none; border-color:#ff9800;">
+              <div style="font-size:14px">WATCH AD +50000</div>
+              <div class="small" style="font-weight:normal; opacity:.7">Normal復活</div>
+            </button>
+            <button class="btn ctaBig" id="btnModePractice">
+              <div style="font-size:16px" data-i18n="mode.practice">PRACTICE</div>
+              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="prac.desc">Free Play</div>
+              <div class="help-icon" data-mode-help="practice">?
+                <div class="mode-tooltip" data-i18n="mode.help_practice_tooltip">Free practice mode</div>
+              </div>
+            </button>
+          </div>
+          <div class="ctaRow" style="margin-top:12px; justify-content:center;">
+             <button class="btn ghost" id="btnHowTitle" data-i18n="title.how">遊び方</button>
           </div>
         </div>
 
         <div class="bd">
-          <div class="row" style="justify-content:space-between; align-items:flex-end;">
-            <div>
-              <div class="muted" data-i18n="title.bet_hint">Bet（偶数推奨：Insurance = bet/2 で端数回避）</div>
-              <div class="row" style="margin-top:8px;">
-                <input id="betInput" type="number" value="100" step="10" min="10">
-                <div class="chips">
-                  <button class="chipbtn" data-add="10">+10</button>
-                  <button class="chipbtn" data-add="50">+50</button>
-                  <button class="chipbtn" data-add="100">+100</button>
-                  <button class="chipbtn" data-add="200">+200</button>
-                </div>
-              </div>
-              <div class="muted" id="betHint" style="margin-top:6px;"></div>
-            </div>
-          </div>
+            <!-- Bet Input Removed -->
 
           <div class="divider"></div>
 
@@ -1161,18 +1890,45 @@ window.CG.p = new Promise((resolve) => {
              <span data-i18n="title.options">Options（タイトルでON/OFF）</span>
              <button id="btnLangToggle" class="btn ghost" style="font-size:12px; padding:4px 8px;">EN / JP</button>
           </div>
-          <div class="optGrid">
-            <div class="opt"><label><input type="checkbox" id="optDouble" checked> <span data-i18n="opt.double">Double Down</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplit" checked> <span data-i18n="opt.split">Split</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optSurrender" checked> <span data-i18n="opt.surrender">Surrender (Late)</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optInsurance" checked> <span data-i18n="opt.insurance">Insurance</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optEvenMoney" checked> <span data-i18n="opt.even_money">Even Money</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optDAS" checked> <span data-i18n="opt.das">DAS</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optSplitBJ" checked> <span data-i18n="opt.split_bj">Split BJ as BJ</span></label></div>
-            <div class="opt"><label><input type="checkbox" id="optH17" checked> <span data-i18n="opt.h17">Dealer hits Soft 17</span></label></div>
-          </div>
-
-          <div class="divider"></div>
+            <div class="optGrid">
+              <div class="opt">
+                <label><input type="checkbox" id="opt_double" checked> <span data-i18n="opt.double">Double Down</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.double">Double bet, draw 1 card</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_split" checked> <span data-i18n="opt.split">Split</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.split">Split matching ranks into 2 hands</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_surrender" checked> <span data-i18n="opt.surrender">Surrender</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.surrender">Early exit for 50% refund (Late)</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_insurance" checked> <span data-i18n="opt.insurance">Insurance</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.insurance">Insurance vs Dealer Ace (Max bet/2)</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_even_money" checked> <span data-i18n="opt.even_money">Even Money</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.even_money">Instant 1:1 if you have BJ vs Dealer Ace</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_das" checked> <span data-i18n="opt.das">DAS</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.das">Allow Double Down after Splitting</div>
+              </div>
+              <!-- Split BJ as BJ is now always OFF by rule logic, so we hide the toggle -->
+              <div class="opt" style="display:none;">
+                <label><input type="checkbox" id="opt_split_bj"> <span data-i18n="opt.split_bj">Split BJ as BJ</span></label>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_h17" checked> <span data-i18n="opt.h17">H17</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.h17">Dealer draws on Soft 17</div>
+              </div>
+              <div class="opt">
+                <label><input type="checkbox" id="opt_haptic" checked> <span data-i18n="opt.haptic">Haptic</span></label>
+                <div class="opt-desc" data-i18n="opt_sub.haptic">Vibration feedback on/off</div>
+              </div>
+            </div>
+ <div class="divider"></div>
 
           <div class="row" style="justify-content:space-between">
 
@@ -1188,43 +1944,55 @@ window.CG.p = new Promise((resolve) => {
         <div class="card">
           <div class="hd">
             <h2 data-i18n="game.garage">CASINO TABLE</h2>
-            <div class="badge" id="phaseBadge">-</div>
+            <span id="modeBadge" class="badge neutral" style="margin-left:8px; font-size:10px; padding:2px 6px;">-</span>
+            <div class="pill" id="debugPhase" style="display:none; color:#888;"></div>
           </div>
           <div class="bd">
-        <!-- Bet / Info Card (Moved Top) -->
-        <div class="card">
-          <div class="hd">
-            <h2 data-i18n="game.bet_info">BET / INFO</h2>
-            <div class="badge" id="rulesMini">-</div>
-          </div>
-          <div class="bd">
-            <div class="row">
-              <div class="muted" data-i18n="game.bet">Bet</div>
-              <select id="betSelect" style="
-                  padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
-                  background:rgba(0,0,0,.22); color:#fff; font-weight:bold; width:140px;
-                  font-size:16px; outline:none;">
-                <option value="10">10</option>
-                <option value="50">50</option>
-                <option value="100" selected>100</option>
-                <option value="200">200</option>
-                <option value="500">500</option>
-                <option value="1000">1000</option>
-                <option value="9999999">MAX</option>
-              </select>
-              <input id="betInput" type="number" value="100" step="10" style="display:none">
-              <button class="btn" id="btnSetBet" data-i18n="game.set" style="display:none">SET</button>
-            </div>
-            
-            <div class="row chips" style="display:none; margin-top:10px;">
-              <button class="chipbtn" data-add2="10">+10</button>
-              <button class="chipbtn" data-add2="50">+50</button>
-              <button class="chipbtn" data-add2="100">+100</button>
-              <button class="chipbtn" data-add2="200">+200</button>
-            </div>
+            <!-- Bet / Info カード (上に移動) -->
+            <div class="card">
+              <div class="hd">
+                <h2 data-i18n="game.bet_info">BET / INFO</h2>
+                <div class="badge" id="rulesMini">-</div>
+              </div>
+              <div class="bd">
+                <div class="row">
+                  <div class="muted" data-i18n="game.bet">Bet</div>
+                  
+                  <!-- ベット表示 -->
+                  <div style="display:flex; justify-content:center; margin-bottom:8px; width:100%;">
+                     <input id="betInput" type="number" readonly value="1000" style="
+                         padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
+                         background:rgba(0,0,0,.4); color:#fff; font-weight:bold; width:100%;
+                         font-size:20px; text-align:center; outline:none;">
+                  </div>
+
+                  <!-- ベットボタン -->
+                  <style>
+                    .bet-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; width:100%; }
+                    .btn-bet { 
+                       padding:8px 2px; border-radius:8px; border:none; 
+                       background:#444; color:#fff; font-weight:bold; cursor:pointer;
+                       font-size:13px;
+                    }
+                    .btn-bet:active { background:#666; transform:scale(0.95); }
+                    .btn-bet:disabled { opacity:0.5; transform:none; }
+                    .btn-bet.plus { background: #2e7d32; }
+                    .btn-bet.minus { background: #c62828; }
+                  </style>
+                  <div class="bet-grid">
+                      <!-- 上段: プラス -->
+                      <button class="btn-bet plus" onclick="updateBet(1000)">+1K</button>
+                      <button class="btn-bet plus" onclick="updateBet(10000)">+10K</button>
+                      <button class="btn-bet plus" onclick="updateBet(100000)">+100K</button>
+                      <!-- 下段: マイナス -->
+                      <button class="btn-bet minus" onclick="updateBet(-1000)">-1K</button>
+                      <button class="btn-bet minus" onclick="updateBet(-10000)">-10K</button>
+                      <button class="btn-bet minus" onclick="updateBet(-100000)">-100K</button>
+                  </div>
+                </div>
 
             <div class="divider"></div>
-            <!-- More Panel removed -->
+            <!-- Moreパネル削除 -->
             <div class="divider"></div>
 <div class="handBox" id="insSideBox" style="display:none; margin-top:12px;">
   <div class="row" style="justify-content:space-between;">
@@ -1233,9 +2001,7 @@ window.CG.p = new Promise((resolve) => {
   </div>
 
   <div class="row" style="margin-top:10px;">
-    <input id="insAmountSide" type="number" value="0" step="2" min="0">
-    <button class="btn" id="btnInsMaxSide" data-i18n="ins.max">MAX</button>
-    <button class="btn ghost" id="btnInsZeroSide">0</button>
+    <!-- Insurance額はmax固定（手入力不要） -->
   </div>
 
   <div class="muted small" style="margin-top:8px;" data-i18n="ins.dock_hint">
@@ -1247,19 +2013,25 @@ window.CG.p = new Promise((resolve) => {
   </div>
 </div>
 
-            <div class="small" id="debugLine">-</div>
+
           </div>
         </div>
 
         <div class="row">
           <div style="flex:1">
-            <!-- Table (Moved Bottom) -->
+            <!-- テーブル (下に移動) -->
             <div class="tableStage">
               <div class="tableTilt">
                 <div class="tableFrame">
                   <div class="tableSurface">
+                    <!-- シャッフル演出用ラップ -->
+                    <div id="shuffleWrap">
+                      <div class="shuffle-stack stack-a" id="shuffleStackA"></div>
+                      <div class="shuffle-stack stack-b" id="shuffleStackB"></div>
+                      <div id="shufflingText">Shuffling...</div>
+                    </div>
 
-                    <!-- Markings (②C) -->
+                    <!-- マーキング (②C) -->
                     <svg class="markings" viewBox="0 0 1000 650" preserveAspectRatio="none">
                       <path id="arcPayout" d="M140,510 C260,600 740,600 860,510" />
                       <path id="arcInner"  d="M210,475 C320,555 680,555 790,475" />
@@ -1278,13 +2050,13 @@ window.CG.p = new Promise((resolve) => {
                         </textPath>
                       </text>
 
-                      <!-- Small rules line -->
+                      <!-- 小さいルールの行 -->
                       <text x="500" y="100" text-anchor="middle" font-size="20" class="markSmall">
                         DEALER MUST DRAW TO 16 AND STAND ON 17 • 6 DECKS • HOUSE RULES APPLY
                       </text>
                     </svg>
 
-                    <!-- Dealer -->
+                    <!-- ディーラー -->
                     <div class="dealerZone">
                       <div class="handBox" id="dealerBox">
                         <div class="row" style="justify-content:space-between;">
@@ -1296,9 +2068,17 @@ window.CG.p = new Promise((resolve) => {
                         </div>
                         <div class="cards" id="dealerCards"></div>
                       </div>
+
+                      <!-- デッキ残数ゲージ -->
+                      <div class="shoe-gauge-container" id="shoeGaugeContainer" title="Remain Cards">
+                        <div class="shoe-gauge-inner">
+                          <div class="shoe-gauge-fill" id="shoeGaugeFill"></div>
+                          <div class="shoe-gauge-cut" id="shoeGaugeCut"></div>
+                        </div>
+                      </div>
                     </div>
 
-                    <!-- Player -->
+                    <!-- プレイヤー -->
                     <div class="playerZone">
                       <div class="handArea" id="playerHands"></div>
 
@@ -1315,25 +2095,56 @@ window.CG.p = new Promise((resolve) => {
           </div>
         </div>
 
-  <!-- Bottom Dock -->
-  <!-- Bottom Dock -->
+  <!-- 下部ドック -->
+  <!-- 下部ドック -->
   <nav class="dock full" aria-label="main controls">
-    <!-- Row 1 (Mobile) / Left (Desktop) -->
+    <!-- 行1 (モバイル) / 左 (デスクトップ) -->
     <button class="btn primary" id="btnDeal" disabled><span data-i18n="dock.deal">DEAL</span></button>
     <button class="btn" id="btnHit" disabled><span data-i18n="dock.hit">HIT</span></button>
     <button class="btn" id="btnStand" disabled><span data-i18n="dock.stand">STAND</span></button>
     
-    <!-- Row 2 (Mobile) / Right (Desktop) -->
+    <!-- 行2 (モバイル) / 右 (デスクトップ) -->
     <button class="btn" id="btnDouble" disabled><span data-i18n="cmd.double">DBL</span></button>
     <button class="btn" id="btnSplit" disabled><span data-i18n="cmd.split">SPLIT</span></button>
     
     <button class="btn danger" id="btnSurrender" disabled><span data-i18n="cmd.surrender">SURR</span></button>
     <button class="btn" id="btnEvenMoney" disabled style="display:none;"><span data-i18n="cmd.even_money">EVEN</span></button>
   </nav>
+          </div><!-- /bd (CASINO TABLE) -->
+        </div><!-- /card (CASINO TABLE) -->
+      </div><!-- /grid -->
+    </div><!-- /screenGame -->
 
-  <!-- OVERLAYS -->
+  <!-- オーバーレイ -->
 
-  <!-- SESSION OVER FLOW -->
+  <!-- 破産オーバーレイ -->
+  <div class="overlay" id="overlayBankruptcy">
+    <div class="modal">
+      <div class="hd">
+        <b data-i18n="bank.bankruptcy">BANKRUPTCY</b>
+        <span class="badge bad" data-i18n="dyn.lose">LOSE</span>
+      </div>
+      <div class="bd">
+        <div style="text-align:center; padding:20px 0;">
+          <div class="soBig" style="color:#ff4d4d;" data-i18n="bank.bankruptcy">YOU ARE BANKRUPT</div>
+          <div class="soSub" style="margin-top:10px;" data-i18n="bank.revive_hint">チップがなくなりました。<br>広告を見て復活しますか？</div>
+          
+          <div id="adErrorMsg" style="color:#ff4d4d; font-size:12px; margin-top:10px; display:none;" data-i18n="ad.load_fail">
+            広告の読み込みに失敗しました。もう一度お試しください。
+          </div>
+        </div>
+        
+        <div class="soBtns">
+          <button class="btn ghost" id="btnBankruptTitle" data-i18n="cmd.title">TITLE</button>
+          <button class="btn primary ctaBig" id="btnBankruptAd">
+            <span style="font-size:14px">WATCH AD</span><br>+50000
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- セッション終了フロー -->
   <div class="overlay" id="overlaySessionOver">
     <div class="modal">
       <div class="hd">
@@ -1360,13 +2171,7 @@ window.CG.p = new Promise((resolve) => {
           </div>
 
           <div class="row soBtns">
-            <button class="btn ghost" id="btnSOTitle" disabled data-i18n="so.to_title">タイトルへ</button>
-            <button class="btn primary" id="btnSORetry" disabled data-i18n="so.retry">EARN 5000 & RETRY</button>
-          </div>
-          <div class="row soBtns" id="soReviveRow" style="justify-content:center; margin-top:10px; display:none;">
-             <button class="btn good" id="btnSORevive" style="width:100%; font-size:15px; padding:14px;" data-i18n="so.revive">
-               📺 Watch Ad to Revive (+500)
-             </button>
+            <button class="btn primary" id="btnSOTitle" disabled data-i18n="so.to_title">タイトルへ</button>
           </div>
         </div>
       </div>
@@ -1380,10 +2185,22 @@ window.CG.p = new Promise((resolve) => {
         <button class="btn ghost" id="btnClosePause" data-i18n="pause.close">Close</button>
       </div>
       <div class="bd">
+        <!-- ポーズメニュー内レベル情報 -->
+        <div class="pause-level-info" id="pauseLevelInfo">
+          <div class="level-badge" id="pauseLevelBadge">Lv 1</div>
+          <div class="level-details">
+            <div id="pauseXpText">XP: 0 / 100</div>
+            <div class="xp-progress"><div class="xp-progress-fill" id="pauseXpFill" style="width:0%"></div></div>
+          </div>
+          <button class="btn ghost" id="btnAddXP" style="font-size:10px; padding:2px 6px; color:#ffd700; border-color:#ffd700;">+10 XP</button>
+          <button class="btn ghost" id="btnResetLevel" style="font-size:10px; padding:2px 6px; color:#ff5252; border-color:#ff5252;">Reset</button>
+        </div>
         <p class="muted" style="margin-top:0;" data-i18n="pause.msg">
           セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。
         </p>
         <div class="row" style="justify-content:flex-end; gap:10px;">
+          <button class="btn secondary small" id="btnDebugAce" style="font-size:10px; padding:4px 8px;">ACE</button>
+          <button class="btn secondary small" id="btnShuffle" style="font-size:10px; padding:4px 8px;">SHUFFLE</button>
           <button class="btn" id="btnHowPause" data-i18n="title.how">遊び方</button>
           <button class="btn primary" id="btnContinue" data-i18n="pause.continue">Continue</button>
           <button class="btn danger" id="btnQuit" data-i18n="pause.quit">Quit to Title</button>
@@ -1391,62 +2208,53 @@ window.CG.p = new Promise((resolve) => {
       </div>
     </div>
   </div>
-<!-- How to play -->
-<div class="overlay" id="overlayHow">
-  <div class="modal wide">
-    <div class="hd">
-      <b data-i18n="how.title">HOW TO PLAY</b>
-      <button class="btn ghost" id="btnCloseHow" data-i18n="how.close">Close</button>
-    </div>
-    <div class="bd">
-      
-      <div class="rule-sec">
-        <b data-i18n="how.goal_title">GOAL</b>
-        <div data-i18n="how.goal_text">Beat the dealer...</div>
+<!-- 遊び方 -->
+  <div id="overlayHow" class="overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 data-i18n="how.title">HOW TO PLAY</h2>
+        <button class="btn ghost" id="btnCloseHow" data-i18n="how.close">Close</button>
       </div>
-
-      <div class="rule-sec">
-        <b data-i18n="how.val_title">CARD VALUES</b>
-        <div data-i18n="how.val_text">2-10...</div>
-      </div>
-
-      <div class="rule-sec">
-        <b data-i18n="how.act_title">ACTIONS</b>
-        <div class="rule-list">
-          <div class="rule-item" data-i18n="how.act_hit">HIT</div>
-          <div class="rule-item" data-i18n="how.act_stand">STAND</div>
-          <div class="rule-item" data-i18n="how.act_double">DOUBLE</div>
-          <div class="rule-item" data-i18n="how.act_split">SPLIT</div>
-          <div class="rule-item" data-i18n="how.act_surrender">SURRENDER</div>
-          <div class="rule-item" data-i18n="how.act_insurance">INSURANCE</div>
-        </div>
-      </div>
-
-      <div class="row" style="align-items:flex-start; gap:24px; flex-wrap:wrap;">
-        <div class="rule-sec" style="flex:1; min-width:240px;">
-          <b data-i18n="how.dlr_title">DEALER RULES</b>
-          <div data-i18n="how.dlr_text">Dealer must draw...</div>
+      <div class="modal-body">
+        <div style="margin-bottom: 16px;">
+          <div style="font-weight: 900; color: var(--gold); margin-bottom: 4px; font-size: 14px;" data-i18n="how.summary_title">QUICK SUMMARY</div>
+          <p style="margin: 4px 0; font-size: 13px;" data-i18n="how.summary_goal">Goal: Get closer to 21 than the dealer (22+ is a bust/loss).</p>
+          <p style="margin: 4px 0; font-size: 13px;" data-i18n="how.summary_val">Values: 2-10 face value / JQK=10 / A=1 or 11 (auto-best).</p>
+          <p style="margin: 4px 0; font-size: 13px;" data-i18n="how.summary_act">Actions: HIT to draw / STAND to end turn.</p>
+          <p style="margin: 4px 0; font-size: 13px;" data-i18n="how.summary_pay">Payouts: Win 1:1 / BJ 3:2 / Insurance 2:1 / Push 0</p>
         </div>
 
-        <div class="rule-sec" style="flex:1; min-width:240px;">
-          <b data-i18n="how.pay_title">PAYOUTS</b>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; font-size:13px; font-weight:bold;">
-            <span class="pill" style="background:rgba(255,215,0,.15); color:#ffd700; padding:6px 10px;" data-i18n="how.pay_bj">BJ 3:2</span>
-            <span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" data-i18n="how.pay_win">Win 1:1</span>
-            <span class="pill" style="background:rgba(255,255,255,.1); padding:6px 10px;" data-i18n="how.pay_ins">Ins 2:1</span>
-          </div>
-        </div>
-      </div>
+        <details>
+          <summary data-i18n="how.det_action_title">Action Details</summary>
+          <div class="details-content" data-i18n="how.det_action_text">Action details here...</div>
+        </details>
 
-      <div class="muted small" style="margin-top:16px; border-top:1px solid rgba(255,255,255,.1); padding-top:10px;">
-        <span data-i18n="how.note">Note...</span>
-      </div>
+        <details>
+          <summary data-i18n="how.det_dealer_title">Dealer Rules</summary>
+          <div class="details-content" data-i18n="how.det_dealer_text">Dealer rules here...</div>
+        </details>
 
+        <details>
+          <summary data-i18n="how.det_table_title">Table Rules</summary>
+          <div class="details-content" data-i18n="how.det_table_text">Table rules here...</div>
+        </details>
+
+        <details>
+          <summary data-i18n="how.det_terms_title">Terms</summary>
+          <div class="details-content" data-i18n="how.det_terms_text">Terms here...</div>
+        </details>
+
+        <details>
+          <summary data-i18n="how.det_payout_title">Payouts</summary>
+          <div class="details-content" data-i18n="how.det_payout_text">Payout details here...</div>
+        </details>
+
+        <div class="small" style="margin-top: 16px;" data-i18n="how.note">※Buttons are only shown when the action is available.</div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- History -->
+<!-- 履歴 -->
 <div class="overlay" id="overlayHistory">
   <div class="modal">
     <div class="hd">
@@ -1465,7 +2273,23 @@ window.CG.p = new Promise((resolve) => {
   </div>
 </div>
 
-<!-- Ranking -->
+<!-- モード詳細説明オーバーレイ -->
+<div class="overlay" id="overlayModeDesc">
+  <div class="modal">
+    <div class="hd">
+      <b data-i18n="how.title">HOW TO PLAY</b>
+      <button class="btn ghost" id="btnCloseModeDesc" data-i18n="how.close">Close</button>
+    </div>
+    <div class="bd" id="modeDescBody" style="line-height:1.6; padding: 10px 0;">
+      <!-- 動的にコンテンツが挿入される -->
+    </div>
+    <div class="ctaRow" style="justify-content:center; margin-top:10px;">
+      <button class="btn primary" id="btnModeDescClose">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ランキング -->
 <div class="overlay" id="overlayRanking">
   <div class="modal">
     <div class="hd">
@@ -1495,15 +2319,453 @@ window.CG.p = new Promise((resolve) => {
 </div>
 
 
+
+<!-- インシュランス (ぼかし無し) -->
+<div class="overlay no-blur" id="overlayInsurance">
+  <div class="modal">
+    <div class="hd">
+      <b data-i18n="ins.title">INSURANCE?</b>
+    </div>
+    <div class="bd">
+      <div style="text-align:center; padding:20px 0;">
+        <div class="soBig" style="font-size:32px; margin-bottom:10px;">DEALER ACE</div>
+        
+        <p class="muted" style="margin-bottom:20px;">
+          インシュランスに賭けますか？
+        </p>
+
+        <!-- ボタン行: Yes(左), No(右) -->
+        <div class="row" style="justify-content:center; gap:24px; margin-bottom: 20px;">
+          <button class="btn primary big" id="btnInsYes" style="min-width:140px;" data-i18n="ins.yes">YES</button>
+          <button class="btn danger big" id="btnInsNo" style="min-width:140px;" data-i18n="ins.no">NO</button>
+        </div>
+
+        <!-- Insurance額はmax固定のため手入力不要 / ヒント -->
+        <div class="muted small" id="insHintOverlay" style="opacity:0.8;">-</div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
   <div class="toastWrap" id="toastWrap"></div>
+
+  <!-- レベルアップ演出オーバーレイ -->
+  <div class="overlay-levelup" id="overlayLevelUp">
+    <div class="levelup-modal">
+      <div class="levelup-title">LEVEL UP!</div>
+      <div class="levelup-level" id="levelupLevel">Lv 2</div>
+      <div class="levelup-reward" id="levelupReward">+1000 chips</div>
+      <div class="levelup-choices" id="levelupChoices" style="display:none; margin-top:12px; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn primary" id="btnRewardNormal" style="min-width:120px;">+1,000 受け取る</button>
+        <button class="btn" id="btnRewardAd" style="min-width:120px; background:linear-gradient(135deg,#ffd700,#ff9800); color:#1a1a2e; font-weight:bold;">🎬 ×5 (+5,000)</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     window.CG?.loadingStart?.();
     let prevPhase = null;
-    
 
-    // ========= Utilities =========
+    // ========= モード管理 (Hoisted) =========
+    const MODE_KEY = "bj_mode";
+    const BANK_KEY_NORMAL = "bj_bank_normal";
+    const HISTORY_KEY_CHALLENGE = "bj_history_challenge";
+    const HISTORY_KEY_NORMAL = "bj_history_normal";
+
+    const PRAC_FREE_KEY = "bj_prac_free_date"; // YYYY-MM-DD (JST)
+    const PRAC_TICKET_KEY = "bj_prac_ticket";    // number
+
+    // ========= XP / レベルシステム =========
+    const XP_KEY = "bj_xp";
+    const LEVEL_KEY = "bj_level";
+    const LEVEL_REWARDED_KEY = "bj_level_rewarded";
+    const LEVEL_PENDING_KEY  = "bj_level_pending"; // 未受取り報酬保存用
+    const LEVEL_REWARD_AMOUNT = 1000; // 通常報酬
+    const LEVEL_REWARD_AD     = 5000; // 広告視聴時の報酬
+    // 結果別ベースXP
+    const XP_BLACKJACK = 20;  // ブラックジャック勝ち
+    const XP_WIN       = 10;  // 通常勝ち
+    const XP_PUSH      = 5;   // 引き分け
+    const XP_LOSS      = 3;   // 負け
+    // スケール係数（ベット額によるXP倍率）
+    const XP_SCALE_BJ   = 0.55;
+    const XP_SCALE_WIN  = 0.55;
+    const XP_SCALE_PUSH = 0.35;
+    const XP_SCALE_LOSS = 0.15;
+    const XP_SCALE_CAP  = 3.0; // スケール上限
+
+    let currentMode = "challenge"; // "challenge" | "normal" | "practice"
+    let isAdRequesting = false; // 広告連打防止
+    let xpAwardedRound = -1; // XP二重付与防止（付与済みラウンド番号）
+
+    // 起動時にモード復元
+    const savedMode = localStorage.getItem(MODE_KEY);
+    if (savedMode === "normal" || savedMode === "challenge" || savedMode === "practice") {
+        currentMode = savedMode;
+    }
+    
+    // JST (UTC+9) の日付文字列を取得 "YYYY-MM-DD"
+    function getJstDateStr() {
+       const now = new Date();
+       const jstOffset = 9 * 60; // +9 hours
+       const localOffset = now.getTimezoneOffset(); // minutes (inv sign)
+       // 現在時刻(UTC) + 9時間
+       const jstMs = now.getTime() + (jstOffset + localOffset) * 60000;
+       const jstDate = new Date(jstMs);
+       
+       const y = jstDate.getFullYear();
+       const m = String(jstDate.getMonth()+1).padStart(2,'0');
+       const d = String(jstDate.getDate()).padStart(2,'0');
+       return `${y}-${m}-${d}`;
+    }
+
+    function getPracState() {
+       const today = getJstDateStr();
+       const lastDate = localStorage.getItem(PRAC_FREE_KEY);
+       const freeUsed = (lastDate === today);
+       const tickets = Number(localStorage.getItem(PRAC_TICKET_KEY) || 0);
+       return { today, freeUsed, tickets };
+    }
+
+    function consumePracTicket() {
+       const s = getPracState();
+       if (!s.freeUsed) {
+          // 無料枠消費
+          localStorage.setItem(PRAC_FREE_KEY, s.today);
+          return true;
+       }
+       if (s.tickets > 0) {
+          localStorage.setItem(PRAC_TICKET_KEY, String(s.tickets - 1));
+          return true;
+       }
+       return false;
+    }
+
+    function addPracTicket(n) {
+       const cur = Number(localStorage.getItem(PRAC_TICKET_KEY) || 0);
+       localStorage.setItem(PRAC_TICKET_KEY, String(cur + n));
+       updateModeButtons(); // UI更新
+    }
+
+    // ========= ユーティリティ =========
     const $ = (id)=>document.getElementById(id);
+
+    // Normal モードの所持金を安全に取得（bank=0 で || 5000 に潰されるバグ防止）
+    const MIN_BET = 1000; // 最低ベット額
+    function getNormalBank() {
+        const raw = localStorage.getItem(BANK_KEY_NORMAL);
+        if (raw === null) return 5000; // 初回プレイ
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : 5000;
+    }
+
+    // ========= XP / レベル ヘルパー =========
+    // レベルLから L+1 に必要なXP量（毎レベル+20ずつ増加、Lv1→2は50）
+    function xpNeed(level) {
+      return 30 + 20 * level;
+    }
+
+    // 累積XPからレベル・進捗を算出（累積しきい値方式）
+    function xpToLevelAndProgress(xp) {
+      let level = 1;
+      let cumulative = 0;
+      while (true) {
+        const need = xpNeed(level);
+        if (cumulative + need > xp) {
+          // このレベル内でXPが足りない → 現在レベル
+          return {
+            level: level,
+            xpInLevel: xp - cumulative,  // このレベル内の進捗XP
+            xpNeeded: need               // 次のレベルまでの必要XP
+          };
+        }
+        cumulative += need;
+        level++;
+      }
+    }
+
+    // 後方互換: XPからレベルだけ返す
+    function xpToLevel(xp) {
+      return xpToLevelAndProgress(xp).level;
+    }
+
+    function getXP()  { return Number(localStorage.getItem(XP_KEY) || 0); }
+    function getLevel(){ return xpToLevel(getXP()); }
+
+    // ========= Pending報酬ヘルパー =========
+    function getPendingLevelReward() {
+      try {
+        const raw = localStorage.getItem(LEVEL_PENDING_KEY);
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (obj && typeof obj.levelsUp === "number" && obj.levelsUp > 0) return obj;
+      } catch(e) { console.warn("Invalid pending reward data", e); }
+      return null;
+    }
+    function setPendingLevelReward(obj) {
+      localStorage.setItem(LEVEL_PENDING_KEY, JSON.stringify(obj));
+    }
+    function clearPendingLevelReward() {
+      localStorage.removeItem(LEVEL_PENDING_KEY);
+    }
+    function getLevelRewarded(){ return Number(localStorage.getItem(LEVEL_REWARDED_KEY) || 0); }
+    // ========= XPベット額スケール計算 =========
+    // 全handのbet合計（Split/Double込み）
+    function getTotalBetFromState(st) {
+      if (st && st.hands && st.hands.length > 0) {
+        let total = 0;
+        for (const h of st.hands) total += (h.bet || 0);
+        if (total > 0) return total;
+      }
+      // フォールバック: betInputの値
+      const el = $("betInput") || $("betInGame");
+      return el ? Number(el.value) || MIN_BET : MIN_BET;
+    }
+
+    // ラウンド結果からXPを計算
+    function calcRoundXP(st) {
+      const totalBet = getTotalBetFromState(st);
+      const units = Math.max(1, totalBet / MIN_BET);
+      const risk = Math.log10(units); // 1K→0, 10K→1, 100K→2
+
+      const hasBJ = st.hands && st.hands.some(h => h.flags && h.flags.blackjack);
+      const net = (st.roundResult && st.roundResult.netProfit) || 0;
+
+      let base, k;
+      if (hasBJ && net > 0) {
+        base = XP_BLACKJACK; k = XP_SCALE_BJ;
+      } else if (net > 0) {
+        base = XP_WIN; k = XP_SCALE_WIN;
+      } else if (net === 0) {
+        base = XP_PUSH; k = XP_SCALE_PUSH;
+      } else {
+        base = XP_LOSS; k = XP_SCALE_LOSS;
+      }
+
+      const scale = Math.min(1 + k * risk, XP_SCALE_CAP);
+      return Math.max(1, Math.round(base * scale));
+    }
+
+    // XP付与 → レベルアップ演出 + 報酬チェック
+    function addXP(amount) {
+      if (amount <= 0) return;
+      const oldXP = getXP();
+      const newXP = oldXP + amount;
+      localStorage.setItem(XP_KEY, String(newXP));
+      const newLevel = xpToLevel(newXP);
+      const oldLevel = xpToLevel(oldXP);
+      // レベルが上がった場合
+      if (newLevel > oldLevel) {
+        // チップ報酬（Normalモードのみ）
+        const bonus = awardLevelRewardsIfNeeded(newLevel);
+        // 演出は全モードで発火
+        showLevelUpCelebration(newLevel, bonus);
+        updateLevelUI();
+      }
+    }
+
+    // レベルアップ報酬（Normal Modeのみ）。pending報酬を生成しレベル数を返す
+    // ★ LEVEL_REWARDED_KEYはここでは進めない（受取確定後に進める）
+    function awardLevelRewardsIfNeeded(currentLevel) {
+      if (currentMode !== "normal") return 0;
+      // 既にpendingがあるなら二重生成しない
+      if (getPendingLevelReward()) return 0;
+      let rewarded = getLevelRewarded();
+      if (rewarded === 0) {
+        // 初回: Lv1から開始としてrewarded=1に設定
+        rewarded = 1;
+        localStorage.setItem(LEVEL_REWARDED_KEY, "1");
+      }
+      if (currentLevel <= rewarded) return 0;
+      const levelsUp = currentLevel - rewarded;
+      // pendingをlocalStorageに保存（受取り前にリロードしても復元可能）
+      setPendingLevelReward({
+        fromLevel: rewarded,
+        toLevel: currentLevel,
+        levelsUp: levelsUp,
+        createdAt: Date.now()
+      });
+      return levelsUp;
+    }
+
+    // 報酬チップを実際に加算
+    function applyLevelReward(amount) {
+      if (amount <= 0) return;
+      const bank = getNormalBank();
+      localStorage.setItem(BANK_KEY_NORMAL, String(bank + amount));
+      if (typeof bjApi !== 'undefined' && bjApi && bjApi.add_funds) {
+        bjApi.add_funds(amount);
+      }
+    }
+
+    // ========= レベルUI更新 =========
+    function updateLevelUI() {
+      const xp = getXP();
+      const { level, xpInLevel, xpNeeded } = xpToLevelAndProgress(xp);
+      const pct = xpNeeded > 0 ? (xpInLevel / xpNeeded * 100).toFixed(1) : "0";
+
+      // Normal以外ではレベルUI要素を非表示にする
+      const isNormal = (currentMode === "normal");
+      const isTitle = $("screenTitle")?.classList.contains("active");
+      const showLevel = isNormal || isTitle; // タイトル画面では常に表示
+
+      // topbar pill
+      const statLevel = document.querySelector(".pill.stat-level");
+      if (statLevel) statLevel.style.display = showLevel ? "" : "none";
+      const pillEl = $("levelPill");
+      if (pillEl) pillEl.textContent = String(level);
+      const barEl = $("xpBarFill");
+      if (barEl) barEl.style.width = pct + "%";
+
+      // タイトル画面のレベルカード（タイトル画面では常に表示）
+      const titleCard = $("titleLevelCard");
+      if (titleCard) titleCard.style.display = "";
+      const titleBadge = $("titleLevelBadge");
+      if (titleBadge) titleBadge.textContent = `Lv ${level}`;
+      const titleXpText = $("titleXpText");
+      if (titleXpText) titleXpText.textContent = `XP: ${xpInLevel} / ${xpNeeded} (次のLvまで ${xpNeeded - xpInLevel})`;
+      const titleXpFill = $("titleXpFill");
+      if (titleXpFill) titleXpFill.style.width = pct + "%";
+
+      // ポーズメニューのレベル情報（Normal以外は非表示）
+      const pauseInfo = $("pauseLevelInfo");
+      if (pauseInfo) pauseInfo.style.display = isNormal ? "" : "none";
+      const pauseBadge = $("pauseLevelBadge");
+      if (pauseBadge) pauseBadge.textContent = `Lv ${level}`;
+      const pauseXpText = $("pauseXpText");
+      if (pauseXpText) pauseXpText.textContent = `XP: ${xpInLevel} / ${xpNeeded} (次まで ${xpNeeded - xpInLevel})`;
+      const pauseXpFill = $("pauseXpFill");
+      if (pauseXpFill) pauseXpFill.style.width = pct + "%";
+    }
+
+    // ========= レベルアップ演出 =========
+    let pendingLevelReward = null; // { level, levelsUp } — ユーザー選択待ち
+
+    function showLevelUpCelebration(level, levelsUp) {
+      const overlay = $("overlayLevelUp");
+      if (!overlay) return;
+      $("levelupLevel").textContent = `Lv ${level}`;
+
+      const rewardEl = $("levelupReward");
+      const choicesEl = $("levelupChoices");
+      const normalReward = levelsUp * LEVEL_REWARD_AMOUNT;
+      const adReward = levelsUp * LEVEL_REWARD_AD;
+
+      if (currentMode === "normal" && levelsUp > 0) {
+        // Normalモード: 選択式UI表示
+        if (rewardEl) { rewardEl.textContent = `報酬を選んでください！`; rewardEl.style.display = ""; }
+        if (choicesEl) {
+          choicesEl.style.display = "flex";
+          const btnNormal = $("btnRewardNormal");
+          const btnAd = $("btnRewardAd");
+          if (btnNormal) btnNormal.textContent = `+${normalReward.toLocaleString()} 受け取る`;
+          if (btnAd) btnAd.textContent = `\ud83c\udfac \u00d75 (+${adReward.toLocaleString()})`;
+        }
+        pendingLevelReward = { level, levelsUp };
+      } else {
+        // Normal以外: 報酬なし、自動閉じ
+        if (rewardEl) { rewardEl.textContent = ""; rewardEl.style.display = "none"; }
+        if (choicesEl) choicesEl.style.display = "none";
+        pendingLevelReward = null;
+        setTimeout(() => { overlay.classList.remove("show"); }, 2500);
+      }
+
+      overlay.classList.add("show");
+      spawnConfetti();
+    }
+
+    // 通常報酬受け取り
+    function acceptNormalReward() {
+      const pending = pendingLevelReward || getPendingLevelReward();
+      if (!pending) return;
+      const amount = pending.levelsUp * LEVEL_REWARD_AMOUNT;
+      applyLevelReward(amount);
+      finalizeLevelReward(pending);
+      toast(`+${amount.toLocaleString()} chips`);
+    }
+
+    // 広告視聴でx5報酬
+    function acceptAdReward() {
+      const pending = pendingLevelReward || getPendingLevelReward();
+      if (!pending) return;
+      const amount = pending.levelsUp * LEVEL_REWARD_AD;
+      const btnAd = $("btnRewardAd");
+      if (btnAd) btnAd.disabled = true;
+
+      const callbacks = {
+        adFinished: () => {
+          applyLevelReward(amount);
+          finalizeLevelReward(pending);
+          toast(`\ud83c\udf89 +${amount.toLocaleString()} chips`);
+        },
+        adError: (err) => {
+          console.warn("Ad error (level reward):", err);
+          if (btnAd) btnAd.disabled = false;
+          toast("広告が再生できませんでした");
+        },
+        adStarted: () => { console.log("Level reward ad started"); },
+      };
+
+      try {
+        if (window.CrazyGames?.SDK?.ad?.requestAd) {
+          window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+        } else {
+          // SDK未接続時: デバッグ用即成功
+          console.warn("SDK not ready, simulating ad success (level reward)");
+          setTimeout(callbacks.adFinished, 1000);
+        }
+      } catch (e) {
+        console.error(e);
+        callbacks.adError(e);
+      }
+    }
+
+    // 報酬確定: LEVEL_REWARDED_KEYを進め、pendingをクリアし、UIを閉じる
+    function finalizeLevelReward(pending) {
+      if (pending && pending.toLevel) {
+        localStorage.setItem(LEVEL_REWARDED_KEY, String(pending.toLevel));
+      }
+      clearPendingLevelReward();
+      closeLevelUpOverlay();
+    }
+
+    function closeLevelUpOverlay() {
+      const overlay = $("overlayLevelUp");
+      if (overlay) overlay.classList.remove("show");
+      const choicesEl = $("levelupChoices");
+      if (choicesEl) choicesEl.style.display = "none";
+      const btnAd = $("btnRewardAd");
+      if (btnAd) btnAd.disabled = false;
+      pendingLevelReward = null;
+      updateLevelUI();
+    }
+
+    // 起動時にpending報酬があれば復元表示
+    function restorePendingReward() {
+      if (currentMode !== "normal") return;
+      const pending = getPendingLevelReward();
+      if (!pending) return;
+      pendingLevelReward = pending;
+      showLevelUpCelebration(pending.toLevel, pending.levelsUp);
+    }
+
+    function spawnConfetti() {
+      const colors = ["#ffd700", "#ff9800", "#4caf50", "#2196f3", "#e91e63", "#9c27b0"];
+      for (let i = 0; i < 40; i++) {
+        const piece = document.createElement("div");
+        piece.className = "confetti-piece";
+        piece.style.left = Math.random() * 100 + "vw";
+        piece.style.top = -10 + "px";
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
+        piece.style.animationDuration = (1.5 + Math.random() * 1.5) + "s";
+        piece.style.animationDelay = (Math.random() * 0.5) + "s";
+        document.body.appendChild(piece);
+        // アニメ完了後に削除
+        piece.addEventListener("animationend", () => piece.remove());
+      }
+    }
 
     function toast(msg){
       const w = $("toastWrap");
@@ -1536,6 +2798,22 @@ window.CG.p = new Promise((resolve) => {
       return `${m}:${String(r).padStart(2,"0")}`;
     }
 
+    document.querySelectorAll("button").forEach(b=>{
+      b.addEventListener("click", ()=>{ vibrate(8); });
+    });
+    // チップは <button> であれば既にカバーされているが
+    // 特定の要素で感触を良くするために追加
+    document.querySelectorAll(".chipbtn").forEach(b=>{
+       b.addEventListener("touchstart", ()=>{ vibrate(12); }, {passive:true});
+    });
+
+    // ========= ハプティクス =========
+    function vibrate(ms){
+      if (!$("opt_haptic") || !$("opt_haptic").checked) return;
+      if (typeof navigator.vibrate !== "function") return;
+      try{ navigator.vibrate(ms); } catch(e){}
+    }
+
     function setEngineBadge(text, kind){
       const b = $("engineBadge");
       const t = $("engineText");
@@ -1543,6 +2821,143 @@ window.CG.p = new Promise((resolve) => {
       b.classList.remove("good","bad");
       if (kind) b.classList.add(kind);
     }
+
+    // ===== シャッフル演出制御 =====
+    async function performShuffleAnimation() {
+      const wrap = $("shuffleWrap");
+      const stackA = $("shuffleStackA");
+      const stackB = $("shuffleStackB");
+      if (!wrap || !stackA || !stackB) return;
+
+      wrap.classList.add("active");
+      
+      const setAnim = (el, name, duration, timing = "ease-in-out") => {
+        el.style.animation = "none";
+        el.offsetHeight; // reflow
+        el.style.animation = `${name} ${duration}ms ${timing} forwards`;
+      };
+
+      // 1. Gather (0.2s)
+      setAnim(stackA, "shuffleGather", 200);
+      setAnim(stackB, "shuffleGather", 200);
+      await new Promise(r => setTimeout(r, 200));
+
+      // 2. Split (0.2s)
+      setAnim(stackA, "shuffleSplitA", 200);
+      setAnim(stackB, "shuffleSplitB", 200);
+      await new Promise(r => setTimeout(r, 200));
+
+      // 3. Interleave (0.4s)
+      setAnim(stackA, "shuffleInterleaveA", 400);
+      setAnim(stackB, "shuffleInterleaveB", 400);
+      await new Promise(r => setTimeout(r, 400));
+
+      // 4. Cut (0.15s)
+      setAnim(stackA, "shuffleCutA", 150);
+      setAnim(stackB, "shuffleCutB", 150);
+      await new Promise(r => setTimeout(r, 150));
+
+      // 5. Settle & Hide (0.15s)
+      setAnim(stackA, "shuffleSettle", 150);
+      setAnim(stackB, "shuffleSettle", 150);
+      await new Promise(r => setTimeout(r, 150));
+
+      wrap.classList.remove("active");
+      stackA.style.animation = "none";
+      stackB.style.animation = "none";
+      
+      // 最後に少しだけ静止 (0.1s)
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    /* ===== チップ演出制御 ===== */
+    let isChipAnimating = false;
+    let chipEffectDone = false;
+    let winEffectDone = false;
+    let lastDisplayedRound = -1;
+    let chipCleanupTimer = null;
+
+    function chipAbsorbCleanup(finalBank) {
+      if (!isChipAnimating) return;
+      isChipAnimating = false;
+      if (chipCleanupTimer) { clearTimeout(chipCleanupTimer); chipCleanupTimer = null; }
+
+      // 粒子DOMを全削除
+      document.querySelectorAll(".chip-particle").forEach(el => el.remove());
+
+      // Bank表示を最終値に強制更新
+      const bankEl = $("bank");
+      if (bankEl) {
+        bankEl.textContent = String(finalBank);
+        const pill = bankEl.closest(".pill");
+        if (pill) pill.classList.remove("bank-pounce");
+      }
+    }
+
+    function playChipAbsorb(finalBank) {
+      if (isChipAnimating) return;
+      // reduced-motion 対応
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        $("bank").textContent = String(finalBank);
+        return;
+      }
+
+      isChipAnimating = true;
+
+      const bankEl = $("bank");
+      const bankPill = bankEl.closest(".pill");
+      const table = document.querySelector(".tableSurface");
+      if (!bankPill || !table) {
+        chipAbsorbCleanup(finalBank);
+        return;
+      }
+
+      const fromRect = table.getBoundingClientRect();
+      const toRect = bankPill.getBoundingClientRect();
+
+      const startX = fromRect.left + fromRect.width / 2;
+      const startY = fromRect.top + fromRect.height / 2;
+      const endX = toRect.left + toRect.width / 2;
+      const endY = toRect.top + toRect.height / 2;
+
+      const dx = endX - startX;
+      const dy = endY - startY;
+
+      // 18個の粒子を生成（増量版）
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement("div");
+        p.className = "chip-particle";
+        
+        // 中心から拡散する座標（拡散範囲を拡大）
+        const ox = (Math.random() - 0.5) * 200;
+        const oy = (Math.random() - 0.5) * 200;
+        p.style.left = startX + "px";
+        p.style.top = startY + "px";
+        
+        p.style.setProperty("--ox", `${ox}px`);
+        p.style.setProperty("--oy", `${oy}px`);
+        p.style.setProperty("--dx", `${dx}px`);
+        p.style.setProperty("--dy", `${dy}px`);
+        p.style.setProperty("--arc", "80px"); // 飛行時の弧
+
+        const delay = Math.random() * 80;
+        p.style.animation = `chipFly 1000ms ease-in-out ${delay}ms forwards`;
+        
+        document.body.appendChild(p);
+      }
+
+      // 850ms後にカウントアップとピルバウンス開始 (1000msアニメの85%地点)
+      chipCleanupTimer = setTimeout(() => {
+        const cur = Number(bankEl.textContent) || 0;
+        animateNumber(bankEl, cur, finalBank, 150);
+        bankPill.classList.add("bank-pounce");
+
+        chipCleanupTimer = setTimeout(() => {
+          chipAbsorbCleanup(finalBank);
+        }, 200);
+      }, 850);
+    }
+
 
     function animateNumber(el, from, to, duration=520){
       from = Number(from); to = Number(to);
@@ -1561,7 +2976,9 @@ window.CG.p = new Promise((resolve) => {
       requestAnimationFrame(step);
     }
 
-        // ========= History (localStorage) =========
+
+
+        // ========= 履歴 (localStorage) =========
     const HISTORY_KEY = "bjHistory_v1";
 
     function loadHistory(){
@@ -1611,6 +3028,13 @@ window.CG.p = new Promise((resolve) => {
         bonusApplied: (st.roundResult && "bonusApplied" in st.roundResult) ? st.roundResult.bonusApplied : 0,
       };
 
+      // P1-7: Practiceモードの履歴は金額を0表示
+      if (currentMode === "practice") {
+        entry.bet = 0;
+        entry.net = 0;
+        entry.bank = 0;
+      }
+
       const list = loadHistory();
       list.unshift(entry);          // 新しいものを先頭に
       if (list.length > 100) list.length = 100; // 最大100件
@@ -1633,7 +3057,7 @@ window.CG.p = new Promise((resolve) => {
       if (!box) return;
       const hist = loadHistory();
       if (!hist.length){
-        box.innerHTML = '<div class="small muted">まだ履歴がありません。</div>';
+        box.innerHTML = `<div class="small muted">${t("hist.none")}</div>`;
         return;
       }
 
@@ -1665,7 +3089,7 @@ window.CG.p = new Promise((resolve) => {
       box.innerHTML = html;
     }
 
-    // ========= Engine bjApi =========
+    // ========= エンジン bjApi =========
     // blackjack_ui.js 側で Engine / engineReady / bjApi を用意している想定
     let Engine = null;
     let bjApi = null;
@@ -1679,24 +3103,102 @@ function apiReady(){
 
 
     function syncEngine(){
-      if (apiReady()){
-        setEngineBadge("READY", "good");
-        window.CG?.loadingStop?.();
-        
-        setEngineBadge("READY", "good");
-        $("subLine").textContent = "ready.";
-        $("btnStart").disabled = false;
-        $("btnMore").disabled = false;
+  if (apiReady()){
+    setEngineBadge("READY", "good");
+    window.CG?.loadingStop?.();
+    
+    $("subLine").textContent = "ready.";
+    if($("btnModeChallenge")) $("btnModeChallenge").disabled = false;
+    if($("btnModeNormal")) $("btnModeNormal").disabled = false;
+    if($("btnModePractice")) $("btnModePractice").disabled = false;
 
-        toast("Engine ready!");
-        return;
-      }
-      setEngineBadge("LOADING", null);
-      $("subLine").textContent = "loading engine…";
-      requestAnimationFrame(syncEngine);
+    updateModeButtons();
+
+    // タイトル画面なら Bank を Normal 所持金で確定表示
+    // （refresh() → render() が state.bank を上書きするのを防ぐ）
+    if ($("screenTitle")?.classList.contains("active")) {
+      $("bank").textContent = String(getNormalBank());
     }
 
-    // ========= timer =========
+    toast("Engine ready!");
+    updateLevelUI();
+    return;
+  }
+  // まだ準備できていない場合（通常ここには来ないはずだが念のため）
+  setEngineBadge("LOADING", null);
+  $("subLine").textContent = "loading engine…";
+}
+
+    // イベントリスナで初期化検知
+    window.addEventListener("bj-engine-ready", syncEngine);
+
+    // 既にロード済みの場合のバックアップ
+    window.addEventListener("DOMContentLoaded", ()=>{
+       if(apiReady()) syncEngine();
+    });
+
+// ... (skipping unchanged lines) ...
+
+// セッション終了ボタン（タイトルへ戻るのみ）
+$("btnSOTitle").onclick = ()=> doResetToTitle();
+
+
+// ========= 破産オーバーレイのボタン配線 =========
+// タイトルへ
+$("btnBankruptTitle").onclick = () => {
+  $("overlayBankruptcy").classList.remove("show");
+  doResetToTitle();
+};
+
+// 広告で復活 (+50000 → Normal再開)
+$("btnBankruptAd").onclick = () => {
+  if (isAdRequesting) return;
+  const btn = $("btnBankruptAd");
+  const errEl = $("adErrorMsg");
+  btn.disabled = true;
+  if (errEl) errEl.style.display = "none";
+
+  const callbacks = {
+    adFinished: () => {
+      isAdRequesting = false;
+      btn.disabled = false;
+      // bank=50000 で保存し、Normal自動再開
+      localStorage.setItem(BANK_KEY_NORMAL, "50000");
+      $("overlayBankruptcy").classList.remove("show");
+      // アニメーションキャッシュをリセット
+      prevDealerCards = [];
+      prevPlayerLens = [];
+      prevBank = null;
+      toast("復活しました！ +50000");
+      // doResetToTitleを使わず直接startSessionを呼ぶ
+      // (reset_sessionがbank=5000に上書きする問題を回避)
+      stopTick();
+      window.startSession("normal");
+    },
+    adError: (error) => {
+      isAdRequesting = false;
+      btn.disabled = false;
+      console.warn("Ad Error (bankruptcy):", error);
+      if (errEl) errEl.style.display = "block";
+    },
+  };
+
+  isAdRequesting = true;
+  try {
+    if (window.CrazyGames?.SDK?.ad?.requestAd) {
+      window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+    } else {
+      // SDK未接続時のデバッグ用: 即成功扱い
+      console.warn("SDK not ready, simulating ad success");
+      setTimeout(callbacks.adFinished, 1000);
+    }
+  } catch (e) {
+    console.error(e);
+    callbacks.adError(e);
+  }
+};
+
+    // ========= タイマー =========
     let sessionMs = 300000;
     let startTickAt = 0;
     let pausedAt = 0;
@@ -1743,14 +3245,14 @@ function apiReady(){
       const RB_DEALER_HIT_S17    = 1 << 7;
 
       let m = 0;
-      if ($("optDouble").checked)   m |= RB_ALLOW_DOUBLE;
-      if ($("optSplit").checked)    m |= RB_ALLOW_SPLIT;
-      if ($("optSurrender").checked)m |= RB_ALLOW_SURRENDER;
-      if ($("optInsurance").checked)m |= RB_ALLOW_INSURANCE;
-      if ($("optEvenMoney").checked)m |= RB_ALLOW_EVEN_MONEY;
-      if ($("optDAS").checked)      m |= RB_ALLOW_DAS;
-      if ($("optSplitBJ").checked)  m |= RB_SPLIT_BJ_AS_BJ;
-      if ($("optH17").checked)      m |= RB_DEALER_HIT_S17;
+      if ($("opt_double").checked)   m |= RB_ALLOW_DOUBLE;
+      if ($("opt_split").checked)    m |= RB_ALLOW_SPLIT;
+      if ($("opt_surrender").checked)m |= RB_ALLOW_SURRENDER;
+      if ($("opt_insurance").checked)m |= RB_ALLOW_INSURANCE;
+      if ($("opt_even_money").checked)m |= RB_ALLOW_EVEN_MONEY;
+      if ($("opt_das").checked)      m |= RB_ALLOW_DAS;
+      if ($("opt_split_bj").checked)  m |= RB_SPLIT_BJ_AS_BJ;
+      if ($("opt_h17").checked)      m |= RB_DEALER_HIT_S17;
       return m >>> 0;
     }
 
@@ -1781,8 +3283,11 @@ function goScreen(name){
 
   $("screenTitle").classList.toggle("active", name==="title");
   $("screenGame").classList.toggle("active", willGame);
+  
+  // ゲーム中のタイトルテキスト非表示
+  document.querySelector(".topbar").classList.toggle("in-game", willGame);
 
-  // CrazyGames: gameplay on/off
+  // CrazyGames: ゲームプレイ開始/終了の通知
   if (willGame && !wasGame) window.CG?.gameplayStart?.();
   if (!willGame && wasGame) window.CG?.gameplayStop?.();
 }
@@ -1798,7 +3303,7 @@ function setPause(paused) {
 }
 
 //a
-    // ========= Hold to reset =========
+    // ========= リセット =========
     let resetArmed = false;
     let holdTimer = null;
     let holdStart = 0;
@@ -1806,39 +3311,115 @@ function setPause(paused) {
 
     function doResetToTitle(){
       stopTick();
-      stopTick();
+
+      // ── 画面遷移を先に行う ──
+      // callAction("reset_session") 内で refresh() → render() が呼ばれるため、
+      // 先にタイトル画面に切り替えて isTitle=true にしておく。
+      // これにより render() が state.bank ではなく getNormalBank() を表示する。
+      goScreen("title");
+      delete document.body.dataset.mode;
+      currentMode = "";
+
+      // エンジンにリセットを通知（この中で render() が呼ばれる）
       callAction("reset_session");
+
       $("overlayPause").classList.remove("show");
       $("overlaySessionOver") && $("overlaySessionOver").classList.remove("show");
-      // try{ window.CrazyGames?.SDK?.banner?.clearBanner?.(window.SO?.bannerId || "cg-so-banner"); }catch(e){}
+      $("overlayBankruptcy") && $("overlayBankruptcy").classList.remove("show");
+      $("overlayPracticeOver") && $("overlayPracticeOver").classList.remove("show");
       $("overlayHow").classList.remove("show");
       $("overlayMore") && $("overlayMore").classList.remove("show");
       $("overlayHistory") && $("overlayHistory").classList.remove("show");
-      goScreen("title");
+
+      // ── タイトル画面用UIリセット ──
+      // startSession() が設定したインラインstyleを除去し、
+      // CSSルール (.topbar:not(.in-game) .stat-round/time { display:none })
+      // （上記CSSルールが正しく適用されるようにする）
+      // が正しく効くようにする
+      const roundPill = $("round")?.parentElement;
+      const timePill  = $("time")?.parentElement;
+      const bankPill  = $("bank")?.closest(".pill");
+      const betCard   = $("betInput")?.closest(".card");
+      if (roundPill) roundPill.style.display = "";
+      if (timePill)  timePill.style.display  = "";
+      if (bankPill)  bankPill.style.display  = "";
+      if (betCard)   betCard.style.display   = "";
+
+      // タイトル画面のBankは常にNormal所持金を表示（source of truth）
+      const normalBank = getNormalBank();
+      $("bank").textContent = String(normalBank);
+
+      // ラウンド/残り時間の表示もリセット（CSSで非表示ですが念のため）
+      $("round").textContent = "-";
+      $("time").textContent  = "-";
+
+      // モードボタンの状態を更新
+      updateModeButtons();
+      updateLevelUI();
+
+      // セッションオーバー状態のリセット
+      try { soHideOverlay(); } catch(e) {}
+      window.SO.active = false;
 
       $("subLine").textContent = t("ui.ready");
       toast(t("toast.reset_done"));
-      // animation caches reset
+      // アニメーションキャッシュをリセット
       prevDealerCards = [];
+      prevDealerJson = "";
       prevPlayerLens = [];
+      prevPlayerJson = "";
       prevBank = null;
+      dealerShowCount = 0;
+      if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+      initialDealStep = 0;
+      if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
     }
 
-    // ========= Anim caches =========
+    // ========= アニメーションキャッシュ =========
     let prevBank = null;
     let prevDealerCards = [];
-    let prevDealerJson = ""; // Cache for Dealer
+    let prevDealerJson = ""; // ディーラー用キャッシュ
     let prevPlayerLens = [];
-    let prevPlayerJson = ""; // Cache for Player
+    let prevPlayerJson = ""; // プレイヤー用キャッシュ
     let hideBoardAfterSet = false;   // ← これを追加（グローバル）
 
-    // Dealer Draw Animation State
+    // ディーラー描画アニメーション状態
     let dealerShowCount = 0;
     let dealerAnimTimer = null;
 
+    // 初回Deal段階表示のステップ（0=非アクティブ, 1〜4=各カードの段階）
+    // 1: プレイヤー1枚目, 2: ディーラー1枚目, 3: プレイヤー2枚目, 4: ディーラー2枚目(完了)
+    let initialDealStep = 0;
+    let initialDealTimer = null;
+
+    // カード文字列からスコアを計算するヘルパー関数
+    function calcCardScore(cards, asString = false) {
+      let hardTotal = 0;
+      let aceCount = 0;
+      for (const c of cards) {
+        if (c === "?") continue;
+        const rank = c.replace(/[♠♥♦♣]/g, "").trim();
+        if (rank === "A") { aceCount++; hardTotal += 1; }
+        else if (["K", "Q", "J"].includes(rank)) { hardTotal += 10; }
+        else { hardTotal += parseInt(rank, 10) || 0; }
+      }
+      
+      let softTotal = hardTotal;
+      if (aceCount > 0 && hardTotal + 10 <= 21) {
+        softTotal = hardTotal + 10;
+      }
+
+      if (asString && softTotal > hardTotal) {
+        // Aceを11として数えてもバストしない（Softな）状態
+        if (softTotal === 21) return "21"; // 21の場合は固定表示
+        return `${hardTotal} / ${softTotal}`;
+      }
+      return asString ? String(softTotal) : softTotal;
+    }
 
 
-// ===== Session Over Flow =====
+
+// ===== セッション終了フロー =====
 // 仕様：sessionOverに入ったら
 //   1) 中央に "SESSION OVER!!" を 2秒表示
 //   2) リザルト表示に切替
@@ -1854,7 +3435,7 @@ window.SO = window.SO || {
   adFailSafe:null,
   bannerShown:false,
   bannerId:"cg-so-banner",
-  sessionCount:0, // Counter for sessions
+  sessionCount:0, // セッション回数カウンタ
 };
 
 function soSetView(stage){
@@ -1867,9 +3448,7 @@ function soSetView(stage){
 
 function soSetButtonsEnabled(enabled){
   const b1 = document.getElementById("btnSOTitle");
-  const b2 = document.getElementById("btnSORetry");
   if (b1) b1.disabled = !enabled;
-  if (b2) b2.disabled = !enabled;
 }
 
 function soClearTimers(){
@@ -1928,18 +3507,12 @@ function soFillStats(st){
     stats.appendChild(el);
   });
 
-  // Revive button logic
-  const reviveRow = document.getElementById("soReviveRow");
-  if (st.bank <= 0 && st.session.timeLeftMs > 0 && st.session.round < st.session.roundLimit) {
-      if(reviveRow) reviveRow.style.display = "flex";
-  } else {
-      if(reviveRow) reviveRow.style.display = "none";
-  }
+  // 復活ボタンは削除済み（仕様B: 自然終了では復活不可）
 }
 
 async function soRequestBanner(){
   if (window.SO.bannerShown) return;
-  if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) return; // Ads disabled
+  if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) return; // 広告無効
 
   const wrap = document.getElementById("soBannerWrap");
   if (wrap) wrap.style.display = "none";
@@ -1959,18 +3532,18 @@ function soRequestMidgame(){
   const note = document.getElementById("soAdNote");
 
   if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) {
-     // Ads disabled: skip immediately
+     // 広告無効：即スキップ
     window.SO.adDone = true;
     if (note) note.textContent = "";
     soUpdateLock();
     return;
   }
 
-  // Show ad only every 2nd session (Satisfying user request: "every 2 sessions")
-  // sessionCount is incremented in beginSessionOverFlow.
-  // 1st session: 1 -> skip
-  // 2nd session: 2 -> show
-  // 3rd session: 3 -> skip
+  // 2セッションごとに広告を表示 (ユーザー要望: "every 2 sessions")
+  // sessionCount は beginSessionOverFlow でインクリメントされる
+  // 1回目: 1 -> スキップ
+  // 2回目: 2 -> 表示
+  // 3回目: 3 -> スキップ
   if (window.SO.sessionCount % 2 !== 0){
     console.log("Skip ad (session count: " + window.SO.sessionCount + ")");
     window.SO.adDone = true;
@@ -2003,49 +3576,7 @@ function soRequestMidgame(){
   window.SO.adFailSafe = setTimeout(finish, 15000);
 }
 
-function doRevive(){
-    if (window.SO.adReviveActive) return;
-
-    if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) {
-        // toast("Ads are disabled in this version.");
-        console.log("Ads differred for Basic Launch");
-        return;
-    }
-    window.SO.adReviveActive = true;
-    const btn = document.getElementById("btnSORevive");
-    const origText = btn.textContent;
-    btn.textContent = "Loading Ad...";
-    btn.disabled = true;
-
-    const finish = (success) => {
-        window.SO.adReviveActive = false;
-        btn.textContent = origText;
-        btn.disabled = false;
-        
-        if (success) {
-            callAction("revive", 500); // 500チップで復活
-            soHideOverlay();
-            window.CG?.gameplayStart?.();
-            toast("Revived with 500 chips!");
-        } else {
-            toast("Ad failed. Try again.");
-        }
-    };
-
-    try {
-        const callbacks = {
-          adFinished: () => finish(true),
-          adError: (error) => {
-              console.warn("Reward ad error:", error);
-              finish(false);
-          },
-        };
-        // window.CrazyGames?.SDK?.ad?.requestAd?.("rewarded", callbacks);
-    } catch(e) {
-        console.error(e);
-        finish(false);
-    }
-}
+// doRevive 関数は削除済み（SessionOverでの復活は不可）
 
 function soUpdateLock(){
   const lockNote = document.getElementById("soLockNote");
@@ -2067,36 +3598,51 @@ function soUpdateLock(){
 function beginSessionOverFlow(st){
   if (window.SO.active) return;
   window.SO.active = true;
-  window.SO.adDone = false;
-  window.SO.bannerShown = false;
-  window.SO.sessionCount = (window.SO.sessionCount || 0) + 1; // Increment counter
-  soClearTimers();
+
+  // 練習モードの場合の終了フロー
+  if (currentMode === "practice") {
+      toast(t("prac.time_up")); // "Time's up!"
+      setTimeout(() => {
+          $("overlayPracticeOver").classList.add("show");
+          window.CG?.gameplayStop?.();
+      }, 1000);
+      return;
+  }
+
+  // 結果を見せるためにオーバーレイ表示前に4秒待機
+  toast(t("so.delay"));
+  setTimeout(() => {
+    window.SO.adDone = false;
+    window.SO.bannerShown = false;
+    window.SO.sessionCount = (window.SO.sessionCount || 0) + 1; // カウンタをインクリメント
+    soClearTimers();
 
 
-  const ov = document.getElementById("overlaySessionOver");
-  if (ov) ov.classList.add("show");
-  soSetButtonsEnabled(false);
-  soSetView("splash");
-
-  window.CG?.gameplayStop?.();
-
-  window.SO.splashTimer = setTimeout(()=>{
-    soSetView("results");
-    soFillStats(st);
-
-    window.SO.lockUntil = performance.now() + 5000;
+    const ov = document.getElementById("overlaySessionOver");
+    if (ov) ov.classList.add("show");
     soSetButtonsEnabled(false);
-    soUpdateLock();
+    soSetView("splash");
 
-    soRequestBanner();
-    soRequestMidgame();
+    window.CG?.gameplayStop?.();
 
-    window.SO.unlockTimer = setInterval(soUpdateLock, 100);
+    window.SO.splashTimer = setTimeout(()=>{
+      soSetView("results");
+      soFillStats(st);
+
+      window.SO.lockUntil = performance.now() + 5000;
+      soSetButtonsEnabled(false);
+      soUpdateLock();
+
+      soRequestBanner();
+      soRequestMidgame();
+
+      window.SO.unlockTimer = setInterval(soUpdateLock, 100);
+    }, 2000);
   }, 2000);
 }
 
 
-    // ========= Render =========
+    // ========= 描画処理 =========
     function render(){
 
       function setDis(id, disabled){
@@ -2106,6 +3652,13 @@ function beginSessionOverFlow(st){
 
       if (!state) return;
 
+      // ラウンド番号が変わったら演出フラグをリセット
+      if (state.session && state.session.round !== lastDisplayedRound) {
+        winEffectDone = false;
+        chipEffectDone = false;
+        lastDisplayedRound = state.session.round;
+      }
+
       const phase = state.phase;
       // roundOver / sessionOver 以外のフェーズに移ったらフラグを解除
       if (phase !== "roundOver" && phase !== "sessionOver") {
@@ -2113,24 +3666,53 @@ function beginSessionOverFlow(st){
       }
       const hideBoard =
         hideBoardAfterSet && (phase === "roundOver" || phase === "sessionOver");
-      $("subLine").textContent = `phase: ${state.phase}`;
+      
+      if($("debugPhase")) {
+          $("debugPhase").style.display = "flex"; 
+          $("debugPhase").textContent = "phase: " + state.phase;
+      }
+      
+      if($("subLine") && $("screenGame") && $("screenGame").classList.contains("active")) {
+          $("subLine").textContent = `phase: ${state.phase}`;
+      }
 
-      // Bank anim
+      // タイトル画面判定
+      const isTitle = $("screenTitle")?.classList.contains("active");
+
+      // 所持金アニメーション
       const bankEl = $("bank");
       const bankPill = bankEl.closest(".pill");
       const newBank = Number(state.bank);
-      if (prevBank === null){
-        bankEl.textContent = String(newBank);
-      } else if (prevBank !== newBank){
-        animateNumber(bankEl, prevBank, newBank, 520);
-        bankPill.classList.remove("bankFlash"); void bankPill.offsetWidth; bankPill.classList.add("bankFlash");
+      
+      if (isTitle) {
+          // タイトル画面: 常にNormal所持金を表示（state.bankで上書きしない）
+          const nb = getNormalBank();
+          bankEl.textContent = String(nb);
+          prevBank = null; // タイトル中はアニメ不要
+      } else if (currentMode === "practice") {
+          // 練習モード: Bankは表示しない or 固定
+          bankEl.textContent = "---";
+          prevBank = newBank;
+      } else {
+          if (prevBank === null){
+            bankEl.textContent = String(newBank);
+          } else if (prevBank !== newBank){
+            if (!isChipAnimating) {
+              animateNumber(bankEl, prevBank, newBank, 520);
+              bankPill.classList.remove("bankFlash"); void bankPill.offsetWidth; bankPill.classList.add("bankFlash");
+            }
+          }
+          prevBank = newBank;
       }
-      prevBank = newBank;
 
-      $("round").textContent = `${state.session.round}/${state.session.roundLimit}`;
-      $("time").textContent = fmtTime(state.session.timeLeftMs);
+      // タイトル画面ではRound/Timeを更新しない（CSSで非表示だが値も保護）
+      if (!isTitle) {
+        const rl = state.session.roundLimit;
+        $("round").textContent = rl > 0 ? `${state.session.round}/${rl}` : `${state.session.round}/—`;
+        $("time").textContent = fmtTime(state.session.timeLeftMs);
+      }
 
-      $("phaseBadge").textContent = state.phase;
+      if ($("phaseBadge")) $("phaseBadge").textContent = state.phase;
       $("rulesMini").textContent = [
         state.rules.allowDouble ? "Dbl" : "",
         state.rules.allowSplit ? "Spl" : "",
@@ -2142,62 +3724,70 @@ function beginSessionOverFlow(st){
         state.rules.dealerHitSoft17 ? "H17" : "S17"
       ].filter(Boolean).join(" • ") || "-";
 
-      // Dealer
-      const totalText = hideBoard
-        ? "-"
-        : (state.dealer.holeKnown ? String(state.dealer.score) : "?");
+      // ディーラー描画とスコアの同期ロジック
+      const dWrap = $("dealerCards");
+      const rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
+      const targetCount = rawDealerCards.length;
+      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
 
-      const shownText = hideBoard ? "-" : state.dealer.scoreShown;
+      // --- 1. アニメーションカウンタの更新 ---
+      if (!isRoundOver) {
+        // ラウンド終了以外は即座に全カード表示（ただし初回配布中は除く）
+        if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        dealerShowCount = targetCount;
+      } else {
+        // ラウンド終了時はアニメーションが必要か確認
+        if (dealerShowCount === 0 && targetCount > 0 && !dealerAnimTimer) {
+             dealerShowCount = targetCount;
+        } else if (dealerShowCount < targetCount) {
+             if (!dealerAnimTimer) {
+                 dealerAnimTimer = setTimeout(() => {
+                     dealerShowCount++;
+                     dealerAnimTimer = null;
+                     render(); 
+                 }, 600);
+             }
+        } else {
+             if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
+        }
+      }
+
+      // --- 2. 視覚的な表示枚数 (visibleCount) の決定 ---
+      let visibleCount = targetCount;
+      if (initialDealStep > 0) {
+        // 初回配布中
+        visibleCount = (initialDealStep >= 2 ? (initialDealStep >= 4 ? 2 : 1) : 0);
+      } else if (isRoundOver) {
+        // 終了後のドロー演出中
+        visibleCount = dealerShowCount;
+      }
+
+      const dealerCards = rawDealerCards.slice(0, visibleCount);
+      const isDealerAnimating = (visibleCount < targetCount) || (initialDealStep > 0);
+
+      // --- 3. スコア表示の計算 (表示されているカードのみに基づく) ---
+      let totalText;
+      if (hideBoard || visibleCount === 0) {
+        totalText = "-";
+      } else {
+        const visibleFaceCards = dealerCards.filter(c => c !== "?");
+        // ディーラーは常に最善の合計値を単一で表示（UI簡略化）
+        totalText = calcCardScore(visibleFaceCards, false) || "-";
+      }
 
       $("dealerScoreLine").innerHTML = `
         <span class="metaLine">
-          <span class="kv"><span class="k">Shown</span><b class="v">${shownText}</b></span>
           <span class="kv"><span class="k">Total</span><b class="v">${totalText}</b></span>
         </span>
       `;
 
       $("dealerHole").textContent = hideBoard
         ? "-"
-        : (state.dealer.holeKnown ? t("dyn.hole_open") : t("dyn.hole_hidden"));
+        : (initialDealStep > 0 || (isRoundOver && !state.dealer.holeKnown))
+          ? t("dyn.hole_hidden")
+          : (state.dealer.holeKnown ? t("dyn.hole_open") : t("dyn.hole_hidden"));
 
-
-      const dWrap = $("dealerCards");
-      let rawDealerCards = hideBoard ? [] : (state.dealer.cards || []);
-
-      // --- Dealer Animation Logic ---
-      const targetCount = rawDealerCards.length;
-      const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
-      //const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
-
-      if (!isRoundOver) {
-        // Not in round over, show all cards immediately (sync)
-        if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
-        dealerShowCount = targetCount;
-      } else {
-        // In round over, check if we need to animate
-        if (dealerShowCount === 0 && targetCount > 0 && !dealerAnimTimer) {
-             // Initial load in roundOver? fast forward
-             dealerShowCount = targetCount;
-        } else if (dealerShowCount < targetCount) {
-             // Need to animate
-             if (!dealerAnimTimer) {
-                 dealerAnimTimer = setTimeout(() => {
-                     dealerShowCount++;
-                     dealerAnimTimer = null;
-                     render(); // Re-trigger render to show next card
-                 }, 600);
-             }
-        } else {
-            // Animation done
-             if (dealerAnimTimer) { clearTimeout(dealerAnimTimer); dealerAnimTimer = null; }
-        }
-      }
-      
-      const isDealerAnimating = (dealerShowCount < targetCount);
-      // Slice cards based on show count
-      const dealerCards = rawDealerCards.slice(0, dealerShowCount);
-
-      // Cache check for Dealer
+      // ディーラーのキャッシュチェック
 
       const dealerJson = JSON.stringify({
          cards: dealerCards,
@@ -2216,8 +3806,14 @@ function beginSessionOverFlow(st){
         if (c === "?"){
           el.className = "cardBack";
         } else {
-          el.className = "cardFace";
-          el.textContent = c;
+          const suitStr = c.slice(-1);
+          const rankStr = c.slice(0, -1);
+          const isRed = (suitStr === "♥" || suitStr === "♦");
+          el.className = "cardFace" + (isRed ? " red" : "");
+          el.innerHTML = `
+            <div class="corner top-left"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+            <div class="corner bottom-right"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+          `;
         }
 
         const isNew = idx >= prevDealerCards.length;
@@ -2225,21 +3821,76 @@ function beginSessionOverFlow(st){
         if (isNew) el.classList.add("dealIn");
         if (reveal) el.classList.add("flipIn");
 
+        // B1-2: 階段状に少しずつ上にずらす (2pxずつ)
+        el.style.top = (idx * -2) + "px";
+
         dWrap.appendChild(el);
-        dWrap.appendChild(el);
+        // dWrap.appendChild(el); //重複
       });
-      } // End of dealerJson check
+      } // ディーラーデータのチェック終了
       prevDealerCards = dealerCards.slice();
 
-      prevDealerJson = dealerJson; // Cache dealer state
+      prevDealerJson = dealerJson; // ディーラー状態をキャッシュ
 
 
-      // Player hands
+      // --- 4. デッキ残数ゲージの更新 ---
+      if (state.shoe) {
+        const shoe = state.shoe;
+        const totalCards = (shoe.decks || 6) * 52;
+        const fillPercent = Math.max(0, Math.min(100, (shoe.deckSize / totalCards) * 100));
+        const cutPercent = Math.max(0, Math.min(100, (shoe.cutSize / totalCards) * 100));
+
+        const fillEl = $("shoeGaugeFill");
+        const cutEl = $("shoeGaugeCut");
+
+        if (fillEl) fillEl.style.height = `${fillPercent}%`;
+        if (cutEl) cutEl.style.bottom = `${cutPercent}%`;
+        
+        if (shoe.reshuffleSoon) {
+          if (fillEl) fillEl.style.background = "linear-gradient(0deg, #b71c1c, #ff5252)";
+        } else {
+          if (fillEl) fillEl.style.background = "linear-gradient(0deg, #1a237e, #3f51b5)";
+        }
+      }
+
+
+      // プレイヤーのハンド
       const ph = $("playerHands");
-      const hands =
+      let hands =
         (!hideBoard && state.player && state.player.hands)
           ? state.player.hands
           : [];
+
+      // B3: Split数に応じたクラス付与
+      if (ph) {
+          ph.classList.remove("split-2", "split-3");
+          if (hands.length >= 2) {
+              ph.classList.add("split-" + Math.min(hands.length, 3));
+          }
+      }
+
+      // 初回Deal段階でのプレイヤーカード表示枚数を決定
+      const playerVisibleCount = (initialDealStep > 0)
+        ? (initialDealStep >= 1 ? (initialDealStep >= 3 ? 2 : 1) : 0)
+        : undefined; // undefined = 全表示
+
+      // 初期配布中または通常時におけるハンドデータの調整
+      if (initialDealStep > 0 && hands.length > 0) {
+        hands = hands.map(h => {
+          const limitedCards = (h.cards || []).slice(0, playerVisibleCount);
+          // 配布中も変化を見せるためSoft/Hard形式の文字列を取得
+          const limitedScoreStr = calcCardScore(limitedCards, true);
+          return { ...h, cards: limitedCards, score: limitedScoreStr };
+        });
+      } else if (hands.length > 0) {
+        hands = hands.map((h, i) => {
+          // 現在操作中のハンドかつプレイヤーターン中のみ「Soft / Hard」形式にする
+          const isActive = (i === state.player.activeHandIndex && state.phase === "inHand");
+          // ユーザー要望：Stand（確定）後は有利な数値に一本化
+          const scoreStr = calcCardScore(h.cards || [], isActive);
+          return { ...h, score: scoreStr };
+        });
+      }
 
 
       
@@ -2258,17 +3909,24 @@ function beginSessionOverFlow(st){
         const box = document.createElement("div");
         box.className = "handBox" + (i === state.player.activeHandIndex ? " active" : "");
 
-        const flags = [];
-        if (h.flags.blackjack) flags.push("BJ");
-        if (h.flags.bust) flags.push("BUST");
-        if (h.flags.doubled) flags.push("DBL");
-        if (h.flags.surrendered) flags.push("SUR");
-        if (h.flags.fromSplit) flags.push("SPLIT");
-        if (h.flags.splitAces) flags.push("A-SPLIT");
+        let flags = [];
+        let badgeClass = "";
+        
+        // 初期配布中はフラグ（BJ等）とバッジ演出を隠す
+        if (initialDealStep > 0) {
+          // 何もしない（空のまま = playing表示）
+        } else {
+          if (h.flags.blackjack) flags.push("BJ");
+          if (h.flags.bust) flags.push("BUST");
+          if (h.flags.doubled) flags.push("DBL");
+          if (h.flags.surrendered) flags.push("SUR");
+          if (h.flags.fromSplit) flags.push("SPLIT");
+          if (h.flags.splitAces) flags.push("A-SPLIT");
 
-        const badgeClass =
-          h.flags.blackjack ? "good" :
-          (h.flags.bust || h.flags.surrendered) ? "bad" : "";
+          badgeClass =
+            h.flags.blackjack ? "good" :
+            (h.flags.bust || h.flags.surrendered) ? "bad" : "";
+        }
 
         const header = document.createElement("div");
         header.className = "row";
@@ -2292,9 +3950,25 @@ header.innerHTML = `
 
         (h.cards||[]).forEach((cc, idx)=>{
           const ce = document.createElement("div");
-          ce.className = "cardFace";
-          ce.textContent = cc;
-          if (idx >= prevLen) ce.classList.add("dealIn"); // ④A slide
+          const suitStr = cc.slice(-1);
+          const rankStr = cc.slice(0, -1);
+          const isRed = (suitStr === "♥" || suitStr === "♦");
+          ce.className = "cardFace" + (isRed ? " red" : "");
+          ce.innerHTML = `
+            <div class="corner top-left"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+            <div class="corner bottom-right"><div class="r">${rankStr}</div><div class="s">${suitStr}</div></div>
+          `;
+          
+          // B2: Doubleカードの回転 (3枚目)
+          if (h.flags.doubled && idx === 2) {
+            ce.classList.add("rotated");
+          }
+
+          if (idx >= prevLen) ce.classList.add("dealIn"); // ④A スライド
+
+          // B1-2: 階段状に少しずつ上にずらす (2pxずつ)
+          ce.style.top = (idx * -2) + "px";
+
           cards.appendChild(ce);
         });
 
@@ -2302,22 +3976,22 @@ header.innerHTML = `
         ph.appendChild(box);
 
         prevPlayerLens[i] = (h.cards||[]).length;
-        prevPlayerLens[i] = (h.cards||[]).length;
+        // prevPlayerLens[i] = (h.cards||[]).length;
       });
-      } // End of playerJson check
-      prevPlayerJson = playerJson; // Cache player state
+      } // playerJson チェック終了
+      prevPlayerJson = playerJson; // プレイヤー状態をキャッシュ
 
 
 
 
-      // Controls enable/disable from state.can
-// Controls enable/disable from state.can
+      // state.can に基づく操作の有効/無効化
+// state.can に基づく操作の有効/無効化
 const can = state.can || {};
 const insMode = (state.phase === "offerInsurance");
 
-// === Dock main buttons ===
+// === ドックのメインボタン ===
 if (insMode) {
-  // Insurance 中は DOCK = YES / NO 専用
+  // 保険の確認中は、ドックは「はい/いいえ」専用の状態になる
   setDis("btnDeal", true);
   setDis("btnHit", !can.insurance);
   setDis("btnStand", !can.insurance);
@@ -2325,25 +3999,25 @@ if (insMode) {
   setDis("btnSplit", true);
   setDis("btnSurrender", true);
 } else {
-  // Betting phase logic
+  // ベッティングフェーズのロジック
   const forceEnableDeal = ((state.phase === "betting" || state.phase === "roundOver") && state.bank > 0);
   setDis("btnDeal", (!can.deal && !forceEnableDeal) || uiLocked);
 
   setDis("btnHit", !can.hit || uiLocked);
-  setDis("btnStand", !can.stand || uiLocked); // Stand also locked to prevent race? User said "Deal/Hit".
-  // But usually Stand leads to Dealer play, so locking is safe.
-  // Double/Split -> User said "Exception", so do NOT add uiLocked
+  setDis("btnStand", !can.stand || uiLocked); // Stand もレースコンディション防止でロック？ ユーザーは既にDeal/Hitしてる。
+  // しかし通常 Stand はディーラープレイに繋がるのでロックは安全。
+  // Double/Split -> ユーザーは「例外」と言ったので、uiLocked は追加しない
   setDis("btnDouble", !can.double);
   setDis("btnSplit", !can.split);
   setDis("btnSurrender", !can.surrender);
 }
 
-// Ensure select is synced with internal bet state (if needed)
+// セレクトボックスを内部ベット状態と同期（必要な場合）
 // setDis("betSelect", !(state.phase === "betting" || state.phase === "roundOver"));
 
 // === 右パネル側も同様 ===
 if (insMode) {
-  // Even Money logic: Swap Surrender button if available
+  // イーブンマネーのロジック: 可能ならサレンダーボタンと入れ替え
   const showEven = !!can.evenMoney;
   const btnSur = $("btnSurrender");
   const btnEven = $("btnEvenMoney");
@@ -2355,18 +4029,61 @@ if (insMode) {
       if(btnSur) { btnSur.style.display = "flex"; btnSur.disabled = !can.surrender; }
       if(btnEven) btnEven.style.display = "none";
   }
+} else {
+  // insMode以外: Even Moneyボタンを非表示に戻し、サレンダーを復元
+  const btnSur = $("btnSurrender");
+  const btnEven = $("btnEvenMoney");
+  if(btnEven) { btnEven.style.display = "none"; btnEven.disabled = true; }
+  if(btnSur) btnSur.style.display = "flex";
 }
-// Removed Side Panel Logic
 
-       // const isRoundOver = (state.phase === "roundOver" || state.phase === "sessionOver");
       // ラウンドが終わった瞬間だけ履歴に追加
       pushHistoryEntry(state);
+
+      // XP付与（Normalモードのみ、同一ラウンドでは1回だけ）
+      const currentRound = state.session ? state.session.round : -1;
+      if (currentRound !== xpAwardedRound && currentMode === "normal" && (phase === "roundOver" || phase === "sessionOver")) {
+        const xpAmount = calcRoundXP(state);
+        addXP(xpAmount);
+        xpAwardedRound = currentRound;
+        updateLevelUI();
+      }
+      
+      // NormalモードならBANK保存
+      if (currentMode === "normal" && state.phase === "roundOver") {
+          // 念のため少し遅延させて、最終的なbankが確定していることを期待するが
+          // state.bank は既に支払い後の値のはず
+          const b = Number(state.bank);
+          if (Number.isFinite(b)) {
+              localStorage.setItem(BANK_KEY_NORMAL, String(b));
+          }
+      }
+      
       finalizeSessionRanking(state);
-      if (state.phase === "sessionOver") beginSessionOverFlow(state);
+      // 破産(bank < MIN_BET)時は sessionOver フローを呼ばない（UI重なり防止）
+      if (state.phase === "sessionOver") {
+          const isBankrupt = currentMode === "normal" && Number(state.bank) < MIN_BET;
+          if (!isBankrupt) {
+              beginSessionOverFlow(state);
+          }
+      }
 
       $("roundBanner").style.display = (isRoundOver && !isDealerAnimating) ? "flex" : "none";
 
-      // Win Effect Trigger
+      // 破産判定 (Normalモードのみ): bank < MIN_BET(1K) で破産
+      if (currentMode === "normal" && isRoundOver && !isDealerAnimating) {
+          const b = Number(state.bank);
+          if (b < MIN_BET) {
+              // 破産確定: bank=0 を即座に保存
+              localStorage.setItem(BANK_KEY_NORMAL, "0");
+              // 破産オーバーレイ表示（演出が終わるのを待つ）
+              setTimeout(()=>{
+                  if($("overlayBankruptcy")) $("overlayBankruptcy").classList.add("show");
+              }, 1500);
+          }
+      }
+
+      // 勝利・チップエフェクトのトリガー
       if (isRoundOver) {
          if (!isDealerAnimating) {
             const net = state.roundResult.netProfit;
@@ -2374,20 +4091,28 @@ if (insMode) {
                 window.triggerWinEffect && window.triggerWinEffect();
                 winEffectDone = true;
             }
+            if (!chipEffectDone && net > 0 && !isTitle && currentMode !== "practice") {
+                playChipAbsorb(Number(state.bank));
+                chipEffectDone = true;
+            }
          }
       } else {
-         winEffectDone = false;
+         // ROUND_OVER以外ではフラグをリセット（念のため）
+         // ただし、ラウンド番号検知があるのでここでは何もしなくても良い
       }
 
 
       const net = state.roundResult.netProfit|0;
       const msgEl = $("roundMsg");
       const metaEl = $("roundMeta");
-      if (isRoundOver){
+      if (isRoundOver && currentMode !== "practice"){
+        /*
+        // "WIN +100" 等を2秒の遅延中も表示したままにする
         if (state.phase === "sessionOver"){
           msgEl.textContent = t("so.session_over");
           msgEl.className = "msg neutral";
-        } else if (net > 0){
+        } else */
+        if (net > 0){
           msgEl.textContent = `${t("dyn.win")} +${net}`;
           msgEl.className = "msg win";
         } else if (net < 0){
@@ -2398,22 +4123,36 @@ if (insMode) {
           msgEl.className = "msg neutral";
         }
         metaEl.textContent = `${t("dyn.streak")} ${state.roundResult.streak} / ${t("dyn.bonus")} ${state.roundResult.bonusPercent}% (+${state.roundResult.bonusApplied})`;
+      } else if (isRoundOver && currentMode === "practice") {
+        // 練習モード: 勝敗のみ表示（金額は非表示）
+        if (net > 0) {
+          msgEl.textContent = t("dyn.win");
+          msgEl.className = "msg win";
+        } else if (net < 0) {
+          msgEl.textContent = t("dyn.lose");
+          msgEl.className = "msg lose";
+        } else {
+          msgEl.textContent = t("dyn.push");
+          msgEl.className = "msg neutral";
+        }
+        metaEl.textContent = "";
       }
 
-      $("debugLine").innerHTML = `
-        err=${state.lastErrorCode} "${state.lastError||""}"<br>
-        can: D=${can.double?"o":"x"} S=${can.split?"o":"x"}<br>
-        Rules: D=${state.rules.allowDouble?"on":"off"} S=${state.rules.allowSplit?"on":"off"}<br>
-        bank=${state.bank} bet=${state.player?.hands?.[state.player.activeHandIndex]?.bet||0}
-      `;
-
-      const v = floorEven($("betInput").value);
-      $("betHint").textContent = `${t("dyn.input")}=${$("betInput").value} → ${t("dyn.even")}=${v}`;
 
 
-      // ===== Bet lock/unlock =====
-// BETを編集できるのは「配る前」or「勝敗確定後」だけ
-  const betEditable = (state.phase === "betting" || state.phase === "roundOver" || state.phase === "sessionOver");
+      // 練習モード: Bet UIを非表示
+      if (currentMode === "practice") {
+          const v = floorEven($("betInput").value);
+          if($("betHint")) $("betHint").textContent = "";
+      } else {
+          const v = floorEven($("betInput").value);
+          if($("betHint")) $("betHint").textContent = `${t("dyn.input")}=${$("betInput").value} → ${t("dyn.even")}=${v}`;
+      }
+
+
+      // ===== ベットのロック/アンロック =====
+// BETを編集できるのは「配る前」or「勝敗確定後」だけ（練習モードでは常に無効）
+  const betEditable = currentMode !== "practice" && (state.phase === "betting" || state.phase === "roundOver" || state.phase === "sessionOver");
 // 入力欄とSETボタン
 setDis("betInGame", !betEditable);
 setDis("btnSetBet", !betEditable);
@@ -2422,7 +4161,7 @@ setDis("btnSetBet", !betEditable);
 document.querySelectorAll("[data-add2]").forEach((b) => {
   b.disabled = !betEditable;
 });
-// ===== Insurance DOCK + Side panel =====
+// ===== Insurance DOCK + サイドパネル =====
 //const insMode = (state.phase === "offerInsurance");
 document.querySelector(".dock").classList.toggle("insMode", insMode);
 
@@ -2436,38 +4175,20 @@ function setDockLabel(id, label, key){
 
 
 if (insMode){
-  setDockLabel("btnHit", t("ins.yes"), "Y");
-  setDockLabel("btnStand", t("ins.no"), "N");
-
-  // ボタンの enable/disable は上の setDis ブロックに任せる
-
-  // 右側：金額入力表示
-  $("insSideBox").style.display = "block";
-  $("insAmountSide").disabled = false;
-
+  // 新しいオーバーレイを表示
+  $("overlayInsurance").classList.add("show");
+  
   const mx = state.insurance.max|0;
-  $("insHintSide").textContent = `${t("dyn.max")} ${mx} (bet/2)`;
-  const a = $("insAmountSide");
-  a.max = mx;
-  a.step = 2;
+  $("insHintOverlay").textContent = t("js.ins_hint", mx);
 
-  if (prevPhase !== "offerInsurance"){
-    a.value = mx;
-  } else {
-    a.value = Math.min(floorEven(a.value), mx);
-  }
-
-  $("btnEvenMoneyIns").style.display = (can.evenMoney ? "block" : "none");
-  $("btnEvenMoneyIns").disabled = !can.evenMoney;
+  // Even Moneyが可能な場合のみサイドパネルのボタンを表示
+  const showEvenIns = !!can.evenMoney;
+  if($("insSideBox")) $("insSideBox").style.display = showEvenIns ? "block" : "none";
 
 } else {
-  setDockLabel("btnHit", t("dock.hit"), "H");
-  setDockLabel("btnStand", t("dock.stand"), "S");
-
-  $("insSideBox").style.display = "none";
-  $("insAmountSide").disabled = true;
-
-  // HIT/STAND の disable は setDis に任せる
+  // offerInsurance以外: オーバーレイを隠す
+  $("overlayInsurance").classList.remove("show");
+  if($("insSideBox")) $("insSideBox").style.display = "none";
 }
 
 
@@ -2483,6 +4204,7 @@ prevPhase = state.phase;
 prevPhase = state.phase;
 
 
+      updateBettingControls(); // ベットボタンの有効/無効更新
       console.log("render ok", state.phase);
 
     }
@@ -2493,27 +4215,87 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     prevDealerJson = "";
     prevPlayerLens = [];
     prevPlayerJson = "";
+    initialDealStep = 0;
+    if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
 }
+    // K表記フォーマッター
+    function fmtK(n) {
+        n = Number(n);
+        if (n >= 1000 && n % 1000 === 0) return (n / 1000) + "K";
+        return String(n);
+    }
 
+    window.updateBet = function(addVal) {
+      if (!state) return;
+      let cur = Number($("betInput").value || 0);
+      let next = cur + addVal;
+      if (next < MIN_BET) next = MIN_BET; // 最低Bet=1K
+      if (state.bank < next) next = floorEven(state.bank); // 所持金でキャップ
+      if (next < MIN_BET) next = MIN_BET; // clamp後も最低保証
+      
+      $("betInput").value = next;
+      
+      // 更新を送信
+      callAction("set_bet", next);
+    };
 
-    // ========= UI events =========
-    document.querySelectorAll('[data-add]').forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const cur = Number($("betInput").value||0);
-        $("betInput").value = cur + Number(btn.dataset.add);
-      });
-    });
+    // 無効化のためのUI更新ロジック
+    function updateBettingControls() {
+        if (!state) return;
+        const canBet = (state.phase === "betting" || state.phase === "roundOver");
+        
+        // ボタンを無効化
+        const btns = document.querySelectorAll(".btn-bet");
+        btns.forEach(b => b.disabled = !canBet);
+        
+        if (!canBet) {
+            $("betInput").style.opacity = "0.5";
+        } else {
+            $("betInput").style.opacity = "1";
+        }
+    }
 
-    document.querySelectorAll('[data-add2]').forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const cur = Number($("betInGame").value||0);
-        $("betInGame").value = cur + Number(btn.dataset.add2);
-      });
-    });
+    // 直接入力の変更
+    function onBetInputChange(e) {
+      if (!state) return;
+      let val = floorEven(e.target.value);
+      if (val < 0) val = 0;
+      if (state.bank < val) val = floorEven(state.bank);
+
+      // 入力を同期
+      $("betInput").value = val;
+      if ($("betInGame")) $("betInGame").value = val;
+      if ($("betSelect")) $("betSelect").value = val;
+
+      if (state.phase === "betting" || state.phase === "roundOver") {
+         callAction("set_bet", val);
+         if (state.phase === "roundOver") hideBoardAfterSet = true;
+      }
+    }
+
+    if ($("betInput")) $("betInput").onchange = onBetInputChange;
+    if ($("betInGame")) $("betInGame").onchange = onBetInputChange;
 
     $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
     $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
-    $("btnHowPause").onclick = ()=> $("overlayHow").classList.add("show");
+    $("btnHowPause").onclick = () => $("overlayHow").classList.add("show");
+
+    $("btnShuffle").onclick = async () => {
+      // 演出開始前にメニューを閉じる
+      $("overlayPause").classList.remove("active");
+      
+      // UIロック
+      lockUI(1500);
+      
+      // 演出実行
+      await performShuffleAnimation();
+      
+      // エンジン実行
+      callAction("force_shuffle");
+      
+      toast("Deck Re-shuffled");
+      render();
+    };
     $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
     
     $("btnLangToggle").onclick = () => {
@@ -2522,14 +4304,35 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
       window.LOC.lang = next;
     };
 
-        // History overlay
+        // 履歴オーバーレイ
     $("btnHistory").onclick = ()=>{
       renderHistoryOverlay();
       $("overlayHistory").classList.add("show");
     };
     $("btnCloseHistory").onclick = ()=> $("overlayHistory").classList.remove("show");
 
-// ========= Ranking (localStorage) =========
+    // モードヘルプ詳細表示
+    document.querySelectorAll(".help-icon").forEach(icon => {
+      icon.onclick = (e) => {
+        e.stopPropagation(); // ボタン自体のクリックイベントを防ぐ
+        const mode = icon.getAttribute("data-mode-help");
+        const body = $("modeDescBody");
+        if (body) {
+           body.innerHTML = t(`mode.help_${mode}_detail`);
+        }
+        $("overlayModeDesc").classList.add("show");
+      };
+    });
+    $("btnCloseModeDesc").onclick = $("btnModeDescClose").onclick = () => {
+      $("overlayModeDesc").classList.remove("show");
+    };
+    $("overlayModeDesc").onclick = (e) => {
+      if (e.target === $("overlayModeDesc")) {
+        $("overlayModeDesc").classList.remove("show");
+      }
+    };
+
+// ========= ランキング (localStorage) =========
 const RANK_KEY = "bjRanking_v1";
 const NAME_KEY = "bjPlayerName_v1";
 
@@ -2576,7 +4379,7 @@ function addRankingRecord(rec){
   list.unshift(rec);
   if (list.length > 50) list.length = 50;
 
-  // Profit desc → finalBank desc → duration asc
+  // 利益 降順 → 最終所持金 降順 → 経過時間 昇順
   list.sort((a,b)=>{
     const pa = (a.profit|0), pb = (b.profit|0);
     if (pb !== pa) return pb - pa;
@@ -2662,12 +4465,12 @@ function finalizeSessionRanking(st){
   toast(`${t("rank.saved")}${profit>=0?`+${profit}`:profit}`);
 }
 
-// === Action Throttling ===
+// === アクションの間引き（スロットリング） ===
 let uiLocked = false;
 let uiLockTimer = null;
 function lockUI(ms){
   uiLocked = true;
-  render(); // update buttons
+  render(); // ボタン更新
   if(uiLockTimer) clearTimeout(uiLockTimer);
   uiLockTimer = setTimeout(()=>{
     uiLocked = false;
@@ -2677,228 +4480,438 @@ function lockUI(ms){
 
 
 $("btnPause").onclick = ()=>{
-  if (state.phase === "paused") return;
+  if (state && state.phase === "paused") return;
   //if (!state) return toast("ゲーム中に使えます");
   //if (!$("screenGame").classList.contains("active")) return toast("ゲーム中に使えます");
 
-  callAction("set_paused", 1);
-  pausedAt = performance.now();
+  // 可能ならエンジンのポーズを呼び出す
+  if(state) {
+    callAction("set_paused", 1);
+    pausedAt = performance.now();
+  }
   setPause(true);
 };
 
+// レベルリセットボタン
+// レベルアップ報酬選択ボタン
+if ($("btnRewardNormal")) {
+  $("btnRewardNormal").onclick = () => acceptNormalReward();
+}
+if ($("btnRewardAd")) {
+  $("btnRewardAd").onclick = () => acceptAdReward();
+}
+
+// +10 XP デバッグボタン
+if ($("btnAddXP")) {
+  $("btnAddXP").onclick = () => {
+    addXP(10);
+    updateLevelUI();
+    toast(t("js.xp_gain", 10));
+  };
+}
+
+if ($("btnResetLevel")) {
+  $("btnResetLevel").onclick = () => {
+    if (!confirm(t("js.reset_lvl_conf"))) return;
+    localStorage.setItem(XP_KEY, "0");
+    localStorage.removeItem(LEVEL_KEY);
+    localStorage.setItem(LEVEL_REWARDED_KEY, "1");
+    clearPendingLevelReward();
+    updateLevelUI();
+    toast(t("js.lvl_reset_done"));
+  };
+}
+
 $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
+  // エンジン側へ再開通知
+  if(state) {
+      callAction("set_paused", 0);
+  }
+  
   if (pausedAt){
     pausedTotal += performance.now() - pausedAt;
     pausedAt = 0;
   }
-  callAction("set_paused", 0);
   setPause(false);
 };
 
-$("btnQuit").onclick = ()=> doResetToTitle();
-$("btnSORevive").onclick = doRevive;
+    // ========= 広告連携 (Rewarded) =========
+    function requestAdForTicket(after = null) {
+       if (isAdRequesting) return;
+       isAdRequesting = true;
+       $("adErrorMsg").style.display = "none";
+       toast(t("js.ad_waiting"));
 
-    $("btnInsMaxSide").onclick = ()=> {
-  if (!state || state.phase !== "offerInsurance") return;
-  $("insAmountSide").value = state.insurance.max|0;
-};
-$("btnInsZeroSide").onclick = ()=> {
-  if (!state || state.phase !== "offerInsurance") return;
-  $("insAmountSide").value = 0;
-};
-$("btnEvenMoneyIns").onclick = ()=> callAction("take_even_money");
+       // CrazyGames SDK
+       const callbacks = {
+         adFinished: () => {
+            isAdRequesting = false;
+            addPracTicket(1);
+            toast(t("js.ticket_get"));
+            // オーバーレイを閉じる
+            $("overlayAdConfirm").classList.remove("show");
+            // 呼び出し元が「広告後に続行したい」場合はコールバック
+            if (typeof after === "function") after();
+         },
+         adError: (error) => {
+            isAdRequesting = false;
+            console.warn("Ad Error:", error);
+            toast(t("ad.load_fail"));
+         },
+         adStarted: () => {
+            console.log("Ad Started");
+         }
+       };
 
-$("btnDeal").onclick = ()=> {
-  $("btnHit").disabled = true;
-  $("btnStand").disabled = true;
-
-  // Auto-cap bet before deal
-  if (state && (state.phase === "betting" || state.phase === "roundOver")) {
-    let bet = floorEven($("betInput").value); // Changed from betInGame
-    if (state.bank < bet) {
-
-      bet = floorEven(state.bank);
-      $("betInput").value = bet;
-      // Sync select if possible
-      const sel = $("betSelect");
-      if(sel) sel.value = bet;
-      
-      callAction("set_bet", bet);
-      toast(t("toast.bet_adjusted"));
+       if (window.CrazyGames?.SDK?.ad?.requestAd) {
+          window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
+       } else {
+          // SDKなし/ロード前 -> デバッグ用: 即成功扱い (or エラー)
+          console.warn("SDK not ready, simulating ad success");
+          setTimeout(callbacks.adFinished, 1000);
+       }
     }
-  }
 
-  setTimeout(()=>{ 
-    lockUI(1500); // Deal animation is long
-    callAction("deal"); 
-  }, 50);
+
+    // ========= モード選択ボタン制御 =========
+    function updateModeButtons() {
+       const ps = getPracState();
+       
+       const btnP = $("btnModePractice");
+       if (btnP) {
+          const desc = btnP.querySelector(".small");
+          if (desc) {
+             if (!ps.freeUsed) {
+                desc.textContent = t("prac.start_free");
+                desc.style.color = "#37d67a";
+                desc.removeAttribute("data-i18n");
+             } else if (ps.tickets > 0) {
+                desc.textContent = t("prac.start_ticket") + ` (${ps.tickets})`;
+                desc.style.color = "#ffcc66";
+                desc.removeAttribute("data-i18n");
+             } else {
+                desc.textContent = t("prac.watch_ad");
+                desc.style.color = "#ffffff";
+                desc.removeAttribute("data-i18n");
+             }
+          }
+       }
+
+       // Normal 破産状態の検出・救済ボタン表示
+       const normalBank = getNormalBank();
+       const btnNormal = $("btnModeNormal");
+       const btnRevive = $("btnNormalRevive");
+       if (normalBank < MIN_BET) {
+           if (btnNormal) btnNormal.style.display = "none";
+           if (btnRevive) btnRevive.style.display = "";
+       } else {
+           if (btnNormal) btnNormal.style.display = "";
+           if (btnRevive) btnRevive.style.display = "none";
+       }
+    }
+
+    $("btnModeChallenge").onclick = () => startSession("challenge");
+    $("btnModeNormal").onclick = () => startSession("normal");
+
+    // タイトル画面の破産救済ボタン
+    if ($("btnNormalRevive")) {
+        $("btnNormalRevive").onclick = () => {
+            if (isAdRequesting) return;
+            const btn = $("btnNormalRevive");
+            btn.disabled = true;
+
+            const callbacks = {
+                adFinished: () => {
+                    isAdRequesting = false;
+                    btn.disabled = false;
+                    // bank=50000 で保存し、Normal自動再開
+                    localStorage.setItem(BANK_KEY_NORMAL, "50000");
+                    toast(t("js.revive_done"));
+                    startSession("normal");
+                },
+                adError: (error) => {
+                    isAdRequesting = false;
+                    btn.disabled = false;
+                    console.warn("Ad Error (title revive):", error);
+                    toast(t("ad.load_fail"));
+                },
+            };
+
+            isAdRequesting = true;
+            try {
+                if (window.CrazyGames?.SDK?.ad?.requestAd) {
+                    window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+                } else {
+                    console.warn("SDK not ready, simulating ad success");
+                    setTimeout(callbacks.adFinished, 1000);
+                }
+            } catch (e) {
+                console.error(e);
+                callbacks.adError(e);
+            }
+        };
+    }
+    
+    $("btnModePractice").onclick = () => {
+       const ps = getPracState();
+       if (!ps.freeUsed) {
+           // 無料枠あり -> 開始
+           startSession("practice");
+       } else if (ps.tickets > 0) {
+           // チケットあり -> 開始
+           startSession("practice");
+       } else {
+           // チケットなし -> 広告確認
+           $("overlayAdConfirm").classList.add("show");
+       }
+    };
+
+    // 広告確認オーバーレイ
+    $("btnAdYes").onclick = () => {
+       requestAdForTicket(() => startSession("practice"));
+    };
+    $("btnAdNo").onclick = () => {
+       $("overlayAdConfirm").classList.remove("show");
+    };
+    
+    // 練習終了オーバーレイ（Time up）
+// 仕様：Retry は表示しない。選択肢は「タイトルへ戻る」「広告でもう一度」だけ。
+// 「広告でもう一度」は Rewarded Ad を見せてチケット +1 → そのまま Practice を開始（= チケット消費）する。
+$("btnPracWatchAd").onclick = () => {
+   requestAdForTicket(() => {
+      $("overlayPracticeOver").classList.remove("show");
+      startSession("practice");
+   });
+};
+$("btnPracToTitle").onclick = () => {
+   $("overlayPracticeOver").classList.remove("show");
+   doResetToTitle();
 };
 
+// ========= スタートセッション =========
+    window.startSession = function(mode) {
+       if (!mode) mode = "challenge";
 
+       // 練習モードの消費処理
+       if (mode === "practice") {
+           if (!consumePracTicket()) {
+               toast(t("prac.no_ticket"));
+               return; 
+           }
+       }
 
+       currentMode = mode;
+       localStorage.setItem(MODE_KEY, mode);
+       updateModeButtons(); // チケット減ったのを反映
 
+       let initialBank = 5000;
+       let roundLimit = 0; // 無制限
+       let timeLimitSec = 300; // 5分 (デフォルト)
 
-    // Start session (engine ready guard)
-    $("btnStart").onclick = () => {
-      try{ soHideOverlay(); }catch(e){}
+       if (mode === "challenge") {
+           initialBank = 50000;
+           roundLimit = 0; 
+           timeLimitSec = 300; // 5分(Challenge)
+       } else if (mode === "normal") {
+           initialBank = getNormalBank();
+           if (initialBank < MIN_BET) initialBank = 0; 
+           roundLimit = 0;
+           timeLimitSec = 0; // 無制限
+       } else if (mode === "practice") {
+           initialBank = 1000000; // 練習用: 十分な額
+           roundLimit = 24;       // 24ラウンドで終了
+           timeLimitSec = 0;      // 練習は時間無制限
+       }
 
-      sessionEndAdDone = false; // セッション終了広告フラグリセット
-      if (!apiReady()){
-        toast(t("ui.engine_not_ready"));
-        return;
-      }
+       if (!apiReady()) {
+           toast(t("js.engine_not_ready"));
+           return;
+       }
 
-      const {lo,hi} = seed64();
-      const mask = rulesMaskFromUI();
-      const sessionSeconds = 300;
-      const roundLimit = 12;
+       // UI切り替え
+       $("screenTitle").classList.remove("active");
+       $("screenGame").classList.add("active");
 
-      callAction("start_session", lo, hi, mask, sessionSeconds, roundLimit);
+       // 練習モード時はBetカードとBank pillを非表示
+       const betCard = $("betInput")?.closest(".card");
+       const bankPill = $("bank")?.closest(".pill");
+       if (mode === "practice") {
+           if (betCard) betCard.style.display = "none";
+           if (bankPill) bankPill.style.display = "none";
+       } else {
+           if (betCard) betCard.style.display = "";
+           if (bankPill) bankPill.style.display = "";
+       }
+       
+       // モードバッジ更新
+       const mb = $("modeBadge");
+       mb.className = "badge"; // reset
+       if (mode === "practice") {
+          mb.textContent = t("mode.practice");
+          mb.classList.add("good"); 
+          mb.style.background = "#4caf50";
+       } else if (mode === "challenge") {
+          mb.textContent = t("mode.challenge");
+          mb.classList.add("neutral");
+       } else {
+          mb.textContent = t("mode.normal");
+          mb.classList.add("neutral");
+       }
 
-      // ===== Ranking session begin =====
-currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-sessionStartBank = Number(state?.bank || 0);   // start_session直後のbank
-sessionFinalized = false;
+       // 開始
+       const seed = seed64();
+       const mask = getRuleMaskFromUI();
+       // Practice: Insurance OFFにする（ただしpeekは行われる）
+       const finalMask = (mode === "practice") ? (mask & ~(1 << 3)) : mask;
 
-      const savedName = localStorage.getItem(NAME_KEY);
-if (savedName && $("nameInput")) $("nameInput").value = savedName;
+       console.log("startSession:", mode, "initialBank=", initialBank);
+       const ret = bjApi.start_session(seed.lo, seed.hi, finalMask, timeLimitSec, roundLimit, initialBank);
+       if (ret !== 0) {
+          console.error("start_session failed", ret);
+          toast(t("js.session_start_err"));
+          doResetToTitle();
+          return;
+       }
 
-      // Bet cap for start
-      let bet = floorEven($("betInput").value);
-      if (bet > 5000) bet = 5000; // Cap at initial bank
-      $("betInput").value = bet;
+       refresh();
 
-      $("betInput").value = bet;
-      
-      $("betInput").value = bet;
-      
-      // Sync select if possible
-      const sel = $("betSelect");
-      if(sel) sel.value = bet;
+       // ベット入力欄をMIN_BETで初期化
+       $("betInput").value = MIN_BET;
+       callAction("set_bet", MIN_BET);
 
-      lockUI(800); // Wait for potential deal animation/profit update visual
-      callAction("set_bet", bet);
+       // body.dataset.mode を設定
+       document.body.dataset.mode = mode;
+       
+       // タイマースタート
+       if (timeLimitSec > 0) {
+           startTick();
+           sessionMs = timeLimitSec * 1000;
+       } else {
+           stopTick();
+           sessionMs = Infinity;
+       }
 
+       if (mode === "practice") {
+           // 練習モード：Round表示（24ラウンド制）、Time非表示
+           $("round").parentElement.style.display = "flex";
+           $("time").parentElement.style.display = "none";
+           stopTick(); 
+       } else if (mode === "challenge") {
+           // Challenge: Round非表示、Time表示（5分）
+           $("round").parentElement.style.display = "none";
+           $("time").parentElement.style.display = "flex";
+           startTick();
+       } else {
+           // Normal: Round表示、Time非表示（∞）
+           $("round").parentElement.style.display = "flex";
+           $("time").parentElement.style.display = "none";
+           stopTick();
+       }
 
-      // clear animation caches
+       // セッションオーバー状態のリセット
+       try { soHideOverlay(); } catch(e) {}
+       sessionEndAdDone = false;
+
+       // ランキング用セッション初期化
+       currentSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+       sessionStartBank = Number(initialBank);
+       sessionFinalized = false;
+
+       // 名前の復元
+       const savedName = localStorage.getItem(NAME_KEY);
+       if (savedName && $("nameInput")) $("nameInput").value = savedName;
+
+       // ベット設定
+       let bet = MIN_BET;
+       if ($("betInput")) bet = Number($("betInput").value);
+       if (!bet || bet < MIN_BET) bet = MIN_BET;
+       bet = floorEven(bet);
+       if (bet > initialBank) bet = initialBank;
+       if ($("betInput")) $("betInput").value = bet;
+       callAction("set_bet", bet);
+
+       // アニメーションキャッシュクリア
        prevDealerCards = [];
        prevPlayerLens = [];
        prevBank = null;
-       hideBoardAfterSet = false;   // ← 追加：SET 後に盤面を隠す用
-      goScreen("game");
-      startTick();
-      toast(t("toast.good_luck"));
+       hideBoardAfterSet = false;
+       initialDealStep = 0;
+       if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
+
+       render(); // 初回描画
+       
+       callAction("set_paused", 0);
+       setPause(false);
+       
+       lockUI(800);
+       goScreen("game");
+       
+       toast(mode === "normal" ? "Normal Mode Start!" : 
+             mode === "practice" ? "Practice Mode Start!" : t("toast.good_luck"));
+       
+       window.CG.gameplayStart();
     };
 
-$("btnSetBet").onclick = ()=>{
-  if (!state) return;
-  const phase = state.phase;
-  let v = floorEven($("betInput").value);
-  if (state.bank < v) v = floorEven(state.bank); // Cap at current bank
-  $("betInput").value = v;
 
-  // BETTING / roundOver 中は今まで通りエンジンに bet を送る
-  if (phase === "betting" || phase === "roundOver") {
-    callAction("set_bet", v);
+    // ========= アクションイベント定義 =========
+    $("btnHit").onclick = ()=> {
+      if (!state) return;
+      if (uiLocked) return; 
 
-    // roundOver 中に SET したら盤面を消して「次ラウンド待ち」の見た目にする
-    if (phase === "roundOver") {
-      hideBoardAfterSet = true;
-      render();
-    }
-    return;
-  }
+      if (state.phase === "offerInsurance") {
+        // Insurance額はmax固定で買う
+        const mx = state.insurance?.max ?? 0;
+        return callAction("buy_insurance", mx); 
+      }
 
-  // ★ sessionOver 中に SET を押した場合 → 盤面だけ消す
-  if (phase === "sessionOver") {
-    // hideBoardAfterSet = true; //// boardHidden = true で空に描く
-    render();      // エンジンには触らず、見た目だけ更新
-    return;
-  }
-};
+      lockUI(600); 
+      return callAction("hit");
+    };
 
+    $("btnStand").onclick = ()=> {
+      if (!state) return;
+      if (uiLocked && state.phase !== "offerInsurance") return; 
 
-    // Main actions (Dock)
-$("btnHit").onclick = ()=> {
-  if (!state) return;
-  if (uiLocked) return; // Ignore spam
+      if (state.phase === "offerInsurance"){
+        // Insuranceを買わない（0で購入）
+        return callAction("buy_insurance", 0);   
+      }
+      lockUI(1000); 
+      return callAction("stand");
+    };
 
-  if (state.phase === "offerInsurance") {
-    const mx = state.insurance?.max ?? 0;
-    let v = floorEven($("insAmountSide").value);
-    v = Math.max(0, Math.min(v, mx));
-    $("insAmountSide").value = v;
-    return callAction("buy_insurance", v); // YES
-  }
+    $("btnDouble").onclick = ()=> callAction("double_down");
+    $("btnSplit").onclick = ()=> callAction("split");
+    $("btnSurrender").onclick = ()=> callAction("surrender");
+    $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
 
-  lockUI(600); // Card animation ~420ms + margin
-  return callAction("hit");
-};
+    $("btnInsNo").onclick = () => {
+      if(uiLocked) return;
+      lockUI(500);
+      callAction("buy_insurance", 0);
+      $("overlayInsurance").classList.remove("show");
+    };
+    $("btnInsYes").onclick = () => {
+      if(uiLocked || !state) return;
+      lockUI(500);
+      // Insurance額は自動でmax固定（手入力不要）
+      const mx = state.insurance?.max ?? 0;
+      callAction("buy_insurance", mx);
+      $("overlayInsurance").classList.remove("show");
+    };
+    // btnInsMaxOverlay は削除済み（手入力不要のため）
+    
+    $("btnRanking").onclick = ()=> {
+      renderRankingOverlay();
+      $("overlayRanking").classList.add("show");
+    };
+    $("btnCloseRanking").onclick = ()=> $("overlayRanking").classList.remove("show");
 
-$("btnStand").onclick = ()=> {
-  if (!state) return;
-  if (uiLocked && state.phase !== "offerInsurance") return; // Allow answering insurance? No, standard lock rules.
+    $("nameInput")?.addEventListener("input", ()=>{
+      const v = $("nameInput").value.trim().slice(0,12) || "YOU";
+      localStorage.setItem(NAME_KEY, v);
+    });
 
-  if (state.phase === "offerInsurance"){
-    $("insAmountSide").value = 0;
-    return callAction("buy_insurance", 0);   // NO
-  }
-  lockUI(1000); // Waiting for dealer turn start
-  return callAction("stand");
-};
-
-// New Dock Action Listeners
-$("btnDouble").onclick = ()=> callAction("double_down");
-$("btnSplit").onclick = ()=> callAction("split");
-$("btnSurrender").onclick = ()=> callAction("surrender");
-$("btnEvenMoney").onclick = ()=> callAction("take_even_money");
-
-// Bet Select Listener
-$("betSelect").onchange = (e) => {
-  if (!state) return;
-  const val = Number(e.target.value); // already int from value="100"
-  
-  // Sync hidden inputs for compatibility
-  $("betInput").value = val;
-  $("betInGame").value = val;
-
-  // If in valid betting phase, send action immediately
-  if (state.phase === "betting" || state.phase === "roundOver") {
-     callAction("set_bet", val);
-     if (state.phase === "roundOver") {
-        hideBoardAfterSet = true;
-        render();
-     }
-  }
-};
-
-// Session Over buttons
-$("btnSOTitle").onclick = ()=> doResetToTitle();
-$("btnSORetry").onclick = ()=> {
-  doResetToTitle();
-  setTimeout(()=> $("btnStart").click(), 200);
-};
-
-
-$("btnRanking").onclick = ()=> {
-  renderRankingOverlay();
-  $("overlayRanking").classList.add("show");
-};
-$("btnCloseRanking").onclick = ()=> $("overlayRanking").classList.remove("show");
-
-//このコメントアウトはランキング削除機能を無効化するためのものです
-// $("btnClearRanking").onclick = ()=> {
-//   saveRanking([]);
-//   renderRankingOverlay();
-//   toast("Ranking cleared");
-// };
-
-$("nameInput")?.addEventListener("input", ()=>{
-  const v = $("nameInput").value.trim().slice(0,12) || "YOU";
-  localStorage.setItem(NAME_KEY, v);
-});
-
-    // keyboard shortcuts
     window.addEventListener("keydown", (e)=>{
       if (!apiReady() || !$("screenGame").classList.contains("active")) return;
       const k = e.key.toLowerCase();
@@ -2911,43 +4924,232 @@ $("nameInput")?.addEventListener("input", ()=>{
         } else if ($("overlayPause").classList.contains("show")) {
             $("btnClosePause").click();
         }
-  }
-      if (state && state.phase === "offerInsurance"){
-      if (k === "y") $("btnHit").click();
-      if (k === "n") $("btnStand").click();
-      if (k === "m") {
-        const btn = $("btnDockMore");
-        if (btn) btn.click();
       }
-      return;
-    }
-
+      if (state && state.phase === "offerInsurance"){
+         if (k === "y") $("btnHit").click();
+         if (k === "n") $("btnStand").click();
+      }
     });
 
-    // bet hint pre-engine
-    function updateBetHintPreEngine(){
-      const v = floorEven($("betInput").value);
-      $("betHint").textContent = `入力=${$("betInput").value} → 偶数化=${v}`;
+    // デバッグ機能（常に有効）
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDev = true;
+    console.log("Dev mode enabled");
+
+    // ========= 開発用デバッグUI =========
+    {
+        const initDebugUI = () => {
+            // ポーズオーバーレイにチップ追加ボタン
+            const container = document.querySelector("#overlayPause .bd .row");
+            if (container && !document.getElementById("btnDebugFull")) {
+                const btn = document.createElement("button");
+                btn.id = "btnDebugFull";
+                btn.className = "btn";
+                btn.style.fontSize = "12px";
+                btn.style.padding = "4px 8px";
+                btn.textContent = "DEV +10000";
+                container.insertBefore(btn, container.firstChild);
+                btn.onclick = () => {
+                   if (!apiReady()) return;
+                   callAction("add_funds", 10000);
+                   toast("Debug: +10000 Chips");
+                   if (currentMode === "normal") {
+                       setTimeout(()=>{
+                           if (state && state.bank) localStorage.setItem(BANK_KEY_NORMAL, String(state.bank));
+                       }, 500);
+                   }
+                };
+            }
+
+            // タイトル画面に練習チケット付与ボタン
+            const titleRow = document.querySelector("#screenTitle .ctaRow");
+            if (titleRow && !document.getElementById("btnDevTicket")) {
+                const ticketBtn = document.createElement("button");
+                ticketBtn.id = "btnDevTicket";
+                ticketBtn.className = "btn ghost";
+                ticketBtn.style.fontSize = "11px";
+                ticketBtn.style.padding = "4px 8px";
+                ticketBtn.style.border = "1px dashed #ff0";
+                ticketBtn.style.color = "#ff0";
+                ticketBtn.textContent = "🎫 DEV +1 Ticket";
+                titleRow.parentElement.insertBefore(ticketBtn, titleRow.nextSibling);
+                ticketBtn.onclick = () => {
+                   addPracTicket(1);
+                   toast("Debug: +1 Practice Ticket");
+                };
+            }
+        };
+
+        // タイミング対策: 即時とエンジン後の両方で試行
+        if (document.readyState === "loading") {
+            window.addEventListener("DOMContentLoaded", initDebugUI);
+        } else {
+            initDebugUI();
+        }
+        window.addEventListener("bj-engine-ready", initDebugUI);
     }
-    $("betInput").addEventListener("input", updateBetHintPreEngine);
+
+    // エンジン同期ループを開始
+    syncEngine();
+
+    // 起動時にpending報酬があれば復元表示
+    restorePendingReward();
+
+    // ベットヒント (エンジン接続前・タイトル画面用)
+    function updateBetHintPreEngine(){
+      const el = $("betInputTitle") || $("betInput");
+      if (!el) return;
+      const v = floorEven(el.value);
+      if ($("betHint")) $("betHint").textContent = t("js.bet_hint_full", el.value, v);
+    }
+    if ($("betInputTitle")) $("betInputTitle").addEventListener("input", updateBetHintPreEngine);
+    else if ($("betInput")) $("betInput").addEventListener("input", updateBetHintPreEngine);
     updateBetHintPreEngine();
 
-    // kick engine sync loop
-    syncEngine();
-  
+
+    // Deal / DebugAce
+    $("btnDebugAce").onclick = () => {
+      // ポーズメニューを閉じてからDealを実行
+      if(state) callAction("set_paused", 0);
+      if (pausedAt) {
+        pausedTotal += performance.now() - pausedAt;
+        pausedAt = 0;
+      }
+      setPause(false);
+
+      $("btnDeal").disabled = true;
+      $("btnDebugAce").disabled = true;
+      setTimeout(()=>{ 
+        lockUI(800); 
+        callAction("debug_deal_ace");
+        $("btnDebugAce").disabled = false; // 再度有効化
+      }, 50);
+    };
+
+    $("btnDeal").onclick = ()=> {
+      $("btnHit").disabled = true;
+      $("btnStand").disabled = true;
+
+      // ディール前にベットを自動キャップ
+      if (state && (state.phase === "betting" || state.phase === "roundOver")) {
+        let bet = floorEven($("betInput").value); 
+        if (state.bank < bet) {
+          bet = floorEven(state.bank);
+          $("betInput").value = bet;
+          // 可能ならセレクトを同期
+          const sel = $("betSelect");
+          if(sel) sel.value = bet;
+          callAction("set_bet", bet);
+          toast(t("toast.bet_adjusted"));
+        }
+      }
+
+      setTimeout(async ()=>{ 
+        // エンジンからリシャッフルが必要かを確認
+        const shoe = state.shoe || {};
+        if (shoe.reshuffleSoon) {
+          // UIロックを延長
+          lockUI(1200 + 450 * 4 + 200);
+          await performShuffleAnimation();
+        } else {
+          // 通常のUIロック（アニメーション全体の時間分）
+          lockUI(450 * 4 + 200);
+        }
+
+        const DEAL_STEP_MS = 450; // 各ステップの間隔
+
+        // アニメーションキャッシュをリセット（新しいラウンド用）
+        prevDealerCards = [];
+        prevDealerJson = "";
+        prevPlayerLens = [];
+        prevPlayerJson = "";
+
+        // エンジンにDealを送信（4枚一括で配られる）
+        callAction("deal");
+
+        // 初回Deal段階アニメーション開始
+        // 順序: プレイヤー1枚目 → ディーラー1枚目 → プレイヤー2枚目 → ディーラー2枚目
+        initialDealStep = 1;
+        // キャッシュを無効化して再描画を強制
+        prevDealerJson = "";
+        prevPlayerJson = "";
+        render(); // Step 1: プレイヤー1枚目
+
+        if (initialDealTimer) clearTimeout(initialDealTimer);
+        initialDealTimer = setTimeout(() => {
+          initialDealStep = 2;
+          prevDealerJson = "";
+          prevPlayerJson = "";
+          render(); // Step 2: ディーラー1枚目
+
+          initialDealTimer = setTimeout(() => {
+            initialDealStep = 3;
+            prevDealerJson = "";
+            prevPlayerJson = "";
+            render(); // Step 3: プレイヤー2枚目
+
+            initialDealTimer = setTimeout(() => {
+              initialDealStep = 4; // Step 4: ディーラー2枚目表示
+              prevDealerJson = "";
+              render();
+
+              initialDealTimer = setTimeout(() => {
+                initialDealStep = 0; // 完了: 演出許可
+                initialDealTimer = null;
+                render(); 
+              }, DEAL_STEP_MS);
+            }, DEAL_STEP_MS);
+          }, DEAL_STEP_MS);
+        }, DEAL_STEP_MS);
+      }, 50);
+    };
+
+
+
+    function getRuleMaskFromUI() {
+       let mask = 0;
+       if($("opt_double").checked) mask |= 1;
+       if($("opt_split").checked) mask |= 2;
+       if($("opt_surrender").checked) mask |= 4;
+       if($("opt_insurance").checked) mask |= 8;
+       if($("opt_even_money").checked) mask |= 16;
+       if($("opt_das").checked) mask |= 32;
+       if($("opt_split_bj").checked) mask |= 64;
+       if($("opt_h17").checked) mask |= 128;
+       return mask;
+    }
+
+
+
+$("btnQuit").onclick = ()=> doResetToTitle();
+// btnSORevive は削除済み
+
+    // Insuranceのサイドパネル手入力ボタンは削除済み（max固定のため）
+    
+    $("btnEvenMoneyIns").onclick = () => {callAction("take_even_money");};
+
+
+
+
+
+
+
+
+
+
+
+
   </script>
-
-
-
 <!-- Last Build Scripts -->
-<script src="blackjack.js"></script>
-<script src="blackjack_ui.js"></script>
+<script src="loc.js?v=1772708114"></script>
+<script src="blackjack.js?v=1772708114"></script>
+<script src="blackjack_ui.js?v=1772708114"></script>
 
 <style>
   #fxCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
 </style>
 <script>
-  // Particle System
+  // パーティクルシステム
   const fxCanvas = document.createElement("canvas");
   fxCanvas.id = "fxCanvas";
   document.body.appendChild(fxCanvas);
@@ -2960,6 +5162,8 @@ $("nameInput")?.addEventListener("input", ()=>{
   }
   window.addEventListener("resize", resizeFx);
   resizeFx();
+
+
 
   class Particle {
     constructor(x, y, color){

@@ -104,7 +104,7 @@ const RESOURCES = {
 
     "how.det_table_title": "Table Rules",
     "how.det_table_text":
-      "6 decks are used.<br>The shoe is reshuffled when the cut card is reached.<br>Maximum of 4 hands per round (Split limit).<br><b>Split Aces</b>: Each hand receives only one card and then stands.<br>Blackjack (3:2) is only on the first two cards. Split 21 is a regular win (1:1).",
+      "6 decks are used.<br>The shoe is reshuffled when the cut card is reached.<br>Maximum of 3 hands per round (Split limit).<br><b>Split Aces</b>: Each hand receives only one card and then stands.<br>Blackjack (3:2) is only on the first two cards. Split 21 is a regular win (1:1).",
 
     "how.det_terms_title": "Terms",
     "how.det_terms_text":
@@ -315,7 +315,7 @@ const RESOURCES = {
 
     "how.det_table_title": "テーブルルール",
     "how.det_table_text":
-      "6デッキ（312枚）を使用します。<br>カードの残りが少なくなると、再シャッフルが行われます。<br>最大4ハンドまで分割可能です。<br><b>Split Aces</b>：Aのスプリット後は各手1枚のみ配られ、強制スタンドとなります。<br>Blackjack(3:2)は最初の2枚のみ。スプリット後の21は通常勝ち(1:1)です。",
+      "6デッキ（312枚）を使用します。<br>カードの残りが少なくなると、再シャッフルが行われます。<br>最大3ハンドまで分割可能です。<br><b>Split Aces</b>：Aのスプリット後は各手1枚のみ配られ、強制スタンドとなります。<br>Blackjack(3:2)は最初の2枚のみ。スプリット後の21は通常勝ち(1:1)です。",
 
     "how.det_terms_title": "用語の解説",
     "how.det_terms_text":

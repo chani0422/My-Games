@@ -1054,11 +1054,9 @@
     /* Split数に応じた幅調整 */
     .handArea.split-2 .handBox { flex: 0 1 45%; min-width: 140px; }
     .handArea.split-3 .handBox { flex: 0 1 30%; min-width: 120px; }
-    .handArea.split-4 .handBox { flex: 0 1 22%; min-width: 100px; }
 
     @media (max-width: 600px) {
       .handArea.split-3 .handBox { flex: 0 1 45%; } /* モバイル3枚は2+1 */
-      .handArea.split-4 .handBox { flex: 0 1 45%; } /* モバイル4枚は2x2 */
     }
 
     /* 練習モード用スタイル */
@@ -1453,82 +1451,115 @@ body{
   position: relative !important;
 }
 
-@media (max-width: 600px) {
-  .tableSurface {
-    /* absoluteの子要素にはpaddingはあまり関係ないが、フレームサイズを維持する */
-    padding: 0 !important; 
-    height: 520px !important; /* 高さを確保 */
-  }
-  
-  /* コンパクト Bet/Info */
-  .card .bd { padding: 8px !important; }
-  .card .hd { display:none; } /* "BET/INFO" ヘッダーを隠す */
-  .dealerZone { top: 40px !important; } /* ディーラーを上にずらす */
-  .playerZone { bottom: 85px !important; } /* プレイヤーを下にずらす/合わせる */
-  .divider { margin: 6px 0 !important; }
-  
-  /* コンパクトドック */
-  .dock.full {
-    min-height: 60px !important;
-    gap: 6px !important;
-    padding: 6px !important;
-    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
-    --dockH: 60px; /* 計算に必要な場合は変数を更新 */
-  }
-  .dock .btn {
-    min-height: 48px !important;
-    font-size: 14px !important;
-    border-radius: 10px !important;
-  }
-  .dock .btn .k { display:none; } /* モバイルではキーヒントを隠す */
-  
-  /* 新しいドックの高さに合わせてラッパーのパディングを調整 */
-  .wrap { padding-bottom: calc(60px + 20px + env(safe-area-inset-bottom)) !important; }
-}
-    
+    /* ==========================================
+       MOBILE LAYOUT REFACTOR (<= 600px)
+       ========================================== */
     @media (max-width: 600px) {
+      /* テーブル表面を縦並びの通常フローに変更 */
       .tableSurface {
-        padding: 40px 12px 180px !important; /* 複数行ドック用に下部パディングを増やす */
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+        height: auto !important;
+        min-height: 480px !important;
+        padding: 20px 10px 140px !important; /* 下部にドック用の余白 */
+        overflow-y: auto !important;
+        position: relative !important;
       }
+
+      /* ゾーンの絶対配置を解除 */
       .dealerZone, .playerZone {
+        position: relative !important;
+        top: auto !important;
+        bottom: auto !important;
+        left: auto !important;
+        right: auto !important;
+        transform: none !important;
+        width: 100% !important;
         max-width: 100% !important;
+        margin: 0 auto !important;
       }
-      /* モバイルでハンドが横に並びすぎると辛いので、微調整 */
+
+      /* ディーラーとプレイヤーの間隔 */
+      .dealerZone {
+        order: 1;
+        margin-bottom: 10px;
+      }
+      .playerZone {
+        order: 3;
+      }
+
+      /* 中央のバナーやエフェクト用スペース */
+      .banner {
+        order: 2;
+        margin: 10px 0;
+        position: relative !important;
+        z-index: 5;
+      }
+
+      /* ハンドエリアの調整 */
       .handArea {
-        gap: 6px;
+        gap: 8px !important;
+      }
+      .handArea.split-3 .handBox { flex: 0 1 45% !important; }
+
+      /* コンパクト表示設定 */
+      .card .bd { padding: 8px !important; }
+      .card .hd { display: none !important; }
+      .divider { margin: 6px 0 !important; }
+
+      /* 操作ドックの安定化 */
+      .dock.full {
+        position: fixed !important;
+        left: 8px !important;
+        right: 8px !important;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+        height: auto !important;
+        min-height: 80px !important;
+        max-height: 35vh !important;
+        padding: 8px !important;
+        gap: 8px !important;
+        z-index: 100 !important;
+      }
+      .dock .btn {
+        min-height: 54px !important;
+        font-size: 16px !important;
+        flex: 1 1 45% !important;
+      }
+      .dock .btn .k { display: none !important; }
+
+      /* 全体ラッパーの底面余白（ドックと重ならないように） */
+      .wrap {
+        padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+      }
+      
+      /* シューゲージを少し調整 */
+      .shoe-gauge-container {
+        left: 4px !important;
+        top: 10px !important;
+        height: 80px !important;
       }
     }
+    /* デスクトップ向けの絶対配置設定 (モバイル以外) */
+    @media (min-width: 600px) {
+      .dealerZone, .playerZone {
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 86% !important;
+        max-width: 800px !important;
+      }
+      .dealerZone { top: 110px !important; }
+      .playerZone { bottom: 90px !important; }
 
-/* absolute を解除してセンターに収める */
-/* absolute を解除してセンターに収める -> absolute配置を復元するためにキャンセル */
-/* 
-.dealerZone, .playerZone{
-  position: relative !important;
-  top: auto !important; bottom: auto !important; left: auto !important;
-  transform: none !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
-*/
-/* 代わりにabsoluteを使用するが幅を制限する */
-.dealerZone, .playerZone{
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  width: 86% !important; /* マージンを許可 */
-  max-width: 600px !important;
-}
-.dealerZone{ top: 110px !important; } /* 70pxから下げた */
-.playerZone{ bottom: 90px !important; }
-
-/* テーブルの曲率が強すぎると見切れやすい → 少し緩める */
-.tableFrame{
-  border-radius: 28px 28px 280px 280px !important;
-}
-.tableSurface{
-  border-radius: 18px 18px 240px 240px !important;
-  min-height: 620px !important;            /* 余白不足による下切れを防ぐ */
-}
+      .tableFrame {
+        border-radius: 28px 28px 280px 280px !important;
+      }
+      .tableSurface {
+        border-radius: 18px 18px 240px 240px !important;
+        min-height: 620px !important;
+      }
+    }
 
 /* backdrop-filter が文字を滲ませる時があるのでテーブル内は切る */
 .handBox{
@@ -1929,7 +1960,7 @@ window.CG.p = new Promise((resolve) => {
                   
                   <!-- ベット表示 -->
                   <div style="display:flex; justify-content:center; margin-bottom:8px; width:100%;">
-                     <input id="betInput" type="number" readonly value="100" style="
+                     <input id="betInput" type="number" readonly value="1000" style="
                          padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
                          background:rgba(0,0,0,.4); color:#fff; font-weight:bold; width:100%;
                          font-size:20px; text-align:center; outline:none;">
@@ -3832,9 +3863,9 @@ function beginSessionOverFlow(st){
 
       // B3: Split数に応じたクラス付与
       if (ph) {
-          ph.classList.remove("split-2", "split-3", "split-4");
+          ph.classList.remove("split-2", "split-3");
           if (hands.length >= 2) {
-              ph.classList.add("split-" + Math.min(hands.length, 4));
+              ph.classList.add("split-" + Math.min(hands.length, 3));
           }
       }
 
@@ -4791,9 +4822,9 @@ $("btnPracToTitle").onclick = () => {
        if (savedName && $("nameInput")) $("nameInput").value = savedName;
 
        // ベット設定
-       let bet = 100;
+       let bet = MIN_BET;
        if ($("betInput")) bet = Number($("betInput").value);
-       if (!bet || bet < 10) bet = 10;
+       if (!bet || bet < MIN_BET) bet = MIN_BET;
        bet = floorEven(bet);
        if (bet > initialBank) bet = initialBank;
        if ($("betInput")) $("betInput").value = bet;
