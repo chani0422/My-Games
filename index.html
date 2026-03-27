@@ -3269,7 +3269,12 @@ $("btnBankruptAd").onclick = () => {
     }
 
     function callAction(fnName, ...args){
-      const rc = bjApi[fnName](...args);
+        if (!window.bjApi || typeof window.bjApi[fnName] !== "function") {
+            console.warn(`callAction: Function "${fnName}" is not defined in bjApi.`);
+            if (typeof toast === "function") toast(`Error: ${fnName} not ready`);
+            return -1;
+        }
+        const rc = bjApi[fnName](...args);
       const st = refresh();
       if (rc !== 0 || st.lastErrorCode !== 0){
         if (st.lastError) {
