@@ -4107,14 +4107,14 @@ if (insMode) {
           }
       }
 
-      // 勝敗表示条件: ラウンド終了かつディーラー演出なし、かつ設定したディレイ(800ms)が完了していること
-      if (isRoundOver && !isDealerAnimating) {
+      // 勝敗表示条件: ラウンド終了かつディーラー演出なし、かつ初回配布完了(initialDealStep === 0)、かつ設定したディレイ(400ms)が完了していること
+      if (isRoundOver && !isDealerAnimating && initialDealStep === 0) {
           if (!resultDelayFinished && !resultDelayTimer) {
               resultDelayTimer = setTimeout(() => {
                   resultDelayFinished = true;
                   resultDelayTimer = null;
                   render();
-              }, 800);
+              }, 400);
           }
       } else {
           resultDelayFinished = false;
