@@ -2448,6 +2448,30 @@ window.CG.p = new Promise((resolve) => {
        updateModeButtons(); // UI更新
     }
 
+    // ========= DEV モード設定 (URL クエリ判定) =========
+    const params = new URLSearchParams(window.location.search);
+    const devUnlocked = params.get("dev") === "1";
+
+    /**
+     * DEV 用 UI 要素の表示・非表示を一括制御
+     */
+    function updateDevUIVisibility() {
+        // 静的な DEV ボタンの ID リスト
+        const devElemIds = ["btnAddXP", "btnResetLevel", "btnDebugAce", "btnShuffle"];
+        devElemIds.forEach(id => {
+            const el = $(id);
+            if (el) {
+                el.style.display = devUnlocked ? "" : "none";
+            }
+        });
+
+        if (devUnlocked) {
+            console.log("DEV MODE UNLOCKED via URL query");
+            // 任意で DEV モード開始のトーストを表示可能
+            // if (typeof toast === "function") toast("DEV MODE ENABLED");
+        }
+    }
+
     // ========= ユーティリティ =========
     const $ = (id)=>document.getElementById(id);
 
@@ -4276,6 +4300,11 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
         if (window.audioMgr) {
             window.audioMgr.init();
         }
+
+        // DEV UIの表示更新
+        if (typeof updateDevUIVisibility === "function") {
+            updateDevUIVisibility();
+        }
         
         // ユーザーの初回操作で音声をアンロック
         const unlock = () => {
@@ -5017,12 +5046,19 @@ $("btnPracToTitle").onclick = () => {
 
     // デバッグ機能（常に有効）
     const urlParams = new URLSearchParams(window.location.search);
-    const isDev = true;
-    console.log("Dev mode enabled");
+    // DEV モード判定は index.html の前半で window.devUnlocked として定義済みか、
+    // ここで再度取得（冗長だが安全）
+    const isDev = (typeof devUnlocked !== "undefined") ? devUnlocked : (new URLSearchParams(window.location.search).get("dev") === "1");
+    if (isDev) {
+        console.log("Dev mode enabled via query");
+    }
 
     // ========= 開発用デバッグUI =========
     {
         const initDebugUI = () => {
+            // クエリ判定で無効なら何もしない
+            if (!isDev) return;
+
             // ポーズオーバーレイにチップ追加ボタン
             const container = document.querySelector("#overlayPause .bd .row");
             if (container && !document.getElementById("btnDebugFull")) {
