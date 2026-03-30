@@ -209,6 +209,12 @@ const RESOURCES = {
       "<b>Challenge Mode</b><br>• Time limit: 5:00<br>• Fixed starting Bank (50K)<br>• Score attack mode<br>• Score tracked for ranking",
     "mode.help_practice_detail":
       "<b>Practice Mode</b><br>• Training only mode (24 rounds/play)<br>• No Bank fluctuation<br>• No impact on history/stats<br>• Insurance OFF<br>• Limited rounds (Future: add play by ads)",
+
+    "prac.no_ticket_basic": "No tickets left.",
+    "mode.practice_desc_basic": "Training mode.",
+    "bank.restart": "RESTART",
+    "bank.revive_hint_basic": "Chips are gone. Restart the session?",
+    "js.revive_done_basic": "Revived! +50000 (Free)",
   },
 
   ja: {
@@ -420,6 +426,12 @@ const RESOURCES = {
       "<b>Challenge Mode</b><br>・制限時間あり（5:00）<br>・初期Bank固定（50K）<br>・スコアアタックモード<br>・ランキング用スコア計測",
     "mode.help_practice_detail":
       "<b>Practice Mode</b><br>・練習専用モード（1プレイ24ラウンド）<br>・Bank変動なし<br>・履歴 / 統計に影響しない<br>・インシュランスOFF<br>・プレイ回数制限あり（将来的に広告で追加プレイ）",
+
+    "prac.no_ticket_basic": "チケットがありません。",
+    "mode.practice_desc_basic": "練習モードです。",
+    "bank.restart": "復活スタート",
+    "bank.revive_hint_basic": "チップがなくなりました。はじめからやり直しますか？",
+    "js.revive_done_basic": "復活しました！ +50000",
   },
 };
 

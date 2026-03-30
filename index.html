@@ -1697,6 +1697,11 @@ body{
   // 設定: CrazyGames "Basic Launch" 提出用にはfalseに設定。
   const ENABLE_ADS = false;
 
+  /** 広告が有効かどうかを一元管理 */
+  function isAdsEnabled() {
+    return !!(typeof ENABLE_ADS !== 'undefined' && ENABLE_ADS);
+  }
+
   window.CG = window.CG || {};
   window.CG.ready = false;
 
@@ -1706,19 +1711,40 @@ body{
       await window.CrazyGames.SDK.init();
       window.CG.ready = true;
       console.log("[CrazyGames] SDK ready");
+
+      // muteAudio連動
+      const sdk = window.CrazyGames.SDK;
+      if (sdk.game && sdk.game.settings) {
+        // 初期値の反映
+        if (sdk.game.settings.muteAudio !== undefined) {
+          window.audioMgr.setMuted(sdk.game.settings.muteAudio);
+        }
+        // 変更の監視
+        sdk.game.settings.addSettingsChangeListener((s) => {
+          if (s.muteAudio !== undefined) {
+            window.audioMgr.setMuted(s.muteAudio);
+          }
+        });
+      }
+
       return true;
     } catch (e) {
       console.warn("[CrazyGames] SDK init failed:", e);
       return false;
     }
   };
-// DOMContentLoadedで初期化
-window.CG.p = new Promise((resolve) => {
-  window.addEventListener("DOMContentLoaded", async () => {
-    const ok = await window.CG.init();
-    resolve(ok);
+
+  // DOMContentLoadedで初期化
+  window.CG.p = new Promise((resolve) => {
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await window.CG.init();
+      // 広告UIの整理を実行
+      if (typeof updateAdsUIForLaunchMode === 'function') {
+        updateAdsUIForLaunchMode();
+      }
+      resolve(ok);
+    });
   });
-});
 
 </script>
 
@@ -1762,6 +1788,48 @@ window.CG.p = new Promise((resolve) => {
       window.CrazyGames.SDK.game.gameplayStop();
     });
   };
+
+  /** Basic Launch 向けのUI整理 */
+  function updateAdsUIForLaunchMode() {
+    const ads = isAdsEnabled();
+    console.log("[CrazyGames] updateAdsUIForLaunchMode, adsEnabled:", ads);
+
+    if (!ads) {
+      // レベルアップ報酬ボタンを隠す
+      if ($("btnRewardAd")) $("btnRewardAd").style.display = "none";
+
+      // 練習モードの広告導線を隠す
+      if ($("btnPracWatchAd")) $("btnPracWatchAd").style.display = "none";
+      
+      // 練習モードボタンの表示調整 (Watch Adなどの文言が含まれる場合を考慮)
+      // 今回は loc.js の mode.practice 等で対応するが、動的に書き換える
+      const btnP = $("btnModePractice");
+      if (btnP) {
+        // 子要素の .small (デスクリプション) を差し替える
+        const desc = btnP.querySelector(".small");
+        if (desc) desc.setAttribute("data-i18n", "mode.practice_desc_basic");
+      }
+
+      // 破産時の広告復活ボタンを隠し、無料復活ボタンを出す
+      if ($("btnBankruptAd")) $("btnBankruptAd").style.display = "none";
+      if ($("btnBankruptRestart")) $("btnBankruptRestart").style.display = "inline-flex";
+      
+      // タイトル画面の復活ボタンも隠す
+      if ($("btnNormalRevive")) $("btnNormalRevive").style.display = "none";
+
+      // Sponsoredラベルを隠す
+      document.querySelectorAll('[data-i18n="so.sponsored"]').forEach(el => {
+        el.style.display = "none";
+      });
+
+      // 破産文言の調整
+      const hint = document.querySelector('[data-i18n="bank.revive_hint"]');
+      if (hint) hint.setAttribute("data-i18n", "bank.revive_hint_basic");
+    }
+    
+    // UIを再適用
+    if (typeof updateDOM === 'function') updateDOM();
+  }
 
 
 </script>
@@ -2136,8 +2204,13 @@ window.CG.p = new Promise((resolve) => {
         
         <div class="soBtns">
           <button class="btn ghost" id="btnBankruptTitle" data-i18n="cmd.title">TITLE</button>
-          <button class="btn primary ctaBig" id="btnBankruptAd">
-            <span style="font-size:14px">WATCH AD</span><br>+50000
+          <button class="btn primary ctaBig" id="rowBankruptAdAction">
+             <div id="btnBankruptAd">
+               <span style="font-size:14px">WATCH AD</span><br>+50000
+             </div>
+             <div id="btnBankruptRestart" style="display:none;">
+               <span style="font-size:14px" data-i18n="bank.restart">RESTART</span><br><span style="font-size:11px; font-weight:normal;">+50000 (Free)</span>
+             </div>
           </button>
         </div>
       </div>
@@ -3176,6 +3249,20 @@ $("btnBankruptTitle").onclick = () => {
 };
 
 // 広告で復活 (+50000 → Normal再開)
+// 広告で復活 (+50000 → Normal再開)
+const doReviveNormal = () => {
+  // bank=50000 で保存し、Normal自動再開
+  localStorage.setItem(BANK_KEY_NORMAL, "50000");
+  if ($("overlayBankruptcy")) $("overlayBankruptcy").classList.remove("show");
+  // アニメーションキャッシュをリセット
+  prevDealerCards = [];
+  prevPlayerLens = [];
+  prevBank = null;
+  toast(t("js.revive_done_basic")); // +50000
+  stopTick();
+  window.startSession("normal");
+};
+
 $("btnBankruptAd").onclick = () => {
   if (isAdRequesting) return;
   const btn = $("btnBankruptAd");
@@ -3187,41 +3274,29 @@ $("btnBankruptAd").onclick = () => {
     adFinished: () => {
       isAdRequesting = false;
       btn.disabled = false;
-      // bank=50000 で保存し、Normal自動再開
-      localStorage.setItem(BANK_KEY_NORMAL, "50000");
-      $("overlayBankruptcy").classList.remove("show");
-      // アニメーションキャッシュをリセット
-      prevDealerCards = [];
-      prevPlayerLens = [];
-      prevBank = null;
-      toast("復活しました！ +50000");
-      // doResetToTitleを使わず直接startSessionを呼ぶ
-      // (reset_sessionがbank=5000に上書きする問題を回避)
-      stopTick();
-      window.startSession("normal");
+      doReviveNormal();
     },
     adError: (error) => {
       isAdRequesting = false;
       btn.disabled = false;
       console.warn("Ad Error (bankruptcy):", error);
       if (errEl) errEl.style.display = "block";
-    },
-  };
-
-  isAdRequesting = true;
-  try {
-    if (window.CrazyGames?.SDK?.ad?.requestAd) {
-      window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
-    } else {
-      // SDK未接続時のデバッグ用: 即成功扱い
-      console.warn("SDK not ready, simulating ad success");
-      setTimeout(callbacks.adFinished, 1000);
     }
-  } catch (e) {
-    console.error(e);
-    callbacks.adError(e);
+  };
+  if (isAdsEnabled() && window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.ad) {
+    window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+  } else {
+    isAdRequesting = false;
+    btn.disabled = false;
   }
 };
+
+if ($("btnBankruptRestart")) {
+  $("btnBankruptRestart").onclick = () => {
+    doReviveNormal();
+  };
+}
+
 
     // ========= タイマー =========
     let sessionMs = 300000;
@@ -4644,39 +4719,41 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 
     // ========= 広告連携 (Rewarded) =========
     function requestAdForTicket(after = null) {
-       if (isAdRequesting) return;
-       isAdRequesting = true;
-       $("adErrorMsg").style.display = "none";
-       toast(t("js.ad_waiting"));
+        if (!isAdsEnabled()) {
+          toast(t("prac.no_ticket_basic"));
+          return;
+        }
+        if (isAdRequesting) return;
+        isAdRequesting = true;
+        $("adErrorMsg").style.display = "none";
+        toast(t("js.ad_waiting"));
 
-       // CrazyGames SDK
-       const callbacks = {
-         adFinished: () => {
-            isAdRequesting = false;
-            addPracTicket(1);
-            toast(t("js.ticket_get"));
-            // オーバーレイを閉じる
-            $("overlayAdConfirm").classList.remove("show");
-            // 呼び出し元が「広告後に続行したい」場合はコールバック
-            if (typeof after === "function") after();
-         },
-         adError: (error) => {
-            isAdRequesting = false;
-            console.warn("Ad Error:", error);
-            toast(t("ad.load_fail"));
-         },
-         adStarted: () => {
-            console.log("Ad Started");
-         }
-       };
+        // CrazyGames SDK
+        const callbacks = {
+          adFinished: () => {
+             isAdRequesting = false;
+             addPracTicket(1);
+             toast(t("js.ticket_get"));
+             // オーバーレイを閉じる
+             $("overlayAdConfirm").classList.remove("show");
+             // 呼び出し元が「広告後に続行したい」場合はコールバック
+             if (typeof after === "function") after();
+          },
+          adError: (error) => {
+             isAdRequesting = false;
+             console.warn("Ad Error (ticket):", error);
+             toast(t("ad.load_fail"));
+          },
+          adStarted: () => {
+             console.log("Ad Started");
+          }
+        };
 
-       if (window.CrazyGames?.SDK?.ad?.requestAd) {
-          window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
-       } else {
-          // SDKなし/ロード前 -> デバッグ用: 即成功扱い (or エラー)
-          console.warn("SDK not ready, simulating ad success");
-          setTimeout(callbacks.adFinished, 1000);
-       }
+        if (window.CrazyGames?.SDK?.ad?.requestAd) {
+           window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
+        } else {
+           isAdRequesting = false;
+        }
     }
 
 
