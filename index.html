@@ -2362,6 +2362,28 @@ body{
   </div>
 </div>
 
+<!-- 初回名前入力 -->
+<div class="overlay" id="overlayNameInput">
+  <div class="modal">
+    <div class="hd">
+      <b data-i18n="name.welcome">WELCOME!</b>
+    </div>
+    <div class="bd" style="text-align:center; padding:20px 0;">
+      <p class="muted" data-i18n="name.input_hint">
+        ランキングに使用する名前を入力してください。
+      </p>
+      <div style="margin:20px 0;">
+        <input id="initialNameInput" type="text" maxlength="12" placeholder="YOU" 
+               style="width:240px; font-size:18px; text-align:center; padding:12px;">
+      </div>
+      <div id="nameErrorMsg" style="color:#ff4d4d; font-size:12px; margin-bottom:15px; display:none;" data-i18n="name.error_empty">
+        名前を入力してください。
+      </div>
+      <button class="btn primary ctaBig" id="btnSaveName" style="min-width:200px;" data-i18n="name.start">START GAME</button>
+    </div>
+  </div>
+</div>
+
 <!-- ランキング -->
 <div class="overlay" id="overlayRanking">
   <div class="modal">
@@ -2375,8 +2397,8 @@ body{
       </p>
 
       <div class="row" style="justify-content:space-between; margin-top:10px;">
-        <div class="muted small" data-i18n="rank.name">Name（任意）</div>
-        <input id="nameInput" type="text" maxlength="12" placeholder="YOU" style="width:180px;">
+        <div class="muted small" data-i18n="rank.name">Name</div>
+        <div id="rankNameDisplay" style="font-weight:bold; color:var(--primary);">YOU</div>
       </div>
 
       <div class="handBox" id="rankingList"
@@ -4394,6 +4416,15 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
         if (window.bjApi && window.apiReady && window.apiReady()) {
             syncEngine();
         }
+
+        // --- 名前設定チェック ---
+        const savedName = localStorage.getItem(NAME_KEY);
+        if (!savedName) {
+            if($("overlayNameInput")) $("overlayNameInput").classList.add("show");
+        } else {
+            if ($("rankNameDisplay")) $("rankNameDisplay").textContent = savedName;
+            if ($("initialNameInput")) $("initialNameInput").value = savedName;
+        }
     }
     function fmtK(n) {
         n = Number(n);
@@ -4548,9 +4579,7 @@ function fmtDur(ms){
 }
 
 function getPlayerName(){
-  const inp = $("nameInput");
-  const v = (inp ? inp.value : "").trim().slice(0,12);
-  const name = v || (localStorage.getItem(NAME_KEY) || "YOU");
+  const name = (localStorage.getItem(NAME_KEY) || "YOU").trim().slice(0,12);
   localStorage.setItem(NAME_KEY, name);
   return name;
 }
@@ -4575,6 +4604,9 @@ function addRankingRecord(rec){
 function renderRankingOverlay(){
   const box = $("rankingList");
   if (!box) return;
+
+  const current = getPlayerName();
+  if ($("rankNameDisplay")) $("rankNameDisplay").textContent = current;
 
   const list = loadRanking();
   if (!list.length){
@@ -5003,7 +5035,7 @@ $("btnPracToTitle").onclick = () => {
 
        // 名前の復元
        const savedName = localStorage.getItem(NAME_KEY);
-       if (savedName && $("nameInput")) $("nameInput").value = savedName;
+        if (savedName && $("rankNameDisplay")) $("rankNameDisplay").textContent = savedName;
 
        // ベット設定
        let bet = MIN_BET;
@@ -5097,10 +5129,31 @@ $("btnPracToTitle").onclick = () => {
     };
     $("btnCloseRanking").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayRanking").classList.remove("show"); };
 
-    $("nameInput")?.addEventListener("input", ()=>{
-      const v = $("nameInput").value.trim().slice(0,12) || "YOU";
-      localStorage.setItem(NAME_KEY, v);
-    });
+    // 以前の nameInput リスナーは削除
+    
+    // 初回名前保存
+    if ($("btnSaveName")) {
+      $("btnSaveName").onclick = () => {
+        const inp = $("initialNameInput");
+        const name = (inp ? inp.value : "").trim().slice(0, 12);
+        const err = $("nameErrorMsg");
+
+        if (!name) {
+          if (err) err.style.display = "block";
+          return;
+        }
+
+        localStorage.setItem(NAME_KEY, name);
+        if ($("rankNameDisplay")) $("rankNameDisplay").textContent = name;
+        if ($("overlayNameInput")) $("overlayNameInput").classList.remove("show");
+        toast(t("ui.ready"));
+      };
+
+      // Enterキーでも保存
+      $("initialNameInput")?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("btnSaveName").click();
+      });
+    }
 
     window.addEventListener("keydown", (e)=>{
       if (!apiReady() || !$("screenGame").classList.contains("active")) return;

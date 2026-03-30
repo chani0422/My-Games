@@ -215,6 +215,11 @@ const RESOURCES = {
     "bank.restart": "RESTART",
     "bank.revive_hint_basic": "Chips are gone. Restart the session?",
     "js.revive_done_basic": "Revived! +50000 (Free)",
+
+    "name.welcome": "WELCOME!",
+    "name.input_hint": "Please enter your name for the ranking.",
+    "name.start": "START GAME",
+    "name.error_empty": "Please enter a name.",
   },
 
   ja: {
@@ -342,7 +347,7 @@ const RESOURCES = {
     "rank.title": "RANKING",
     "rank.close": "閉じる",
     "rank.msg": "セッション結果（Profit順）を保存しています（最大 50 件）。",
-    "rank.name": "Name（任意）",
+    "rank.name": "Name",
     "rank.none": "まだランキングがありません。",
     "rank.saved": "ランキングを保存しました: ",
 
@@ -432,6 +437,11 @@ const RESOURCES = {
     "bank.restart": "復活スタート",
     "bank.revive_hint_basic": "チップがなくなりました。はじめからやり直しますか？",
     "js.revive_done_basic": "復活しました！ +50000",
+
+    "name.welcome": "WELCOME!",
+    "name.input_hint": "ランキングに使用する名前を入力してください。",
+    "name.start": "ゲーム開始",
+    "name.error_empty": "名前を入力してください。",
   },
 };
 
