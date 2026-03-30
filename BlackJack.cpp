@@ -216,6 +216,8 @@ struct Shoe {
   int decks = 6;
   int cutSize = 78;
   bool forceNextAce = false; // デバッグ用: 次のdrawでAを強制返却
+  int forceNextSplitRank = 0; // デバッグ用: 0以外なら次のディールでPにそのランクを2枚配る
+  int drawCountInRound = 0;   // 同上: ディール開始からのドロー枚数
 
   vector<Card> cards;
   std::mt19937 rng;
@@ -224,6 +226,8 @@ struct Shoe {
     decks = decks_;
     cutSize = cutSize_;
     forceNextAce = false;
+    forceNextSplitRank = 0;
+    drawCountInRound = 0;
     rng.seed((uint32_t)(seed ^ (seed >> 32)));
     rebuild_and_shuffle();
   }
@@ -245,10 +249,27 @@ struct Shoe {
     if (cards.empty()) {
       rebuild_and_shuffle();
     }
-    // デバッグ: forceNextAce が ON なら A♠ を返す（ワンショット）
-    if (forceNextAce) {
+
+    drawCountInRound++;
+
+    // デバッグ: スプリット強制 (1枚目と3枚目)
+    if (forceNextSplitRank > 0 && (drawCountInRound == 1 || drawCountInRound == 3)) {
+      int targetRank = forceNextSplitRank;
+      if (drawCountInRound == 3) forceNextSplitRank = 0; // 3枚目(P2枚目)でリセット
+
+      for (int i = (int)cards.size() - 1; i >= 0; i--) {
+        if (cards[i].rank == targetRank) {
+          Card c = cards[i];
+          cards.erase(cards.begin() + i);
+          return c;
+        }
+      }
+      return Card{(uint8_t)targetRank, 0};
+    }
+
+    // デバッグ: forceNextAce が ON なら A を返す (1枚目のみ)
+    if (forceNextAce && drawCountInRound == 1) {
       forceNextAce = false;
-      // デッキからAを探して返す（見つからなければ A♠ を生成）
       for (int i = (int)cards.size() - 1; i >= 0; i--) {
         if (cards[i].rank == 1) {
           Card c = cards[i];
@@ -256,9 +277,9 @@ struct Shoe {
           return c;
         }
       }
-      // デッキにAがない場合のフォールバック
-      return Card{1, 0}; // A♠
+      return Card{1, 0};
     }
+
     Card c = cards.back();
     cards.pop_back();
     return c;
@@ -679,6 +700,7 @@ struct Engine {
 
     reset_round_state();
     bankAtRoundStart = bank;
+    shoe.drawCountInRound = 0; // カウンタリセット
 
     bank -= baseBet;
     init_single_hand_bet(baseBet, false, false);
@@ -1226,6 +1248,12 @@ struct Engine {
     return deal();
   }
 
+  // ★デバッグ: 次のdealでプレイヤーにペア（8-8など）を配る
+  int debug_deal_split() {
+    shoe.forceNextSplitRank = 8; // 8-8が一番スプリットしやすい
+    return deal();
+  }
+
   string get_state_json() {
     update_all_caches();
 
@@ -1445,6 +1473,9 @@ int add_funds(int amount) { return bj::g.add_funds(amount); }
 
 EMSCRIPTEN_KEEPALIVE
 int debug_deal_ace() { return bj::g.debug_deal_ace(); }
+
+EMSCRIPTEN_KEEPALIVE
+int debug_deal_split() { return bj::g.debug_deal_split(); }
 
 EMSCRIPTEN_KEEPALIVE
 int force_shuffle() { return bj::g.force_shuffle(); }

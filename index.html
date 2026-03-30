@@ -461,7 +461,7 @@
     .overlay-levelup {
       position: fixed;
       inset: 0;
-      z-index: 200;
+      z-index: 2100 !important;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1351,7 +1351,7 @@
       display:none;
       align-items:center; justify-content:center;
       padding:18px;
-      z-index:60;
+      z-index:2000 !important;
       backdrop-filter: blur(10px);
     }
     .overlay.no-blur{
@@ -2316,8 +2316,9 @@ body{
           セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。
         </p>
         <div class="row" style="justify-content:flex-end; gap:10px;">
-          <button class="btn secondary small" id="btnDebugAce" style="font-size:10px; padding:4px 8px;">ACE</button>
-          <button class="btn secondary small" id="btnShuffle" style="font-size:10px; padding:4px 8px;">SHUFFLE</button>
+          <button class="btn secondary small" id="btnDebugAce" style="font-size:10px; padding:4px 8px; display:none;">ACE</button>
+          <button class="btn secondary small" id="btnDebugSplit" style="font-size:10px; padding:4px 8px; display:none;">SPLIT</button>
+          <button class="btn secondary small" id="btnShuffle" style="font-size:10px; padding:4px 8px; display:none;">SHUFFLE</button>
           <button class="btn" id="btnHowPause" data-i18n="title.how">遊び方</button>
           <button class="btn primary" id="btnContinue" data-i18n="pause.continue">Continue</button>
           <button class="btn danger" id="btnQuit" data-i18n="pause.quit">Quit to Title</button>
@@ -5213,6 +5214,11 @@ $("btnPracToTitle").onclick = () => {
 
     window.addEventListener("keydown", (e)=>{
       if (!apiReady() || !$("screenGame").classList.contains("active")) return;
+      // オーバーレイ表示中は無視
+      if (document.querySelector(".overlay.show") || document.querySelector(".overlay-levelup.show")) {
+        return;
+      }
+      
       const k = e.key.toLowerCase();
       if (k === "d") $("btnDeal").click();
       if (k === "h") $("btnHit").click();
@@ -5266,6 +5272,11 @@ $("btnPracToTitle").onclick = () => {
                    }
                 };
             }
+
+            // ポーズメニューのデバッグ動作セット
+            if ($("btnDebugAce")) $("btnDebugAce").style.display = "inline-block";
+            if ($("btnDebugSplit")) $("btnDebugSplit").style.display = "inline-block";
+            if ($("btnShuffle")) $("btnShuffle").style.display = "inline-block";
 
             // タイトル画面に練習チケット付与ボタン
             const titleRow = document.querySelector("#screenTitle .ctaRow");
@@ -5329,6 +5340,24 @@ $("btnPracToTitle").onclick = () => {
         lockUI(800); 
         callAction("debug_deal_ace");
         $("btnDebugAce").disabled = false; // 再度有効化
+      }, 50);
+    };
+
+    $("btnDebugSplit").onclick = () => {
+      // ポーズメニューを閉じてからDealを実行
+      if(state) callAction("set_paused", 0);
+      if (pausedAt) {
+        pausedTotal += performance.now() - pausedAt;
+        pausedAt = 0;
+      }
+      setPause(false);
+
+      $("btnDeal").disabled = true;
+      $("btnDebugSplit").disabled = true;
+      setTimeout(()=>{ 
+        lockUI(800); 
+        callAction("debug_deal_split");
+        $("btnDebugSplit").disabled = false; // 再度有効化
       }, 50);
     };
 
