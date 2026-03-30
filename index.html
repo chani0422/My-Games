@@ -617,6 +617,44 @@
     .btn:active{ transform: translateY(1px) scale(.99); }
     .btn[disabled]{ opacity:.40; cursor:not-allowed; box-shadow:none; filter:saturate(.2); }
 
+    /* ===== Feedback Button ===== */
+    .btn-feedback {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 11px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s ease;
+      font-weight: 800;
+    }
+    .btn-feedback:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: var(--gold);
+      transform: translateY(-1px);
+    }
+    .btn-feedback:active {
+      transform: translateY(1px);
+    }
+    @media (max-width: 600px) {
+      .btn-feedback {
+        right: 12px;
+        bottom: 12px;
+        padding: 6px 10px;
+        font-size: 10px;
+      }
+    }
+
     /* ===== Help Icon & Tooltip & Modal ===== */
     .help-icon {
       position: absolute;
@@ -1054,11 +1092,9 @@
     /* Split数に応じた幅調整 */
     .handArea.split-2 .handBox { flex: 0 1 45%; min-width: 140px; }
     .handArea.split-3 .handBox { flex: 0 1 30%; min-width: 120px; }
-    .handArea.split-4 .handBox { flex: 0 1 22%; min-width: 100px; }
 
     @media (max-width: 600px) {
       .handArea.split-3 .handBox { flex: 0 1 45%; } /* モバイル3枚は2+1 */
-      .handArea.split-4 .handBox { flex: 0 1 45%; } /* モバイル4枚は2x2 */
     }
 
     /* 練習モード用スタイル */
@@ -1453,82 +1489,115 @@ body{
   position: relative !important;
 }
 
-@media (max-width: 600px) {
-  .tableSurface {
-    /* absoluteの子要素にはpaddingはあまり関係ないが、フレームサイズを維持する */
-    padding: 0 !important; 
-    height: 520px !important; /* 高さを確保 */
-  }
-  
-  /* コンパクト Bet/Info */
-  .card .bd { padding: 8px !important; }
-  .card .hd { display:none; } /* "BET/INFO" ヘッダーを隠す */
-  .dealerZone { top: 40px !important; } /* ディーラーを上にずらす */
-  .playerZone { bottom: 85px !important; } /* プレイヤーを下にずらす/合わせる */
-  .divider { margin: 6px 0 !important; }
-  
-  /* コンパクトドック */
-  .dock.full {
-    min-height: 60px !important;
-    gap: 6px !important;
-    padding: 6px !important;
-    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
-    --dockH: 60px; /* 計算に必要な場合は変数を更新 */
-  }
-  .dock .btn {
-    min-height: 48px !important;
-    font-size: 14px !important;
-    border-radius: 10px !important;
-  }
-  .dock .btn .k { display:none; } /* モバイルではキーヒントを隠す */
-  
-  /* 新しいドックの高さに合わせてラッパーのパディングを調整 */
-  .wrap { padding-bottom: calc(60px + 20px + env(safe-area-inset-bottom)) !important; }
-}
-    
+    /* ==========================================
+       MOBILE LAYOUT REFACTOR (<= 600px)
+       ========================================== */
     @media (max-width: 600px) {
+      /* テーブル表面を縦並びの通常フローに変更 */
       .tableSurface {
-        padding: 40px 12px 180px !important; /* 複数行ドック用に下部パディングを増やす */
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+        height: auto !important;
+        min-height: 480px !important;
+        padding: 20px 10px 140px !important; /* 下部にドック用の余白 */
+        overflow-y: auto !important;
+        position: relative !important;
       }
+
+      /* ゾーンの絶対配置を解除 */
       .dealerZone, .playerZone {
+        position: relative !important;
+        top: auto !important;
+        bottom: auto !important;
+        left: auto !important;
+        right: auto !important;
+        transform: none !important;
+        width: 100% !important;
         max-width: 100% !important;
+        margin: 0 auto !important;
       }
-      /* モバイルでハンドが横に並びすぎると辛いので、微調整 */
+
+      /* ディーラーとプレイヤーの間隔 */
+      .dealerZone {
+        order: 1;
+        margin-bottom: 10px;
+      }
+      .playerZone {
+        order: 3;
+      }
+
+      /* 中央のバナーやエフェクト用スペース */
+      .banner {
+        order: 2;
+        margin: 10px 0;
+        position: relative !important;
+        z-index: 5;
+      }
+
+      /* ハンドエリアの調整 */
       .handArea {
-        gap: 6px;
+        gap: 8px !important;
+      }
+      .handArea.split-3 .handBox { flex: 0 1 45% !important; }
+
+      /* コンパクト表示設定 */
+      .card .bd { padding: 8px !important; }
+      .card .hd { display: none !important; }
+      .divider { margin: 6px 0 !important; }
+
+      /* 操作ドックの安定化 */
+      .dock.full {
+        position: fixed !important;
+        left: 8px !important;
+        right: 8px !important;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+        height: auto !important;
+        min-height: 80px !important;
+        max-height: 35vh !important;
+        padding: 8px !important;
+        gap: 8px !important;
+        z-index: 100 !important;
+      }
+      .dock .btn {
+        min-height: 54px !important;
+        font-size: 16px !important;
+        flex: 1 1 45% !important;
+      }
+      .dock .btn .k { display: none !important; }
+
+      /* 全体ラッパーの底面余白（ドックと重ならないように） */
+      .wrap {
+        padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+      }
+      
+      /* シューゲージを少し調整 */
+      .shoe-gauge-container {
+        left: 4px !important;
+        top: 10px !important;
+        height: 80px !important;
       }
     }
+    /* デスクトップ向けの絶対配置設定 (モバイル以外) */
+    @media (min-width: 600px) {
+      .dealerZone, .playerZone {
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 86% !important;
+        max-width: 800px !important;
+      }
+      .dealerZone { top: 110px !important; }
+      .playerZone { bottom: 90px !important; }
 
-/* absolute を解除してセンターに収める */
-/* absolute を解除してセンターに収める -> absolute配置を復元するためにキャンセル */
-/* 
-.dealerZone, .playerZone{
-  position: relative !important;
-  top: auto !important; bottom: auto !important; left: auto !important;
-  transform: none !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
-*/
-/* 代わりにabsoluteを使用するが幅を制限する */
-.dealerZone, .playerZone{
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  width: 86% !important; /* マージンを許可 */
-  max-width: 600px !important;
-}
-.dealerZone{ top: 110px !important; } /* 70pxから下げた */
-.playerZone{ bottom: 90px !important; }
-
-/* テーブルの曲率が強すぎると見切れやすい → 少し緩める */
-.tableFrame{
-  border-radius: 28px 28px 280px 280px !important;
-}
-.tableSurface{
-  border-radius: 18px 18px 240px 240px !important;
-  min-height: 620px !important;            /* 余白不足による下切れを防ぐ */
-}
+      .tableFrame {
+        border-radius: 28px 28px 280px 280px !important;
+      }
+      .tableSurface {
+        border-radius: 18px 18px 240px 240px !important;
+        min-height: 620px !important;
+      }
+    }
 
 /* backdrop-filter が文字を滲ませる時があるのでテーブル内は切る */
 .handBox{
@@ -1666,6 +1735,11 @@ body{
   // 設定: CrazyGames "Basic Launch" 提出用にはfalseに設定。
   const ENABLE_ADS = false;
 
+  /** 広告が有効かどうかを一元管理 */
+  function isAdsEnabled() {
+    return !!(typeof ENABLE_ADS !== 'undefined' && ENABLE_ADS);
+  }
+
   window.CG = window.CG || {};
   window.CG.ready = false;
 
@@ -1675,19 +1749,40 @@ body{
       await window.CrazyGames.SDK.init();
       window.CG.ready = true;
       console.log("[CrazyGames] SDK ready");
+
+      // muteAudio連動
+      const sdk = window.CrazyGames.SDK;
+      if (sdk.game && sdk.game.settings) {
+        // 初期値の反映
+        if (sdk.game.settings.muteAudio !== undefined) {
+          window.audioMgr.setMuted(sdk.game.settings.muteAudio);
+        }
+        // 変更の監視
+        sdk.game.settings.addSettingsChangeListener((s) => {
+          if (s.muteAudio !== undefined) {
+            window.audioMgr.setMuted(s.muteAudio);
+          }
+        });
+      }
+
       return true;
     } catch (e) {
       console.warn("[CrazyGames] SDK init failed:", e);
       return false;
     }
   };
-// DOMContentLoadedで初期化
-window.CG.p = new Promise((resolve) => {
-  window.addEventListener("DOMContentLoaded", async () => {
-    const ok = await window.CG.init();
-    resolve(ok);
+
+  // DOMContentLoadedで初期化
+  window.CG.p = new Promise((resolve) => {
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await window.CG.init();
+      // 広告UIの整理を実行
+      if (typeof updateAdsUIForLaunchMode === 'function') {
+        updateAdsUIForLaunchMode();
+      }
+      resolve(ok);
+    });
   });
-});
 
 </script>
 
@@ -1731,6 +1826,48 @@ window.CG.p = new Promise((resolve) => {
       window.CrazyGames.SDK.game.gameplayStop();
     });
   };
+
+  /** Basic Launch 向けのUI整理 */
+  function updateAdsUIForLaunchMode() {
+    const ads = isAdsEnabled();
+    console.log("[CrazyGames] updateAdsUIForLaunchMode, adsEnabled:", ads);
+
+    if (!ads) {
+      // レベルアップ報酬ボタンを隠す
+      if ($("btnRewardAd")) $("btnRewardAd").style.display = "none";
+
+      // 練習モードの広告導線を隠す
+      if ($("btnPracWatchAd")) $("btnPracWatchAd").style.display = "none";
+      
+      // 練習モードボタンの表示調整 (Watch Adなどの文言が含まれる場合を考慮)
+      // 今回は loc.js の mode.practice 等で対応するが、動的に書き換える
+      const btnP = $("btnModePractice");
+      if (btnP) {
+        // 子要素の .small (デスクリプション) を差し替える
+        const desc = btnP.querySelector(".small");
+        if (desc) desc.setAttribute("data-i18n", "mode.practice_desc_basic");
+      }
+
+      // 破産時の広告復活ボタンを隠し、無料復活ボタンを出す
+      if ($("btnBankruptAd")) $("btnBankruptAd").style.display = "none";
+      if ($("btnBankruptRestart")) $("btnBankruptRestart").style.display = "inline-flex";
+      
+      // タイトル画面の復活ボタンも隠す
+      if ($("btnNormalRevive")) $("btnNormalRevive").style.display = "none";
+
+      // Sponsoredラベルを隠す
+      document.querySelectorAll('[data-i18n="so.sponsored"]').forEach(el => {
+        el.style.display = "none";
+      });
+
+      // 破産文言の調整
+      const hint = document.querySelector('[data-i18n="bank.revive_hint"]');
+      if (hint) hint.setAttribute("data-i18n", "bank.revive_hint_basic");
+    }
+    
+    // UIを再適用
+    if (typeof updateDOM === 'function') updateDOM();
+  }
 
 
 </script>
@@ -1848,6 +1985,12 @@ window.CG.p = new Promise((resolve) => {
           <div class="ctaRow" style="margin-top:12px; justify-content:center;">
              <button class="btn ghost" id="btnHowTitle" data-i18n="title.how">遊び方</button>
           </div>
+          
+          <!-- フィードバックボタン (Googleフォーム) -->
+          <button class="btn-feedback" id="btnFeedback">
+            <span style="font-size: 14px;">💬</span>
+            <span data-i18n="ui.feedback">ご意見・不具合</span>
+          </button>
         </div>
 
         <div class="bd">
@@ -1929,7 +2072,7 @@ window.CG.p = new Promise((resolve) => {
                   
                   <!-- ベット表示 -->
                   <div style="display:flex; justify-content:center; margin-bottom:8px; width:100%;">
-                     <input id="betInput" type="number" readonly value="100" style="
+                     <input id="betInput" type="number" readonly value="1000" style="
                          padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
                          background:rgba(0,0,0,.4); color:#fff; font-weight:bold; width:100%;
                          font-size:20px; text-align:center; outline:none;">
@@ -2105,8 +2248,13 @@ window.CG.p = new Promise((resolve) => {
         
         <div class="soBtns">
           <button class="btn ghost" id="btnBankruptTitle" data-i18n="cmd.title">TITLE</button>
-          <button class="btn primary ctaBig" id="btnBankruptAd">
-            <span style="font-size:14px">WATCH AD</span><br>+50000
+          <button class="btn primary ctaBig" id="rowBankruptAdAction">
+             <div id="btnBankruptAd">
+               <span style="font-size:14px">WATCH AD</span><br>+50000
+             </div>
+             <div id="btnBankruptRestart" style="display:none;">
+               <span style="font-size:14px" data-i18n="bank.restart">RESTART</span><br><span style="font-size:11px; font-weight:normal;">+50000 (Free)</span>
+             </div>
           </button>
         </div>
       </div>
@@ -2258,6 +2406,28 @@ window.CG.p = new Promise((resolve) => {
   </div>
 </div>
 
+<!-- 初回名前入力 -->
+<div class="overlay" id="overlayNameInput">
+  <div class="modal">
+    <div class="hd">
+      <b data-i18n="name.welcome">WELCOME!</b>
+    </div>
+    <div class="bd" style="text-align:center; padding:20px 0;">
+      <p class="muted" data-i18n="name.input_hint">
+        ランキングに使用する名前を入力してください。
+      </p>
+      <div style="margin:20px 0;">
+        <input id="initialNameInput" type="text" maxlength="12" placeholder="YOU" 
+               style="width:240px; font-size:18px; text-align:center; padding:12px;">
+      </div>
+      <div id="nameErrorMsg" style="color:#ff4d4d; font-size:12px; margin-bottom:15px; display:none;" data-i18n="name.error_empty">
+        名前を入力してください。
+      </div>
+      <button class="btn primary ctaBig" id="btnSaveName" style="min-width:200px;" data-i18n="name.start">START GAME</button>
+    </div>
+  </div>
+</div>
+
 <!-- ランキング -->
 <div class="overlay" id="overlayRanking">
   <div class="modal">
@@ -2271,8 +2441,8 @@ window.CG.p = new Promise((resolve) => {
       </p>
 
       <div class="row" style="justify-content:space-between; margin-top:10px;">
-        <div class="muted small" data-i18n="rank.name">Name（任意）</div>
-        <input id="nameInput" type="text" maxlength="12" placeholder="YOU" style="width:180px;">
+        <div class="muted small" data-i18n="rank.name">Name</div>
+        <div id="rankNameDisplay" style="font-weight:bold; color:var(--primary);">YOU</div>
       </div>
 
       <div class="handBox" id="rankingList"
@@ -2335,6 +2505,9 @@ window.CG.p = new Promise((resolve) => {
   <script>
     window.CG?.loadingStart?.();
     let prevPhase = null;
+
+    // ========= フィードバック・外部連携 =========
+    const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScfoc07SpR-S3SQIzDoE_Sm3OPpfDY4T25L19Oy_tutnzmhmw/viewform?usp=header";
 
     // ========= モード管理 (Hoisted) =========
     const MODE_KEY = "bj_mode";
@@ -2415,6 +2588,30 @@ window.CG.p = new Promise((resolve) => {
        const cur = Number(localStorage.getItem(PRAC_TICKET_KEY) || 0);
        localStorage.setItem(PRAC_TICKET_KEY, String(cur + n));
        updateModeButtons(); // UI更新
+    }
+
+    // ========= DEV モード設定 (URL クエリ判定) =========
+    const params = new URLSearchParams(window.location.search);
+    const devUnlocked = params.get("dev") === "1";
+
+    /**
+     * DEV 用 UI 要素の表示・非表示を一括制御
+     */
+    function updateDevUIVisibility() {
+        // 静的な DEV ボタンの ID リスト
+        const devElemIds = ["btnAddXP", "btnResetLevel", "btnDebugAce", "btnShuffle"];
+        devElemIds.forEach(id => {
+            const el = $(id);
+            if (el) {
+                el.style.display = devUnlocked ? "" : "none";
+            }
+        });
+
+        if (devUnlocked) {
+            console.log("DEV MODE UNLOCKED via URL query");
+            // 任意で DEV モード開始のトーストを表示可能
+            // if (typeof toast === "function") toast("DEV MODE ENABLED");
+        }
     }
 
     // ========= ユーティリティ =========
@@ -2612,6 +2809,7 @@ window.CG.p = new Promise((resolve) => {
     let pendingLevelReward = null; // { level, levelsUp } — ユーザー選択待ち
 
     function showLevelUpCelebration(level, levelsUp) {
+      window.audioMgr.play("level_up");
       const overlay = $("overlayLevelUp");
       if (!overlay) return;
       $("levelupLevel").textContent = `Lv ${level}`;
@@ -3120,6 +3318,20 @@ $("btnBankruptTitle").onclick = () => {
 };
 
 // 広告で復活 (+50000 → Normal再開)
+// 広告で復活 (+50000 → Normal再開)
+const doReviveNormal = () => {
+  // bank=50000 で保存し、Normal自動再開
+  localStorage.setItem(BANK_KEY_NORMAL, "50000");
+  if ($("overlayBankruptcy")) $("overlayBankruptcy").classList.remove("show");
+  // アニメーションキャッシュをリセット
+  prevDealerCards = [];
+  prevPlayerLens = [];
+  prevBank = null;
+  toast(t("js.revive_done_basic")); // +50000
+  stopTick();
+  window.startSession("normal");
+};
+
 $("btnBankruptAd").onclick = () => {
   if (isAdRequesting) return;
   const btn = $("btnBankruptAd");
@@ -3131,41 +3343,29 @@ $("btnBankruptAd").onclick = () => {
     adFinished: () => {
       isAdRequesting = false;
       btn.disabled = false;
-      // bank=50000 で保存し、Normal自動再開
-      localStorage.setItem(BANK_KEY_NORMAL, "50000");
-      $("overlayBankruptcy").classList.remove("show");
-      // アニメーションキャッシュをリセット
-      prevDealerCards = [];
-      prevPlayerLens = [];
-      prevBank = null;
-      toast("復活しました！ +50000");
-      // doResetToTitleを使わず直接startSessionを呼ぶ
-      // (reset_sessionがbank=5000に上書きする問題を回避)
-      stopTick();
-      window.startSession("normal");
+      doReviveNormal();
     },
     adError: (error) => {
       isAdRequesting = false;
       btn.disabled = false;
       console.warn("Ad Error (bankruptcy):", error);
       if (errEl) errEl.style.display = "block";
-    },
-  };
-
-  isAdRequesting = true;
-  try {
-    if (window.CrazyGames?.SDK?.ad?.requestAd) {
-      window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
-    } else {
-      // SDK未接続時のデバッグ用: 即成功扱い
-      console.warn("SDK not ready, simulating ad success");
-      setTimeout(callbacks.adFinished, 1000);
     }
-  } catch (e) {
-    console.error(e);
-    callbacks.adError(e);
+  };
+  if (isAdsEnabled() && window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.ad) {
+    window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+  } else {
+    isAdRequesting = false;
+    btn.disabled = false;
   }
 };
+
+if ($("btnBankruptRestart")) {
+  $("btnBankruptRestart").onclick = () => {
+    doReviveNormal();
+  };
+}
+
 
     // ========= タイマー =========
     let sessionMs = 300000;
@@ -3237,10 +3437,18 @@ $("btnBankruptAd").onclick = () => {
     }
 
     function callAction(fnName, ...args){
-      const rc = bjApi[fnName](...args);
+        if (!window.bjApi || typeof window.bjApi[fnName] !== "function") {
+            console.warn(`callAction: Function "${fnName}" is not defined in bjApi.`);
+            if (typeof toast === "function") toast(`Error: ${fnName} not ready`);
+            return -1;
+        }
+        const rc = bjApi[fnName](...args);
       const st = refresh();
       if (rc !== 0 || st.lastErrorCode !== 0){
-        if (st.lastError) toast(st.lastError);
+        if (st.lastError) {
+            toast(st.lastError);
+            window.audioMgr.play("ui_error");
+        }
         console.warn("action", fnName, "rc=", rc, "err=", st.lastErrorCode, st.lastError);
       }
       return rc;
@@ -3360,6 +3568,10 @@ function setPause(paused) {
     // 1: プレイヤー1枚目, 2: ディーラー1枚目, 3: プレイヤー2枚目, 4: ディーラー2枚目(完了)
     let initialDealStep = 0;
     let initialDealTimer = null;
+
+    // 勝敗演出のディレイ制御用
+    let resultDelayTimer = null;
+    let resultDelayFinished = false;
 
     // カード文字列からスコアを計算するヘルパー関数
     function calcCardScore(cards, asString = false) {
@@ -3624,6 +3836,7 @@ function beginSessionOverFlow(st){
       // ラウンド番号が変わったら演出フラグをリセット
       if (state.session && state.session.round !== lastDisplayedRound) {
         winEffectDone = false;
+        resultSEDone = false;
         chipEffectDone = false;
         lastDisplayedRound = state.session.round;
       }
@@ -3712,6 +3925,7 @@ function beginSessionOverFlow(st){
              if (!dealerAnimTimer) {
                  dealerAnimTimer = setTimeout(() => {
                      dealerShowCount++;
+                     window.audioMgr.play("card_flip");
                      dealerAnimTimer = null;
                      render(); 
                  }, 600);
@@ -3832,9 +4046,9 @@ function beginSessionOverFlow(st){
 
       // B3: Split数に応じたクラス付与
       if (ph) {
-          ph.classList.remove("split-2", "split-3", "split-4");
+          ph.classList.remove("split-2", "split-3");
           if (hands.length >= 2) {
-              ph.classList.add("split-" + Math.min(hands.length, 4));
+              ph.classList.add("split-" + Math.min(hands.length, 3));
           }
       }
 
@@ -4037,10 +4251,28 @@ if (insMode) {
           }
       }
 
-      $("roundBanner").style.display = (isRoundOver && !isDealerAnimating) ? "flex" : "none";
+      // 勝敗表示条件: ラウンド終了かつディーラー演出なし、かつ初回配布完了(initialDealStep === 0)、かつ設定したディレイ(400ms)が完了していること
+      if (isRoundOver && !isDealerAnimating && initialDealStep === 0) {
+          if (!resultDelayFinished && !resultDelayTimer) {
+              resultDelayTimer = setTimeout(() => {
+                  resultDelayFinished = true;
+                  resultDelayTimer = null;
+                  render();
+              }, 400);
+          }
+      } else {
+          resultDelayFinished = false;
+          if (resultDelayTimer) {
+              clearTimeout(resultDelayTimer);
+              resultDelayTimer = null;
+          }
+      }
+
+      const showResultUI = isRoundOver && !isDealerAnimating && resultDelayFinished;
+      $("roundBanner").style.display = showResultUI ? "flex" : "none";
 
       // 破産判定 (Normalモードのみ): bank < MIN_BET(1K) で破産
-      if (currentMode === "normal" && isRoundOver && !isDealerAnimating) {
+      if (currentMode === "normal" && showResultUI) {
           const b = Number(state.bank);
           if (b < MIN_BET) {
               // 破産確定: bank=0 を即座に保存
@@ -4053,21 +4285,40 @@ if (insMode) {
       }
 
       // 勝利・チップエフェクトのトリガー
-      if (isRoundOver) {
-         if (!isDealerAnimating) {
-            const net = state.roundResult.netProfit;
-            if (!winEffectDone && net > 0) {
-                window.triggerWinEffect && window.triggerWinEffect();
-                winEffectDone = true;
-            }
-            if (!chipEffectDone && net > 0 && !isTitle && currentMode !== "practice") {
-                playChipAbsorb(Number(state.bank));
-                chipEffectDone = true;
-            }
-         }
+      if (showResultUI) {
+          const net = state.roundResult.netProfit;
+          if (!winEffectDone && net > 0) {
+              window.triggerWinEffect && window.triggerWinEffect();
+              winEffectDone = true;
+          }
+
+          // 勝敗 SE の再生 (1回のみ)
+          if (!resultSEDone) {
+              const isBJ = state.player?.hands?.some(h => h.flags.blackjack);
+              if (isBJ) {
+                  window.audioMgr.play("blackjack");
+              } else if (net > 0) {
+                  window.audioMgr.play("win");
+                  setTimeout(() => window.audioMgr.play("chip_gain"), 600);
+              } else if (net < 0) {
+                  window.audioMgr.play("lose");
+              } else {
+                  window.audioMgr.play("push");
+              }
+              resultSEDone = true;
+          }
+
+          if (!chipEffectDone && net > 0 && !isTitle && currentMode !== "practice") {
+              playChipAbsorb(Number(state.bank));
+              chipEffectDone = true;
+          }
       } else {
-         // ROUND_OVER以外ではフラグをリセット（念のため）
-         // ただし、ラウンド番号検知があるのでここでは何もしなくても良い
+          // ROUND_OVER以外またはディレイ中
+          if (!isRoundOver) {
+            winEffectDone = false;
+            chipEffectDone = false;
+            resultSEDone = false;
+          }
       }
 
 
@@ -4188,6 +4439,40 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     if (initialDealTimer) { clearTimeout(initialDealTimer); initialDealTimer = null; }
 }
     // K表記フォーマッター
+    function initApp() {
+        console.log("initApp SE Edition");
+        if (window.audioMgr) {
+            window.audioMgr.init();
+        }
+
+        // DEV UIの表示更新
+        if (typeof updateDevUIVisibility === "function") {
+            updateDevUIVisibility();
+        }
+        
+        // ユーザーの初回操作で音声をアンロック
+        const unlock = () => {
+            if (window.audioMgr) window.audioMgr.unlock();
+            document.removeEventListener("mousedown", unlock);
+            document.removeEventListener("touchstart", unlock);
+        };
+        document.addEventListener("mousedown", unlock);
+        document.addEventListener("touchstart", unlock);
+
+        // 必要に応じてエンジンの初期状態を同期
+        if (window.bjApi && window.apiReady && window.apiReady()) {
+            syncEngine();
+        }
+
+        // --- 名前設定チェック ---
+        const savedName = localStorage.getItem(NAME_KEY);
+        if (!savedName) {
+            if($("overlayNameInput")) $("overlayNameInput").classList.add("show");
+        } else {
+            if ($("rankNameDisplay")) $("rankNameDisplay").textContent = savedName;
+            if ($("initialNameInput")) $("initialNameInput").value = savedName;
+        }
+    }
     function fmtK(n) {
         n = Number(n);
         if (n >= 1000 && n % 1000 === 0) return (n / 1000) + "K";
@@ -4203,6 +4488,7 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
       if (next < MIN_BET) next = MIN_BET; // clamp後も最低保証
       
       $("betInput").value = next;
+      window.audioMgr.play("chip_place");
       
       // 更新を送信
       callAction("set_bet", next);
@@ -4245,9 +4531,18 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
     if ($("betInput")) $("betInput").onchange = onBetInputChange;
     if ($("betInGame")) $("betInGame").onchange = onBetInputChange;
 
-    $("btnHowTitle").onclick = ()=> $("overlayHow").classList.add("show");
-    $("btnHowTitle2").onclick = ()=> $("overlayHow").classList.add("show");
-    $("btnHowPause").onclick = () => $("overlayHow").classList.add("show");
+    $("btnHowTitle").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayHow").classList.add("show"); };
+    $("btnHowTitle2").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayHow").classList.add("show"); };
+
+    // フィードバックボタン
+    if ($("btnFeedback")) {
+      $("btnFeedback").onclick = () => {
+        if (!FEEDBACK_FORM_URL) return;
+        window.audioMgr.play("ui_click");
+        window.open(FEEDBACK_FORM_URL, "_blank", "noopener,noreferrer");
+      };
+    }
+    $("btnHowPause").onclick = () => { window.audioMgr.play("ui_click"); $("overlayHow").classList.add("show"); };
 
     $("btnShuffle").onclick = async () => {
       // 演出開始前にメニューを閉じる
@@ -4265,9 +4560,10 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
       toast("Deck Re-shuffled");
       render();
     };
-    $("btnCloseHow").onclick = ()=> $("overlayHow").classList.remove("show");
+    $("btnCloseHow").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayHow").classList.remove("show"); };
     
     $("btnLangToggle").onclick = () => {
+      window.audioMgr.play("ui_click");
       const current = window.LOC.lang;
       const next = current === "en" ? "ja" : "en";
       window.LOC.lang = next;
@@ -4275,14 +4571,16 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
 
         // 履歴オーバーレイ
     $("btnHistory").onclick = ()=>{
+      window.audioMgr.play("ui_click");
       renderHistoryOverlay();
       $("overlayHistory").classList.add("show");
     };
-    $("btnCloseHistory").onclick = ()=> $("overlayHistory").classList.remove("show");
+    $("btnCloseHistory").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayHistory").classList.remove("show"); };
 
     // モードヘルプ詳細表示
     document.querySelectorAll(".help-icon").forEach(icon => {
       icon.onclick = (e) => {
+        window.audioMgr.play("ui_click");
         e.stopPropagation(); // ボタン自体のクリックイベントを防ぐ
         const mode = icon.getAttribute("data-mode-help");
         const body = $("modeDescBody");
@@ -4293,6 +4591,7 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
       };
     });
     $("btnCloseModeDesc").onclick = $("btnModeDescClose").onclick = () => {
+      window.audioMgr.play("ui_click");
       $("overlayModeDesc").classList.remove("show");
     };
     $("overlayModeDesc").onclick = (e) => {
@@ -4336,9 +4635,7 @@ function fmtDur(ms){
 }
 
 function getPlayerName(){
-  const inp = $("nameInput");
-  const v = (inp ? inp.value : "").trim().slice(0,12);
-  const name = v || (localStorage.getItem(NAME_KEY) || "YOU");
+  const name = (localStorage.getItem(NAME_KEY) || "YOU").trim().slice(0,12);
   localStorage.setItem(NAME_KEY, name);
   return name;
 }
@@ -4363,6 +4660,9 @@ function addRankingRecord(rec){
 function renderRankingOverlay(){
   const box = $("rankingList");
   if (!box) return;
+
+  const current = getPlayerName();
+  if ($("rankNameDisplay")) $("rankNameDisplay").textContent = current;
 
   const list = loadRanking();
   if (!list.length){
@@ -4492,6 +4792,7 @@ if ($("btnResetLevel")) {
 }
 
 $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
+  window.audioMgr.play("ui_click");
   // エンジン側へ再開通知
   if(state) {
       callAction("set_paused", 0);
@@ -4506,39 +4807,41 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 
     // ========= 広告連携 (Rewarded) =========
     function requestAdForTicket(after = null) {
-       if (isAdRequesting) return;
-       isAdRequesting = true;
-       $("adErrorMsg").style.display = "none";
-       toast(t("js.ad_waiting"));
+        if (!isAdsEnabled()) {
+          toast(t("prac.no_ticket_basic"));
+          return;
+        }
+        if (isAdRequesting) return;
+        isAdRequesting = true;
+        $("adErrorMsg").style.display = "none";
+        toast(t("js.ad_waiting"));
 
-       // CrazyGames SDK
-       const callbacks = {
-         adFinished: () => {
-            isAdRequesting = false;
-            addPracTicket(1);
-            toast(t("js.ticket_get"));
-            // オーバーレイを閉じる
-            $("overlayAdConfirm").classList.remove("show");
-            // 呼び出し元が「広告後に続行したい」場合はコールバック
-            if (typeof after === "function") after();
-         },
-         adError: (error) => {
-            isAdRequesting = false;
-            console.warn("Ad Error:", error);
-            toast(t("ad.load_fail"));
-         },
-         adStarted: () => {
-            console.log("Ad Started");
-         }
-       };
+        // CrazyGames SDK
+        const callbacks = {
+          adFinished: () => {
+             isAdRequesting = false;
+             addPracTicket(1);
+             toast(t("js.ticket_get"));
+             // オーバーレイを閉じる
+             $("overlayAdConfirm").classList.remove("show");
+             // 呼び出し元が「広告後に続行したい」場合はコールバック
+             if (typeof after === "function") after();
+          },
+          adError: (error) => {
+             isAdRequesting = false;
+             console.warn("Ad Error (ticket):", error);
+             toast(t("ad.load_fail"));
+          },
+          adStarted: () => {
+             console.log("Ad Started");
+          }
+        };
 
-       if (window.CrazyGames?.SDK?.ad?.requestAd) {
-          window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
-       } else {
-          // SDKなし/ロード前 -> デバッグ用: 即成功扱い (or エラー)
-          console.warn("SDK not ready, simulating ad success");
-          setTimeout(callbacks.adFinished, 1000);
-       }
+        if (window.CrazyGames?.SDK?.ad?.requestAd) {
+           window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
+        } else {
+           isAdRequesting = false;
+        }
     }
 
 
@@ -4788,12 +5091,12 @@ $("btnPracToTitle").onclick = () => {
 
        // 名前の復元
        const savedName = localStorage.getItem(NAME_KEY);
-       if (savedName && $("nameInput")) $("nameInput").value = savedName;
+        if (savedName && $("rankNameDisplay")) $("rankNameDisplay").textContent = savedName;
 
        // ベット設定
-       let bet = 100;
+       let bet = MIN_BET;
        if ($("betInput")) bet = Number($("betInput").value);
-       if (!bet || bet < 10) bet = 10;
+       if (!bet || bet < MIN_BET) bet = MIN_BET;
        bet = floorEven(bet);
        if (bet > initialBank) bet = initialBank;
        if ($("betInput")) $("betInput").value = bet;
@@ -4814,6 +5117,7 @@ $("btnPracToTitle").onclick = () => {
        
        lockUI(800);
        goScreen("game");
+       window.audioMgr.play("game_start");
        
        toast(mode === "normal" ? "Normal Mode Start!" : 
              mode === "practice" ? "Practice Mode Start!" : t("toast.good_luck"));
@@ -4834,6 +5138,7 @@ $("btnPracToTitle").onclick = () => {
       }
 
       lockUI(600); 
+      window.audioMgr.play("button_action");
       return callAction("hit");
     };
 
@@ -4846,21 +5151,24 @@ $("btnPracToTitle").onclick = () => {
         return callAction("buy_insurance", 0);   
       }
       lockUI(1000); 
+      window.audioMgr.play("button_action");
       return callAction("stand");
     };
 
-    $("btnDouble").onclick = ()=> callAction("double_down");
-    $("btnSplit").onclick = ()=> callAction("split");
-    $("btnSurrender").onclick = ()=> callAction("surrender");
+    $("btnDouble").onclick = ()=> { window.audioMgr.play("button_action"); callAction("double_down"); };
+    $("btnSplit").onclick = ()=> { window.audioMgr.play("button_action"); callAction("split"); };
+    $("btnSurrender").onclick = ()=> { window.audioMgr.play("button_action"); callAction("surrender"); };
     $("btnEvenMoney").onclick = ()=> callAction("take_even_money");
 
     $("btnInsNo").onclick = () => {
+      window.audioMgr.play("ui_click");
       if(uiLocked) return;
       lockUI(500);
       callAction("buy_insurance", 0);
       $("overlayInsurance").classList.remove("show");
     };
     $("btnInsYes").onclick = () => {
+      window.audioMgr.play("button_action");
       if(uiLocked || !state) return;
       lockUI(500);
       // Insurance額は自動でmax固定（手入力不要）
@@ -4871,15 +5179,37 @@ $("btnPracToTitle").onclick = () => {
     // btnInsMaxOverlay は削除済み（手入力不要のため）
     
     $("btnRanking").onclick = ()=> {
+      window.audioMgr.play("ui_click");
       renderRankingOverlay();
       $("overlayRanking").classList.add("show");
     };
-    $("btnCloseRanking").onclick = ()=> $("overlayRanking").classList.remove("show");
+    $("btnCloseRanking").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayRanking").classList.remove("show"); };
 
-    $("nameInput")?.addEventListener("input", ()=>{
-      const v = $("nameInput").value.trim().slice(0,12) || "YOU";
-      localStorage.setItem(NAME_KEY, v);
-    });
+    // 以前の nameInput リスナーは削除
+    
+    // 初回名前保存
+    if ($("btnSaveName")) {
+      $("btnSaveName").onclick = () => {
+        const inp = $("initialNameInput");
+        const name = (inp ? inp.value : "").trim().slice(0, 12);
+        const err = $("nameErrorMsg");
+
+        if (!name) {
+          if (err) err.style.display = "block";
+          return;
+        }
+
+        localStorage.setItem(NAME_KEY, name);
+        if ($("rankNameDisplay")) $("rankNameDisplay").textContent = name;
+        if ($("overlayNameInput")) $("overlayNameInput").classList.remove("show");
+        toast(t("ui.ready"));
+      };
+
+      // Enterキーでも保存
+      $("initialNameInput")?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("btnSaveName").click();
+      });
+    }
 
     window.addEventListener("keydown", (e)=>{
       if (!apiReady() || !$("screenGame").classList.contains("active")) return;
@@ -4902,12 +5232,19 @@ $("btnPracToTitle").onclick = () => {
 
     // デバッグ機能（常に有効）
     const urlParams = new URLSearchParams(window.location.search);
-    const isDev = true;
-    console.log("Dev mode enabled");
+    // DEV モード判定は index.html の前半で window.devUnlocked として定義済みか、
+    // ここで再度取得（冗長だが安全）
+    const isDev = (typeof devUnlocked !== "undefined") ? devUnlocked : (new URLSearchParams(window.location.search).get("dev") === "1");
+    if (isDev) {
+        console.log("Dev mode enabled via query");
+    }
 
     // ========= 開発用デバッグUI =========
     {
         const initDebugUI = () => {
+            // クエリ判定で無効なら何もしない
+            if (!isDev) return;
+
             // ポーズオーバーレイにチップ追加ボタン
             const container = document.querySelector("#overlayPause .bd .row");
             if (container && !document.getElementById("btnDebugFull")) {
@@ -5039,6 +5376,7 @@ $("btnPracToTitle").onclick = () => {
         // 初回Deal段階アニメーション開始
         // 順序: プレイヤー1枚目 → ディーラー1枚目 → プレイヤー2枚目 → ディーラー2枚目
         initialDealStep = 1;
+        window.audioMgr.play("card_deal");
         // キャッシュを無効化して再描画を強制
         prevDealerJson = "";
         prevPlayerJson = "";
@@ -5059,6 +5397,7 @@ $("btnPracToTitle").onclick = () => {
 
             initialDealTimer = setTimeout(() => {
               initialDealStep = 4; // Step 4: ディーラー2枚目表示
+              window.audioMgr.play("card_deal");
               prevDealerJson = "";
               render();
 
@@ -5108,11 +5447,19 @@ $("btnQuit").onclick = ()=> doResetToTitle();
 
 
 
+
   </script>
 <!-- Last Build Scripts -->
 <script src="loc.js?v=1772708114"></script>
+<script src="audio.js"></script>
 <script src="blackjack.js?v=1772708114"></script>
 <script src="blackjack_ui.js?v=1772708114"></script>
+<script>
+  // すべてのスクリプトとアセットがロードされた後に初期化
+  window.addEventListener("load", () => {
+    if (typeof initApp === "function") initApp();
+  });
+</script>
 
 <style>
   #fxCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }

@@ -273,8 +273,8 @@ struct Engine {
   Rules rules{};
 
   int bank = 5000;
-  int minBet = 10;
-  int baseBet = 10;
+  int minBet = 1000;
+  int baseBet = 1000;
 
   int round = 0;
   int roundLimit = 12;
@@ -1020,8 +1020,8 @@ struct Engine {
 
     if (!rules.allowSplit)
       return set_error(NOT_SUPPORTED, "スプリットは無効です");
-    if ((int)hands.size() >= 4)
-      return set_error(INVALID_STATE, "ハンドの最大数（4）に達しました");
+    if ((int)hands.size() >= 3)
+      return set_error(INVALID_STATE, "ハンドの最大数（3）に達しました");
 
     Hand *h = active_hand();
     if (!h)

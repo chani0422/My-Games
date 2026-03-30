@@ -104,7 +104,7 @@ const RESOURCES = {
 
     "how.det_table_title": "Table Rules",
     "how.det_table_text":
-      "6 decks are used.<br>The shoe is reshuffled when the cut card is reached.<br>Maximum of 4 hands per round (Split limit).<br><b>Split Aces</b>: Each hand receives only one card and then stands.<br>Blackjack (3:2) is only on the first two cards. Split 21 is a regular win (1:1).",
+      "6 decks are used.<br>The shoe is reshuffled when the cut card is reached.<br>Maximum of 3 hands per round (Split limit).<br><b>Split Aces</b>: Each hand receives only one card and then stands.<br>Blackjack (3:2) is only on the first two cards. Split 21 is a regular win (1:1).",
 
     "how.det_terms_title": "Terms",
     "how.det_terms_text":
@@ -209,6 +209,18 @@ const RESOURCES = {
       "<b>Challenge Mode</b><br>• Time limit: 5:00<br>• Fixed starting Bank (50K)<br>• Score attack mode<br>• Score tracked for ranking",
     "mode.help_practice_detail":
       "<b>Practice Mode</b><br>• Training only mode (24 rounds/play)<br>• No Bank fluctuation<br>• No impact on history/stats<br>• Insurance OFF<br>• Limited rounds (Future: add play by ads)",
+
+    "prac.no_ticket_basic": "No tickets left.",
+    "mode.practice_desc_basic": "Training mode.",
+    "bank.restart": "RESTART",
+    "bank.revive_hint_basic": "Chips are gone. Restart the session?",
+    "js.revive_done_basic": "Revived! +50000 (Free)",
+
+    "name.welcome": "WELCOME!",
+    "name.input_hint": "Please enter your name for the ranking.",
+    "name.start": "START GAME",
+    "name.error_empty": "Please enter a name.",
+    "ui.feedback": "Feedback / Bugs",
   },
 
   ja: {
@@ -315,7 +327,7 @@ const RESOURCES = {
 
     "how.det_table_title": "テーブルルール",
     "how.det_table_text":
-      "6デッキ（312枚）を使用します。<br>カードの残りが少なくなると、再シャッフルが行われます。<br>最大4ハンドまで分割可能です。<br><b>Split Aces</b>：Aのスプリット後は各手1枚のみ配られ、強制スタンドとなります。<br>Blackjack(3:2)は最初の2枚のみ。スプリット後の21は通常勝ち(1:1)です。",
+      "6デッキ（312枚）を使用します。<br>カードの残りが少なくなると、再シャッフルが行われます。<br>最大3ハンドまで分割可能です。<br><b>Split Aces</b>：Aのスプリット後は各手1枚のみ配られ、強制スタンドとなります。<br>Blackjack(3:2)は最初の2枚のみ。スプリット後の21は通常勝ち(1:1)です。",
 
     "how.det_terms_title": "用語の解説",
     "how.det_terms_text":
@@ -336,7 +348,7 @@ const RESOURCES = {
     "rank.title": "RANKING",
     "rank.close": "閉じる",
     "rank.msg": "セッション結果（Profit順）を保存しています（最大 50 件）。",
-    "rank.name": "Name（任意）",
+    "rank.name": "Name",
     "rank.none": "まだランキングがありません。",
     "rank.saved": "ランキングを保存しました: ",
 
@@ -420,6 +432,18 @@ const RESOURCES = {
       "<b>Challenge Mode</b><br>・制限時間あり（5:00）<br>・初期Bank固定（50K）<br>・スコアアタックモード<br>・ランキング用スコア計測",
     "mode.help_practice_detail":
       "<b>Practice Mode</b><br>・練習専用モード（1プレイ24ラウンド）<br>・Bank変動なし<br>・履歴 / 統計に影響しない<br>・インシュランスOFF<br>・プレイ回数制限あり（将来的に広告で追加プレイ）",
+
+    "prac.no_ticket_basic": "チケットがありません。",
+    "mode.practice_desc_basic": "練習モードです。",
+    "bank.restart": "復活スタート",
+    "bank.revive_hint_basic": "チップがなくなりました。はじめからやり直しますか？",
+    "js.revive_done_basic": "復活しました！ +50000",
+
+    "name.welcome": "WELCOME!",
+    "name.input_hint": "ランキングに使用する名前を入力してください。",
+    "name.start": "ゲーム開始",
+    "name.error_empty": "名前を入力してください。",
+    "ui.feedback": "ご意見・不具合",
   },
 };
 

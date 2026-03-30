@@ -13,6 +13,12 @@ FILES=(
   "blackjack.wasm"
   "blackjack_ui.js"
   "loc.js"
+  "audio.js"
+)
+
+# 含めるディレクトリ
+DIRS=(
+  "assets"
 )
 
 # 1. ビルド (任意ですが推奨)
@@ -36,6 +42,16 @@ for file in "${FILES[@]}"; do
   else
     echo "❌ エラー: 必須ファイル '$file' が見つかりません！"
     exit 1
+  fi
+done
+
+# 3.2 ディレクトリコピー
+echo "📂 ディレクトリをコピー中..."
+for dir in "${DIRS[@]}"; do
+  if [ -d "$dir" ]; then
+    cp -r "$dir" "$DIST_DIR/"
+  else
+    echo "⚠️ 警告: ディレクトリ '$dir' が見つかりません。"
   fi
 done
 
