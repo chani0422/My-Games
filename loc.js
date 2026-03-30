@@ -220,6 +220,7 @@ const RESOURCES = {
     "name.input_hint": "Please enter your name for the ranking.",
     "name.start": "START GAME",
     "name.error_empty": "Please enter a name.",
+    "ui.feedback": "Feedback / Bugs",
   },
 
   ja: {
@@ -442,6 +443,7 @@ const RESOURCES = {
     "name.input_hint": "ランキングに使用する名前を入力してください。",
     "name.start": "ゲーム開始",
     "name.error_empty": "名前を入力してください。",
+    "ui.feedback": "ご意見・不具合",
   },
 };
 

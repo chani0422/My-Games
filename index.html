@@ -617,6 +617,44 @@
     .btn:active{ transform: translateY(1px) scale(.99); }
     .btn[disabled]{ opacity:.40; cursor:not-allowed; box-shadow:none; filter:saturate(.2); }
 
+    /* ===== Feedback Button ===== */
+    .btn-feedback {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 11px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s ease;
+      font-weight: 800;
+    }
+    .btn-feedback:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: var(--gold);
+      transform: translateY(-1px);
+    }
+    .btn-feedback:active {
+      transform: translateY(1px);
+    }
+    @media (max-width: 600px) {
+      .btn-feedback {
+        right: 12px;
+        bottom: 12px;
+        padding: 6px 10px;
+        font-size: 10px;
+      }
+    }
+
     /* ===== Help Icon & Tooltip & Modal ===== */
     .help-icon {
       position: absolute;
@@ -1947,6 +1985,12 @@ body{
           <div class="ctaRow" style="margin-top:12px; justify-content:center;">
              <button class="btn ghost" id="btnHowTitle" data-i18n="title.how">遊び方</button>
           </div>
+          
+          <!-- フィードバックボタン (Googleフォーム) -->
+          <button class="btn-feedback" id="btnFeedback">
+            <span style="font-size: 14px;">💬</span>
+            <span data-i18n="ui.feedback">ご意見・不具合</span>
+          </button>
         </div>
 
         <div class="bd">
@@ -2461,6 +2505,9 @@ body{
   <script>
     window.CG?.loadingStart?.();
     let prevPhase = null;
+
+    // ========= フィードバック・外部連携 =========
+    const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScfoc07SpR-S3SQIzDoE_Sm3OPpfDY4T25L19Oy_tutnzmhmw/viewform?usp=header";
 
     // ========= モード管理 (Hoisted) =========
     const MODE_KEY = "bj_mode";
@@ -4486,6 +4533,15 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
 
     $("btnHowTitle").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayHow").classList.add("show"); };
     $("btnHowTitle2").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayHow").classList.add("show"); };
+
+    // フィードバックボタン
+    if ($("btnFeedback")) {
+      $("btnFeedback").onclick = () => {
+        if (!FEEDBACK_FORM_URL) return;
+        window.audioMgr.play("ui_click");
+        window.open(FEEDBACK_FORM_URL, "_blank", "noopener,noreferrer");
+      };
+    }
     $("btnHowPause").onclick = () => { window.audioMgr.play("ui_click"); $("overlayHow").classList.add("show"); };
 
     $("btnShuffle").onclick = async () => {
