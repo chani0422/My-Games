@@ -4233,10 +4233,8 @@ if (insMode) {
         updateLevelUI();
       }
       
-      // NormalモードならBANK保存
-      if (currentMode === "normal" && state.phase === "roundOver") {
-          // 念のため少し遅延させて、最終的なbankが確定していることを期待するが
-          // state.bank は既に支払い後の値のはず
+      // NormalモードならBANK保存: プレイ中や終了時も含めて常に最新を保つ
+      if (currentMode === "normal" && (state.phase === "roundOver" || state.phase === "inHand" || state.phase === "offerInsurance" || state.phase === "sessionOver")) {
           const b = Number(state.bank);
           if (Number.isFinite(b)) {
               localStorage.setItem(BANK_KEY_NORMAL, String(b));
