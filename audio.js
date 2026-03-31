@@ -27,7 +27,11 @@ class AudioManager {
      * 初期化とプリロード
      */
     init() {
-        this.muted = false; // ミュート状態
+        // すでにSDK等でセットされている場合は尊重、そうでなければURLクエリをチェック
+        if (this.muted === undefined) {
+            const params = new URLSearchParams(window.location.search);
+            this.muted = (params.get("muteAudio") === "true");
+        }
         Object.keys(this.config).forEach(name => {
             const item = this.config[name];
             const audio = new Audio();

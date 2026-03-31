@@ -195,7 +195,7 @@
       z-index: 2;
       bottom: 0%; /* Dynamic */
     }
-    @media (max-width: 600px) {
+    @media (max-width: 600px), (max-height: 500px) {
       .shoe-gauge-container { left: -18px; width: 10px; height: 100px; }
     }
 
@@ -646,7 +646,7 @@
     .btn-feedback:active {
       transform: translateY(1px);
     }
-    @media (max-width: 600px) {
+    @media (max-width: 600px), (max-height: 500px) {
       .btn-feedback {
         right: 12px;
         bottom: 12px;
@@ -1093,7 +1093,7 @@
     .handArea.split-2 .handBox { flex: 0 1 45%; min-width: 140px; }
     .handArea.split-3 .handBox { flex: 0 1 30%; min-width: 120px; }
 
-    @media (max-width: 600px) {
+    @media (max-width: 600px), (max-height: 500px) {
       .handArea.split-3 .handBox { flex: 0 1 45%; } /* モバイル3枚は2+1 */
     }
 
@@ -1492,7 +1492,7 @@ body{
     /* ==========================================
        MOBILE LAYOUT REFACTOR (<= 600px)
        ========================================== */
-    @media (max-width: 600px) {
+    @media (max-width: 600px), (max-height: 500px) {
       /* テーブル表面を縦並びの通常フローに変更 */
       .tableSurface {
         display: flex !important;
@@ -1734,6 +1734,7 @@ body{
   // ローカル開発やCrazyGames以外のドメインでクラッシュしないための安全なラッパー。
   // 設定: CrazyGames "Basic Launch" 提出用にはfalseに設定。
   const ENABLE_ADS = false;
+  const ENABLE_FEEDBACK_BUTTON = true;
 
   /** 広告が有効かどうかを一元管理 */
   function isAdsEnabled() {
@@ -1987,7 +1988,7 @@ body{
           </div>
           
           <!-- フィードバックボタン (Googleフォーム) -->
-          <button class="btn-feedback" id="btnFeedback">
+          <button class="btn-feedback" id="btnFeedback" style="display:none;">
             <span style="font-size: 14px;">💬</span>
             <span data-i18n="ui.feedback">ご意見・不具合</span>
           </button>
@@ -2876,12 +2877,12 @@ body{
       };
 
       try {
-        if (window.CrazyGames?.SDK?.ad?.requestAd) {
+        if (isAdsEnabled() && window.CrazyGames?.SDK?.ad?.requestAd) {
           window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
         } else {
-          // SDK未接続時: デバッグ用即成功
-          console.warn("SDK not ready, simulating ad success (level reward)");
-          setTimeout(callbacks.adFinished, 1000);
+          // 広告無効時またはSDK未接続時: 即成功扱い
+          console.warn("Ads disabled or SDK not ready, simulating ad success (level reward)");
+          setTimeout(callbacks.adFinished, 100);
         }
       } catch (e) {
         console.error(e);
@@ -4535,6 +4536,7 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
 
     // フィードバックボタン
     if ($("btnFeedback")) {
+      if (ENABLE_FEEDBACK_BUTTON) $("btnFeedback").style.display = "flex";
       $("btnFeedback").onclick = () => {
         if (!FEEDBACK_FORM_URL) return;
         window.audioMgr.play("ui_click");
@@ -4836,10 +4838,11 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
           }
         };
 
-        if (window.CrazyGames?.SDK?.ad?.requestAd) {
+        if (isAdsEnabled() && window.CrazyGames?.SDK?.ad?.requestAd) {
            window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
         } else {
-           isAdRequesting = false;
+           // 広告無効時は即成功
+           setTimeout(callbacks.adFinished, 100);
         }
     }
 
@@ -4910,7 +4913,7 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 
             isAdRequesting = true;
             try {
-                if (window.CrazyGames?.SDK?.ad?.requestAd) {
+                if (isAdsEnabled() && window.CrazyGames?.SDK?.ad?.requestAd) {
                     window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
                 } else {
                     console.warn("SDK not ready, simulating ad success");
