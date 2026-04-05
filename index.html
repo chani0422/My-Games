@@ -1869,6 +1869,7 @@ body{
         const secondaryTxt = btnReviveTitle.querySelector('.small');
         if (secondaryTxt) {
            secondaryTxt.setAttribute("data-i18n", "bank.revive_free_hint");
+           // data-i18n があれば updateDOM() で上書きされるため textContent 直書きは不要or冗長だが、即時反映のため残す
            secondaryTxt.textContent = t("bank.revive_free_hint");
         }
       }
@@ -4986,8 +4987,9 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 
     // 広告確認オーバーレイ
     $("btnAdYes").onclick = () => {
-       if (!isAdsEnabled()) return;
-       requestAdForTicket(() => startSession("practice"));
+       if (isAdsEnabled()) {
+           requestAdForTicket(() => startSession("practice"));
+       }
     };
     $("btnAdNo").onclick = () => {
        $("overlayAdConfirm").classList.remove("show");
@@ -4997,11 +4999,12 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 // 仕様：Retry は表示しない。選択肢は「タイトルへ戻る」「広告でもう一度」だけ。
 // 「広告でもう一度」は Rewarded Ad を見せてチケット +1 → そのまま Practice を開始（= チケット消費）する。
 $("btnPracWatchAd").onclick = () => {
-   if (!isAdsEnabled()) return;
-   requestAdForTicket(() => {
-      $("overlayPracticeOver").classList.remove("show");
-      startSession("practice");
-   });
+   if (isAdsEnabled()) {
+       requestAdForTicket(() => {
+          $("overlayPracticeOver").classList.remove("show");
+          startSession("practice");
+       });
+   }
 };
 $("btnPracToTitle").onclick = () => {
    $("overlayPracticeOver").classList.remove("show");
