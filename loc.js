@@ -69,10 +69,10 @@ const RESOURCES = {
     "so.session_over": "SESSION OVER",
     "so.calculating": "Calculating…",
     "so.wait": "Please wait…",
-    "so.sponsored": "Sponsored",
+    "so.sponsored": "",
     "so.to_title": "To Title",
-    "so.retry": "WATCH AD & PLAY AGAIN (+5000)",
-    "so.revive": "📺 Watch Ad to Revive (+500)",
+    "so.retry": "",
+    "so.revive": "",
     "so.delay": "Add Delay Before Session Over",
 
     "pause.title": "PAUSED",
@@ -158,7 +158,7 @@ const RESOURCES = {
 
     // 銀行・破産
     "bank.bankruptcy": "YOU ARE BANKRUPT",
-    "bank.revive_hint": "Chips are gone.<br>Watch Ad to Revive?",
+    "bank.revive_hint": "Chips are gone.<br>Restart the session?",
     "ad.load_fail": "Ad failed to load. Please try again.",
 
     // JS dynamic
@@ -176,14 +176,14 @@ const RESOURCES = {
     "prac.ticket_left": "Tickets: ",
     "prac.start_free": "Start (Free)",
     "prac.start_ticket": "Start (1 Ticket)",
-    "prac.watch_ad": "Watch Ad (+1 Ticket)",
-    "prac.ad_again": "Watch Ad & Play Again",
+    "prac.watch_ad": "No tickets",
+    "prac.ad_again": "Play Again",
     "prac.no_ticket": "No tickets. Watch Ad to play.",
     "prac.session_over": "Practice Over",
     "prac.retry_free": "Retry (Free)",
     "prac.retry_ticket": "Retry (1 Ticket)",
     "prac.time_up": "Practice Over!",
-    "prac.confirm_ad": "Watch a video to get a play ticket?",
+    "prac.confirm_ad": "Out of tickets.",
 
     // JS localizable
     "js.ins_hint": "💰 Insurance: {0} (bet/2)",
@@ -214,7 +214,8 @@ const RESOURCES = {
     "mode.practice_desc_basic": "Training mode.",
     "bank.restart": "RESTART",
     "bank.revive_hint_basic": "Chips are gone. Restart the session?",
-    "js.revive_done_basic": "Revived! +50000 (Free)",
+    "js.revive_done_basic": "Restarted! +50000",
+    "bank.revive_free_hint": "+50000 (Free)",
 
     "name.welcome": "WELCOME!",
     "name.input_hint": "Please enter your name for the ranking.",
@@ -292,10 +293,10 @@ const RESOURCES = {
     "so.session_over": "SESSION OVER", // Match EN
     "so.calculating": "集計中…",
     "so.wait": "Please wait…",
-    "so.sponsored": "Sponsored",
+    "so.sponsored": "",
     "so.to_title": "タイトルへ",
-    "so.retry": "📺 広告でもう一度 (+5000)",
-    "so.revive": "📺 広告を見て復活 (+500)",
+    "so.retry": "",
+    "so.revive": "",
     "so.delay": "セッション終了まで少しお待ちください",
 
     "pause.title": "PAUSED",
@@ -382,7 +383,7 @@ const RESOURCES = {
 
     // 銀行・破産
     "bank.bankruptcy": "破産しました",
-    "bank.revive_hint": "チップがなくなりました。<br>広告を見て復活しますか？",
+    "bank.revive_hint": "チップがなくなりました。<br>はじめからやり直しますか？",
     "ad.load_fail": "広告の読み込みに失敗しました。もう一度お試しください。",
 
     // JS dynamic
@@ -400,14 +401,14 @@ const RESOURCES = {
     "prac.ticket_left": "所持チケット: ",
     "prac.start_free": "スタート（無料）",
     "prac.start_ticket": "スタート（チケット消費）",
-    "prac.watch_ad": "広告を見てチケット入手",
-    "prac.ad_again": "📺 広告でもう一度",
+    "prac.watch_ad": "チケット不足",
+    "prac.ad_again": "もう一度プレイ",
     "prac.no_ticket": "チケットが足りません。広告を見て入手してください。",
     "prac.session_over": "練習終了",
     "prac.retry_free": "もう一度（無料）",
     "prac.retry_ticket": "もう一度（チケット消費）",
     "prac.time_up": "24ラウンド終了！",
-    "prac.confirm_ad": "動画広告を見て、プレイ権（チケット）を獲得しますか？",
+    "prac.confirm_ad": "チケットがありません。",
 
     // JS localizable
     "js.ins_hint": "💰 保険: {0} (ベットの半分)",
@@ -437,7 +438,8 @@ const RESOURCES = {
     "mode.practice_desc_basic": "練習モードです。",
     "bank.restart": "復活スタート",
     "bank.revive_hint_basic": "チップがなくなりました。はじめからやり直しますか？",
-    "js.revive_done_basic": "復活しました！ +50000",
+    "js.revive_done_basic": "再開しました！ +50000",
+    "bank.revive_free_hint": "+50000 (無料)",
 
     "name.welcome": "WELCOME!",
     "name.input_hint": "ランキングに使用する名前を入力してください。",

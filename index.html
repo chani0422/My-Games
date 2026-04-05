@@ -1837,8 +1837,13 @@ body{
       // レベルアップ報酬ボタンを隠す
       if ($("btnRewardAd")) $("btnRewardAd").style.display = "none";
 
-      // 練習モードの広告導線を隠す
+      // 練習モードの広告導線を完全に隠す
       if ($("btnPracWatchAd")) $("btnPracWatchAd").style.display = "none";
+      const pracOverBtnRaw = document.getElementById("btnPracWatchAd");
+      if (pracOverBtnRaw && pracOverBtnRaw.parentElement) {
+          // ctaRow の中身が 1 つ（タイトルへ戻るのみ）になるように調整
+          pracOverBtnRaw.style.display = "none";
+      }
       
       // 練習モードボタンの表示調整 (Watch Adなどの文言が含まれる場合を考慮)
       // 今回は loc.js の mode.practice 等で対応するが、動的に書き換える
@@ -1863,7 +1868,7 @@ body{
         }
         const secondaryTxt = btnReviveTitle.querySelector('.small');
         if (secondaryTxt) {
-           secondaryTxt.textContent = "+50000 (Free)";
+           secondaryTxt.textContent = t("js.revive_free_hint");
            secondaryTxt.removeAttribute("data-i18n");
         }
       }
@@ -1937,7 +1942,7 @@ body{
       <p data-i18n="prac.time_up">Time's up!</p>
       
       <div class="ctaRow" style="flex-direction:column; gap:10px; margin-top:20px;">
-<button class="btn" id="btnPracWatchAd">
+<button class="btn" id="btnPracWatchAd" style="display:none;">
           <span data-i18n="prac.ad_again">Watch Ad (+1 Ticket)</span>
         </button>
         <button class="btn ghost" id="btnPracToTitle">
@@ -1991,8 +1996,8 @@ body{
               </div>
             </button>
             <button class="btn ctaBig" id="btnNormalRevive" style="display:none; border-color:#ff9800;">
-              <div style="font-size:14px">WATCH AD +50000</div>
-              <div class="small" style="font-weight:normal; opacity:.7">Normal復活</div>
+              <div style="font-size:14px" data-i18n="bank.restart">RESTART</div>
+              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="bank.revive_free_hint">Free Restart</div>
             </button>
             <button class="btn ctaBig" id="btnModePractice">
               <div style="font-size:16px" data-i18n="mode.practice">PRACTICE</div>
@@ -2270,7 +2275,7 @@ body{
           <button class="btn ghost" id="btnBankruptTitle" data-i18n="cmd.title">TITLE</button>
           <button class="btn primary ctaBig" id="rowBankruptAdAction">
              <div id="btnBankruptAd">
-               <span style="font-size:14px">WATCH AD</span><br>+50000
+               <span style="font-size:14px" data-i18n="bank.restart">RESTART</span><br>+50000
              </div>
              <div id="btnBankruptRestart" style="display:none;">
                <span style="font-size:14px" data-i18n="bank.restart">RESTART</span><br><span style="font-size:11px; font-weight:normal;">+50000 (Free)</span>
@@ -4832,8 +4837,8 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
     // ========= 広告連携 (Rewarded) =========
     function requestAdForTicket(after = null) {
         if (!isAdsEnabled()) {
-          toast(t("prac.no_ticket_basic"));
-          return;
+           console.log("[CrazyGames] requestAdForTicket ignored (ads disabled)");
+           return;
         }
         if (isAdRequesting) return;
         isAdRequesting = true;
@@ -4991,6 +4996,7 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 // 仕様：Retry は表示しない。選択肢は「タイトルへ戻る」「広告でもう一度」だけ。
 // 「広告でもう一度」は Rewarded Ad を見せてチケット +1 → そのまま Practice を開始（= チケット消費）する。
 $("btnPracWatchAd").onclick = () => {
+   if (!isAdsEnabled()) return;
    requestAdForTicket(() => {
       $("overlayPracticeOver").classList.remove("show");
       startSession("practice");
