@@ -1868,8 +1868,8 @@ body{
         }
         const secondaryTxt = btnReviveTitle.querySelector('.small');
         if (secondaryTxt) {
-           secondaryTxt.textContent = t("js.revive_free_hint");
-           secondaryTxt.removeAttribute("data-i18n");
+           secondaryTxt.setAttribute("data-i18n", "bank.revive_free_hint");
+           secondaryTxt.textContent = t("bank.revive_free_hint");
         }
       }
 
@@ -4986,6 +4986,7 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 
     // 広告確認オーバーレイ
     $("btnAdYes").onclick = () => {
+       if (!isAdsEnabled()) return;
        requestAdForTicket(() => startSession("practice"));
     };
     $("btnAdNo").onclick = () => {
@@ -5014,7 +5015,7 @@ $("btnPracToTitle").onclick = () => {
        // 練習モードの消費処理
        if (mode === "practice") {
            if (!consumePracTicket()) {
-               toast(t("prac.no_ticket"));
+               toast(t("prac.no_ticket_basic"));
                return; 
            }
        }
