@@ -35,7 +35,9 @@ const RESOURCES = {
     "opt.even_money": "Even Money",
     "opt.das": "DAS",
     "opt.split_bj": "Split BJ as BJ",
-    "opt.h17": "Dealer hits Soft 17",
+    "opt.dealer_rule": "Dealer Rule",
+    "opt.s17": "S17 (Stand on Soft 17)",
+    "opt.h17": "H17 (Hit on Soft 17)",
 
     // ゲーム画面
     "game.garage": "CASINO TABLE",
@@ -100,7 +102,7 @@ const RESOURCES = {
 
     "how.det_dealer_title": "Dealer Rules",
     "how.det_dealer_text":
-      "Dealer hits on 16 or less and stands on 17 or more.<br><b>Soft 17</b>: Depending on settings, dealer may hit or stand when holding an Ace worth 11 and a total of 17.",
+      "Dealer hits on 16 or less and stands on 17 or more (Standard).<br><b>S17 / H17</b>: Depending on settings, dealer may hit or stand on Soft 17 (Ace + 6). Default is S17 (Stand).",
 
     "how.det_table_title": "Table Rules",
     "how.det_table_text":
@@ -153,7 +155,9 @@ const RESOURCES = {
     "opt_sub.insurance": "Insurance vs Dealer Ace (Max bet/2)",
     "opt_sub.even_money": "Instant 1:1 if you have BJ vs Dealer Ace",
     "opt_sub.das": "Allow Double Down after Splitting",
-    "opt_sub.h17": "Dealer draws on Soft 17",
+    "opt_sub.s17": "Dealer stands on ALL 17s (Default)",
+    "opt_sub.h17": "Dealer hits on Soft 17 (Ace + 6)",
+    "opt.haptic": "Vibration",
     "opt_sub.haptic": "Vibration feedback on/off",
 
     // 銀行・破産
@@ -259,7 +263,9 @@ const RESOURCES = {
     "opt.even_money": "Even Money",
     "opt.das": "DAS",
     "opt.split_bj": "Split BJ as BJ",
-    "opt.h17": "Dealer hits Soft 17",
+    "opt.dealer_rule": "ディーラー規則",
+    "opt.s17": "S17 (ソフト17でスタンド)",
+    "opt.h17": "H17 (ソフト17でヒット)",
 
     // Game Screen
     "game.garage": "CASINO TABLE",
@@ -324,7 +330,7 @@ const RESOURCES = {
 
     "how.det_dealer_title": "ディーラーのルール",
     "how.det_dealer_text":
-      "ディーラーは16以下なら引き続け、17以上で止まります。<br><b>Soft 17</b>：Aを11として数える計17の場合、設定によりヒットかスタンドが変わります。",
+      "ディーラーは16以下なら引き続け、17以上で止まります（基本原則）。<br><b>S17 / H17</b>：Aceを11として数える合計17（ソフト17）の場合に、スタンドするかヒットするかの設定です。デフォルトはS17（スタンド）です。",
 
     "how.det_table_title": "テーブルルール",
     "how.det_table_text":
@@ -378,8 +384,10 @@ const RESOURCES = {
     "opt_sub.insurance": "ディーラーAで保険（最大半額）",
     "opt_sub.even_money": "自分BJ＆ディーラーAで確定1:1",
     "opt_sub.das": "スプリット後のダブルを許可",
-    "opt_sub.h17": "Soft17ならディーラーも引く",
-    "opt_sub.haptic": "操作時の振動フィードバック",
+    "opt_sub.s17": "すべての17でスタンドする (標準)",
+    "opt_sub.h17": "Soft17 (A+6) の時のみもう1枚引く",
+    "opt.haptic": "振動",
+    "opt_sub.haptic": "振動のオンオフ切り替え",
 
     // 銀行・破産
     "bank.bankruptcy": "破産しました",

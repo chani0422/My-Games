@@ -57,7 +57,10 @@ Resetボタンは 1回タップで「Hold to reset」に変化
 A：1 または 11（21を超えないなら 11 優先）
 
 2.2 ディーラー規則
-Soft17（Aを11扱いできる17）ではHit（H17）
+Dealer rule は S17（Stand on Soft 17）と H17（Hit on Soft 17）の切替が可能。
+デフォルトは S17（Aを11扱いできる17でStand）。
+タイトルのオプションで H17 への切り替えが可能。
+テーブル上のルール表示（DEALER MUST DRAW TO 16...）も現在の設定と動的に一致させる。
 
 2.3 精算（ベース）
 Blackjack配当：3:2

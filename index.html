@@ -2057,9 +2057,16 @@ body{
               <div class="opt" style="display:none;">
                 <label><input type="checkbox" id="opt_split_bj"> <span data-i18n="opt.split_bj">Split BJ as BJ</span></label>
               </div>
+              <!-- Dealer Rule: S17/H17 Toggle -->
               <div class="opt">
-                <label><input type="checkbox" id="opt_h17" checked> <span data-i18n="opt.h17">H17</span></label>
-                <div class="opt-desc" data-i18n="opt_sub.h17">Dealer draws on Soft 17</div>
+                <div class="opt-label" data-i18n="opt.dealer_rule" style="font-size:12px; margin-bottom:6px; color:var(--muted); font-weight:800; letter-spacing:0.05em;">Dealer Rule</div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                  <label style="font-size:14px;"><input type="radio" name="dealer_rule" id="opt_rule_s17" checked onchange="updateTableRulesText()"> <span data-i18n="opt.s17">S17</span></label>
+                  <label style="font-size:14px;"><input type="radio" name="dealer_rule" id="opt_rule_h17" onchange="updateTableRulesText()"> <span data-i18n="opt.h17">H17</span></label>
+                </div>
+                <div class="opt-desc" id="dealerRuleDesc" data-i18n="opt_sub.s17" style="margin-left:0; font-size:10px;">Dealer stands on ALL 17s (Default)</div>
+                <!-- 内部互換性のための非表示チェックボックス (RB_DEALER_HIT_S17) -->
+                <input type="checkbox" id="opt_h17" style="display:none;">
               </div>
               <div class="opt">
                 <label><input type="checkbox" id="opt_haptic" checked> <span data-i18n="opt.haptic">Haptic</span></label>
@@ -2189,7 +2196,7 @@ body{
                       </text>
 
                       <!-- 小さいルールの行 -->
-                      <text x="500" y="100" text-anchor="middle" font-size="20" class="markSmall">
+                      <text x="500" y="100" text-anchor="middle" font-size="20" class="markSmall" id="tableRulesText">
                         DEALER MUST DRAW TO 16 AND STAND ON 17 • 6 DECKS • HOUSE RULES APPLY
                       </text>
                     </svg>
@@ -3329,6 +3336,7 @@ function apiReady(){
     // 既にロード済みの場合のバックアップ
     window.addEventListener("DOMContentLoaded", ()=>{
        if(apiReady()) syncEngine();
+       if(typeof updateTableRulesText === "function") updateTableRulesText();
     });
 
 // ... (skipping unchanged lines) ...
@@ -3426,30 +3434,30 @@ if ($("btnBankruptRestart")) {
       }, 120);
     }
 
+    window.updateTableRulesText = function() {
+      const isH17 = $("opt_rule_h17")?.checked;
+      const descEl = $("dealerRuleDesc");
+      const tableTextEl = $("tableRulesText");
+      const hiddenH17 = $("opt_h17");
+
+      if (isH17) {
+        if (descEl) descEl.setAttribute("data-i18n", "opt_sub.h17");
+        if (tableTextEl) tableTextEl.textContent = "DEALER MUST DRAW TO 16 AND HIT SOFT 17 \u2022 6 DECKS \u2022 HOUSE RULES APPLY";
+        if (hiddenH17) hiddenH17.checked = true;
+      } else {
+        if (descEl) descEl.setAttribute("data-i18n", "opt_sub.s17");
+        if (tableTextEl) tableTextEl.textContent = "DEALER MUST DRAW TO 16 AND STAND ON 17 \u2022 6 DECKS \u2022 HOUSE RULES APPLY";
+        if (hiddenH17) hiddenH17.checked = false;
+      }
+      if (typeof updateDOM === "function") updateDOM();
+    };
+
     function stopTick(){
       if (tickHandle){ clearInterval(tickHandle); tickHandle = null; }
     }
 
     function rulesMaskFromUI(){
-      const RB_ALLOW_DOUBLE      = 1 << 0;
-      const RB_ALLOW_SPLIT       = 1 << 1;
-      const RB_ALLOW_SURRENDER   = 1 << 2;
-      const RB_ALLOW_INSURANCE   = 1 << 3;
-      const RB_ALLOW_EVEN_MONEY  = 1 << 4;
-      const RB_ALLOW_DAS         = 1 << 5;
-      const RB_SPLIT_BJ_AS_BJ    = 1 << 6;
-      const RB_DEALER_HIT_S17    = 1 << 7;
-
-      let m = 0;
-      if ($("opt_double").checked)   m |= RB_ALLOW_DOUBLE;
-      if ($("opt_split").checked)    m |= RB_ALLOW_SPLIT;
-      if ($("opt_surrender").checked)m |= RB_ALLOW_SURRENDER;
-      if ($("opt_insurance").checked)m |= RB_ALLOW_INSURANCE;
-      if ($("opt_even_money").checked)m |= RB_ALLOW_EVEN_MONEY;
-      if ($("opt_das").checked)      m |= RB_ALLOW_DAS;
-      if ($("opt_split_bj").checked)  m |= RB_SPLIT_BJ_AS_BJ;
-      if ($("opt_h17").checked)      m |= RB_DEALER_HIT_S17;
-      return m >>> 0;
+      return getRuleMaskFromUI();
     }
 
     function refresh(){
@@ -3534,6 +3542,8 @@ function setPause(paused) {
       $("overlayHow").classList.remove("show");
       $("overlayMore") && $("overlayMore").classList.remove("show");
       $("overlayHistory") && $("overlayHistory").classList.remove("show");
+
+      if(typeof updateTableRulesText === "function") updateTableRulesText();
 
       // ── タイトル画面用UIリセット ──
       // startSession() が設定したインラインstyleを除去し、
@@ -5502,7 +5512,8 @@ $("btnPracToTitle").onclick = () => {
        if($("opt_even_money").checked) mask |= 16;
        if($("opt_das").checked) mask |= 32;
        if($("opt_split_bj").checked) mask |= 64;
-       if($("opt_h17").checked) mask |= 128;
+       // ラジオボタンの状態を反映
+       if($("opt_rule_h17").checked) mask |= 128;
        return mask;
     }
 
