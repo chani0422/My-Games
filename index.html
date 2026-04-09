@@ -1734,7 +1734,7 @@ body{
   // ローカル開発やCrazyGames以外のドメインでクラッシュしないための安全なラッパー。
   // 設定: CrazyGames "Basic Launch" 提出用にはfalseに設定。
   const ENABLE_ADS = false;
-  const ENABLE_FEEDBACK_BUTTON = true;
+  const ENABLE_FEEDBACK_BUTTON = false;
 
   /** 広告が有効かどうかを一元管理 */
   function isAdsEnabled() {
@@ -4381,7 +4381,7 @@ if (insMode) {
           msgEl.textContent = `${t("dyn.push")} ±0`;
           msgEl.className = "msg neutral";
         }
-        metaEl.textContent = `${t("dyn.streak")} ${state.roundResult.streak} / ${t("dyn.bonus")} ${state.roundResult.bonusPercent}% (+${state.roundResult.bonusApplied})`;
+        metaEl.textContent = `${t("dyn.streak")} ${state.roundResult.streak}`;
       } else if (isRoundOver && currentMode === "practice") {
         // 練習モード: 勝敗のみ表示（金額は非表示）
         if (net > 0) {

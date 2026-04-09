@@ -48,6 +48,7 @@ Module().then((mod) => {
     revive: Engine.cwrap("revive", "number", ["number"]),
     add_funds: Engine.cwrap("add_funds", "number", ["number"]),
     debug_deal_ace: Engine.cwrap("debug_deal_ace", "number", []),
+    debug_deal_split: Engine.cwrap("debug_deal_split", "number", []),
     force_shuffle: Engine.cwrap("force_shuffle", "number", []),
   };
 

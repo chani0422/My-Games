@@ -195,7 +195,7 @@
       z-index: 2;
       bottom: 0%; /* Dynamic */
     }
-    @media (max-width: 600px) {
+    @media (max-width: 600px), (max-height: 500px) {
       .shoe-gauge-container { left: -18px; width: 10px; height: 100px; }
     }
 
@@ -461,7 +461,7 @@
     .overlay-levelup {
       position: fixed;
       inset: 0;
-      z-index: 200;
+      z-index: 2100 !important;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -616,6 +616,44 @@
     .btn:hover{ box-shadow: 0 22px 60px rgba(0,0,0,.32); filter: brightness(1.06); }
     .btn:active{ transform: translateY(1px) scale(.99); }
     .btn[disabled]{ opacity:.40; cursor:not-allowed; box-shadow:none; filter:saturate(.2); }
+
+    /* ===== Feedback Button ===== */
+    .btn-feedback {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 11px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s ease;
+      font-weight: 800;
+    }
+    .btn-feedback:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: var(--gold);
+      transform: translateY(-1px);
+    }
+    .btn-feedback:active {
+      transform: translateY(1px);
+    }
+    @media (max-width: 600px), (max-height: 500px) {
+      .btn-feedback {
+        right: 12px;
+        bottom: 12px;
+        padding: 6px 10px;
+        font-size: 10px;
+      }
+    }
 
     /* ===== Help Icon & Tooltip & Modal ===== */
     .help-icon {
@@ -1055,7 +1093,7 @@
     .handArea.split-2 .handBox { flex: 0 1 45%; min-width: 140px; }
     .handArea.split-3 .handBox { flex: 0 1 30%; min-width: 120px; }
 
-    @media (max-width: 600px) {
+    @media (max-width: 600px), (max-height: 500px) {
       .handArea.split-3 .handBox { flex: 0 1 45%; } /* モバイル3枚は2+1 */
     }
 
@@ -1313,7 +1351,7 @@
       display:none;
       align-items:center; justify-content:center;
       padding:18px;
-      z-index:60;
+      z-index:2000 !important;
       backdrop-filter: blur(10px);
     }
     .overlay.no-blur{
@@ -1454,7 +1492,7 @@ body{
     /* ==========================================
        MOBILE LAYOUT REFACTOR (<= 600px)
        ========================================== */
-    @media (max-width: 600px) {
+    @media (max-width: 600px), (max-height: 500px) {
       /* テーブル表面を縦並びの通常フローに変更 */
       .tableSurface {
         display: flex !important;
@@ -1696,6 +1734,12 @@ body{
   // ローカル開発やCrazyGames以外のドメインでクラッシュしないための安全なラッパー。
   // 設定: CrazyGames "Basic Launch" 提出用にはfalseに設定。
   const ENABLE_ADS = false;
+  const ENABLE_FEEDBACK_BUTTON = true;
+
+  /** 広告が有効かどうかを一元管理 */
+  function isAdsEnabled() {
+    return !!(typeof ENABLE_ADS !== 'undefined' && ENABLE_ADS);
+  }
 
   window.CG = window.CG || {};
   window.CG.ready = false;
@@ -1706,19 +1750,40 @@ body{
       await window.CrazyGames.SDK.init();
       window.CG.ready = true;
       console.log("[CrazyGames] SDK ready");
+
+      // muteAudio連動
+      const sdk = window.CrazyGames.SDK;
+      if (sdk.game && sdk.game.settings) {
+        // 初期値の反映
+        if (sdk.game.settings.muteAudio !== undefined) {
+          window.audioMgr.setMuted(sdk.game.settings.muteAudio);
+        }
+        // 変更の監視
+        sdk.game.settings.addSettingsChangeListener((s) => {
+          if (s.muteAudio !== undefined) {
+            window.audioMgr.setMuted(s.muteAudio);
+          }
+        });
+      }
+
       return true;
     } catch (e) {
       console.warn("[CrazyGames] SDK init failed:", e);
       return false;
     }
   };
-// DOMContentLoadedで初期化
-window.CG.p = new Promise((resolve) => {
-  window.addEventListener("DOMContentLoaded", async () => {
-    const ok = await window.CG.init();
-    resolve(ok);
+
+  // DOMContentLoadedで初期化
+  window.CG.p = new Promise((resolve) => {
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await window.CG.init();
+      // 広告UIの整理を実行
+      if (typeof updateAdsUIForLaunchMode === 'function') {
+        updateAdsUIForLaunchMode();
+      }
+      resolve(ok);
+    });
   });
-});
 
 </script>
 
@@ -1762,6 +1827,73 @@ window.CG.p = new Promise((resolve) => {
       window.CrazyGames.SDK.game.gameplayStop();
     });
   };
+
+  /** Basic Launch 向けのUI整理 */
+  function updateAdsUIForLaunchMode() {
+    const ads = isAdsEnabled();
+    console.log("[CrazyGames] updateAdsUIForLaunchMode, adsEnabled:", ads);
+
+    if (!ads) {
+      // レベルアップ報酬ボタンを隠す
+      if ($("btnRewardAd")) $("btnRewardAd").style.display = "none";
+
+      // 練習モードの広告導線を完全に隠す
+      if ($("btnPracWatchAd")) $("btnPracWatchAd").style.display = "none";
+      const pracOverBtnRaw = document.getElementById("btnPracWatchAd");
+      if (pracOverBtnRaw && pracOverBtnRaw.parentElement) {
+          // ctaRow の中身が 1 つ（タイトルへ戻るのみ）になるように調整
+          pracOverBtnRaw.style.display = "none";
+      }
+      
+      // 練習モードボタンの表示調整 (Watch Adなどの文言が含まれる場合を考慮)
+      // 今回は loc.js の mode.practice 等で対応するが、動的に書き換える
+      const btnP = $("btnModePractice");
+      if (btnP) {
+        // 子要素の .small (デスクリプション) を差し替える
+        const desc = btnP.querySelector(".small");
+        if (desc) desc.setAttribute("data-i18n", "mode.practice_desc_basic");
+      }
+
+      // 破産時の広告復活ボタンを隠し、無料復活ボタンを出す
+      if ($("btnBankruptAd")) $("btnBankruptAd").style.display = "none";
+      if ($("btnBankruptRestart")) $("btnBankruptRestart").style.display = "inline-flex";
+      
+      // タイトル画面の復活ボタンのテキストを調整（隠さず、内容を書き換える）
+      const btnReviveTitle = $("btnNormalRevive");
+      if (btnReviveTitle) {
+        const primaryTxt = btnReviveTitle.querySelector('div:first-child');
+        if (primaryTxt) {
+            primaryTxt.textContent = "RESTART +50000";
+            primaryTxt.setAttribute("data-i18n", "bank.restart");
+        }
+        const secondaryTxt = btnReviveTitle.querySelector('.small');
+        if (secondaryTxt) {
+           secondaryTxt.setAttribute("data-i18n", "bank.revive_free_hint");
+           // data-i18n があれば updateDOM() で上書きされるため textContent 直書きは不要or冗長だが、即時反映のため残す
+           secondaryTxt.textContent = t("bank.revive_free_hint");
+        }
+      }
+
+      // Sponsoredラベルを隠す
+      document.querySelectorAll('[data-i18n="so.sponsored"]').forEach(el => {
+        el.style.display = "none";
+      });
+
+      // Session Over の広告枠を完全に隠す
+      const soWrap = document.getElementById("soBannerWrap");
+      if (soWrap) soWrap.style.display = "none";
+
+      // 練習モードの確認オーバーレイなどが残らないように
+      if ($("overlayAdConfirm")) $("overlayAdConfirm").classList.remove("show");
+
+      // 破産文言の調整
+      const hint = document.querySelector('[data-i18n="bank.revive_hint"]');
+      if (hint) hint.setAttribute("data-i18n", "bank.revive_hint_basic");
+    }
+    
+    // UIを再適用
+    if (typeof updateDOM === 'function') updateDOM();
+  }
 
 
 </script>
@@ -1811,7 +1943,7 @@ window.CG.p = new Promise((resolve) => {
       <p data-i18n="prac.time_up">Time's up!</p>
       
       <div class="ctaRow" style="flex-direction:column; gap:10px; margin-top:20px;">
-<button class="btn" id="btnPracWatchAd">
+<button class="btn" id="btnPracWatchAd" style="display:none;">
           <span data-i18n="prac.ad_again">Watch Ad (+1 Ticket)</span>
         </button>
         <button class="btn ghost" id="btnPracToTitle">
@@ -1865,8 +1997,8 @@ window.CG.p = new Promise((resolve) => {
               </div>
             </button>
             <button class="btn ctaBig" id="btnNormalRevive" style="display:none; border-color:#ff9800;">
-              <div style="font-size:14px">WATCH AD +50000</div>
-              <div class="small" style="font-weight:normal; opacity:.7">Normal復活</div>
+              <div style="font-size:14px" data-i18n="bank.restart">RESTART</div>
+              <div class="small" style="font-weight:normal; opacity:.7" data-i18n="bank.revive_free_hint">Free Restart</div>
             </button>
             <button class="btn ctaBig" id="btnModePractice">
               <div style="font-size:16px" data-i18n="mode.practice">PRACTICE</div>
@@ -1879,6 +2011,12 @@ window.CG.p = new Promise((resolve) => {
           <div class="ctaRow" style="margin-top:12px; justify-content:center;">
              <button class="btn ghost" id="btnHowTitle" data-i18n="title.how">遊び方</button>
           </div>
+          
+          <!-- フィードバックボタン (Googleフォーム) -->
+          <button class="btn-feedback" id="btnFeedback" style="display:none;">
+            <span style="font-size: 14px;">💬</span>
+            <span data-i18n="ui.feedback">ご意見・不具合</span>
+          </button>
         </div>
 
         <div class="bd">
@@ -1919,9 +2057,16 @@ window.CG.p = new Promise((resolve) => {
               <div class="opt" style="display:none;">
                 <label><input type="checkbox" id="opt_split_bj"> <span data-i18n="opt.split_bj">Split BJ as BJ</span></label>
               </div>
+              <!-- Dealer Rule: S17/H17 Toggle -->
               <div class="opt">
-                <label><input type="checkbox" id="opt_h17" checked> <span data-i18n="opt.h17">H17</span></label>
-                <div class="opt-desc" data-i18n="opt_sub.h17">Dealer draws on Soft 17</div>
+                <div class="opt-label" data-i18n="opt.dealer_rule" style="font-size:12px; margin-bottom:6px; color:var(--muted); font-weight:800; letter-spacing:0.05em;">Dealer Rule</div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                  <label style="font-size:14px;"><input type="radio" name="dealer_rule" id="opt_rule_s17" checked onchange="updateTableRulesText()"> <span data-i18n="opt.s17">S17</span></label>
+                  <label style="font-size:14px;"><input type="radio" name="dealer_rule" id="opt_rule_h17" onchange="updateTableRulesText()"> <span data-i18n="opt.h17">H17</span></label>
+                </div>
+                <div class="opt-desc" id="dealerRuleDesc" data-i18n="opt_sub.s17" style="margin-left:0; font-size:10px;">Dealer stands on ALL 17s (Default)</div>
+                <!-- 内部互換性のための非表示チェックボックス (RB_DEALER_HIT_S17) -->
+                <input type="checkbox" id="opt_h17" style="display:none;">
               </div>
               <div class="opt">
                 <label><input type="checkbox" id="opt_haptic" checked> <span data-i18n="opt.haptic">Haptic</span></label>
@@ -2051,7 +2196,7 @@ window.CG.p = new Promise((resolve) => {
                       </text>
 
                       <!-- 小さいルールの行 -->
-                      <text x="500" y="100" text-anchor="middle" font-size="20" class="markSmall">
+                      <text x="500" y="100" text-anchor="middle" font-size="20" class="markSmall" id="tableRulesText">
                         DEALER MUST DRAW TO 16 AND STAND ON 17 • 6 DECKS • HOUSE RULES APPLY
                       </text>
                     </svg>
@@ -2136,8 +2281,13 @@ window.CG.p = new Promise((resolve) => {
         
         <div class="soBtns">
           <button class="btn ghost" id="btnBankruptTitle" data-i18n="cmd.title">TITLE</button>
-          <button class="btn primary ctaBig" id="btnBankruptAd">
-            <span style="font-size:14px">WATCH AD</span><br>+50000
+          <button class="btn primary ctaBig" id="rowBankruptAdAction">
+             <div id="btnBankruptAd">
+               <span style="font-size:14px" data-i18n="bank.restart">RESTART</span><br>+50000
+             </div>
+             <div id="btnBankruptRestart" style="display:none;">
+               <span style="font-size:14px" data-i18n="bank.restart">RESTART</span><br><span style="font-size:11px; font-weight:normal;">+50000 (Free)</span>
+             </div>
           </button>
         </div>
       </div>
@@ -2199,8 +2349,9 @@ window.CG.p = new Promise((resolve) => {
           セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。
         </p>
         <div class="row" style="justify-content:flex-end; gap:10px;">
-          <button class="btn secondary small" id="btnDebugAce" style="font-size:10px; padding:4px 8px;">ACE</button>
-          <button class="btn secondary small" id="btnShuffle" style="font-size:10px; padding:4px 8px;">SHUFFLE</button>
+          <button class="btn secondary small" id="btnDebugAce" style="font-size:10px; padding:4px 8px; display:none;">ACE</button>
+          <button class="btn secondary small" id="btnDebugSplit" style="font-size:10px; padding:4px 8px; display:none;">SPLIT</button>
+          <button class="btn secondary small" id="btnShuffle" style="font-size:10px; padding:4px 8px; display:none;">SHUFFLE</button>
           <button class="btn" id="btnHowPause" data-i18n="title.how">遊び方</button>
           <button class="btn primary" id="btnContinue" data-i18n="pause.continue">Continue</button>
           <button class="btn danger" id="btnQuit" data-i18n="pause.quit">Quit to Title</button>
@@ -2289,6 +2440,28 @@ window.CG.p = new Promise((resolve) => {
   </div>
 </div>
 
+<!-- 初回名前入力 -->
+<div class="overlay" id="overlayNameInput">
+  <div class="modal">
+    <div class="hd">
+      <b data-i18n="name.welcome">WELCOME!</b>
+    </div>
+    <div class="bd" style="text-align:center; padding:20px 0;">
+      <p class="muted" data-i18n="name.input_hint">
+        ランキングに使用する名前を入力してください。
+      </p>
+      <div style="margin:20px 0;">
+        <input id="initialNameInput" type="text" maxlength="12" placeholder="YOU" 
+               style="width:240px; font-size:18px; text-align:center; padding:12px;">
+      </div>
+      <div id="nameErrorMsg" style="color:#ff4d4d; font-size:12px; margin-bottom:15px; display:none;" data-i18n="name.error_empty">
+        名前を入力してください。
+      </div>
+      <button class="btn primary ctaBig" id="btnSaveName" style="min-width:200px;" data-i18n="name.start">START GAME</button>
+    </div>
+  </div>
+</div>
+
 <!-- ランキング -->
 <div class="overlay" id="overlayRanking">
   <div class="modal">
@@ -2302,8 +2475,8 @@ window.CG.p = new Promise((resolve) => {
       </p>
 
       <div class="row" style="justify-content:space-between; margin-top:10px;">
-        <div class="muted small" data-i18n="rank.name">Name（任意）</div>
-        <input id="nameInput" type="text" maxlength="12" placeholder="YOU" style="width:180px;">
+        <div class="muted small" data-i18n="rank.name">Name</div>
+        <div id="rankNameDisplay" style="font-weight:bold; color:var(--primary);">YOU</div>
       </div>
 
       <div class="handBox" id="rankingList"
@@ -2366,6 +2539,9 @@ window.CG.p = new Promise((resolve) => {
   <script>
     window.CG?.loadingStart?.();
     let prevPhase = null;
+
+    // ========= フィードバック・外部連携 =========
+    const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScfoc07SpR-S3SQIzDoE_Sm3OPpfDY4T25L19Oy_tutnzmhmw/viewform?usp=header";
 
     // ========= モード管理 (Hoisted) =========
     const MODE_KEY = "bj_mode";
@@ -2733,12 +2909,12 @@ window.CG.p = new Promise((resolve) => {
       };
 
       try {
-        if (window.CrazyGames?.SDK?.ad?.requestAd) {
+        if (isAdsEnabled() && window.CrazyGames?.SDK?.ad?.requestAd) {
           window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
         } else {
-          // SDK未接続時: デバッグ用即成功
-          console.warn("SDK not ready, simulating ad success (level reward)");
-          setTimeout(callbacks.adFinished, 1000);
+          // 広告無効時またはSDK未接続時: 何もしない (シミュレーション削除)
+          console.log("[CrazyGames] Ads disabled, reward ignored.");
+          if (btnAd) btnAd.disabled = false;
         }
       } catch (e) {
         console.error(e);
@@ -3160,6 +3336,7 @@ function apiReady(){
     // 既にロード済みの場合のバックアップ
     window.addEventListener("DOMContentLoaded", ()=>{
        if(apiReady()) syncEngine();
+       if(typeof updateTableRulesText === "function") updateTableRulesText();
     });
 
 // ... (skipping unchanged lines) ...
@@ -3176,6 +3353,20 @@ $("btnBankruptTitle").onclick = () => {
 };
 
 // 広告で復活 (+50000 → Normal再開)
+// 広告で復活 (+50000 → Normal再開)
+const doReviveNormal = () => {
+  // bank=50000 で保存し、Normal自動再開
+  localStorage.setItem(BANK_KEY_NORMAL, "50000");
+  if ($("overlayBankruptcy")) $("overlayBankruptcy").classList.remove("show");
+  // アニメーションキャッシュをリセット
+  prevDealerCards = [];
+  prevPlayerLens = [];
+  prevBank = null;
+  toast(t("js.revive_done_basic")); // +50000
+  stopTick();
+  window.startSession("normal");
+};
+
 $("btnBankruptAd").onclick = () => {
   if (isAdRequesting) return;
   const btn = $("btnBankruptAd");
@@ -3187,41 +3378,29 @@ $("btnBankruptAd").onclick = () => {
     adFinished: () => {
       isAdRequesting = false;
       btn.disabled = false;
-      // bank=50000 で保存し、Normal自動再開
-      localStorage.setItem(BANK_KEY_NORMAL, "50000");
-      $("overlayBankruptcy").classList.remove("show");
-      // アニメーションキャッシュをリセット
-      prevDealerCards = [];
-      prevPlayerLens = [];
-      prevBank = null;
-      toast("復活しました！ +50000");
-      // doResetToTitleを使わず直接startSessionを呼ぶ
-      // (reset_sessionがbank=5000に上書きする問題を回避)
-      stopTick();
-      window.startSession("normal");
+      doReviveNormal();
     },
     adError: (error) => {
       isAdRequesting = false;
       btn.disabled = false;
       console.warn("Ad Error (bankruptcy):", error);
       if (errEl) errEl.style.display = "block";
-    },
-  };
-
-  isAdRequesting = true;
-  try {
-    if (window.CrazyGames?.SDK?.ad?.requestAd) {
-      window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
-    } else {
-      // SDK未接続時のデバッグ用: 即成功扱い
-      console.warn("SDK not ready, simulating ad success");
-      setTimeout(callbacks.adFinished, 1000);
     }
-  } catch (e) {
-    console.error(e);
-    callbacks.adError(e);
+  };
+  if (isAdsEnabled() && window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.ad) {
+    window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
+  } else {
+    isAdRequesting = false;
+    btn.disabled = false;
   }
 };
+
+if ($("btnBankruptRestart")) {
+  $("btnBankruptRestart").onclick = () => {
+    doReviveNormal();
+  };
+}
+
 
     // ========= タイマー =========
     let sessionMs = 300000;
@@ -3255,30 +3434,30 @@ $("btnBankruptAd").onclick = () => {
       }, 120);
     }
 
+    window.updateTableRulesText = function() {
+      const isH17 = $("opt_rule_h17")?.checked;
+      const descEl = $("dealerRuleDesc");
+      const tableTextEl = $("tableRulesText");
+      const hiddenH17 = $("opt_h17");
+
+      if (isH17) {
+        if (descEl) descEl.setAttribute("data-i18n", "opt_sub.h17");
+        if (tableTextEl) tableTextEl.textContent = "DEALER MUST DRAW TO 16 AND HIT SOFT 17 \u2022 6 DECKS \u2022 HOUSE RULES APPLY";
+        if (hiddenH17) hiddenH17.checked = true;
+      } else {
+        if (descEl) descEl.setAttribute("data-i18n", "opt_sub.s17");
+        if (tableTextEl) tableTextEl.textContent = "DEALER MUST DRAW TO 16 AND STAND ON 17 \u2022 6 DECKS \u2022 HOUSE RULES APPLY";
+        if (hiddenH17) hiddenH17.checked = false;
+      }
+      if (typeof updateDOM === "function") updateDOM();
+    };
+
     function stopTick(){
       if (tickHandle){ clearInterval(tickHandle); tickHandle = null; }
     }
 
     function rulesMaskFromUI(){
-      const RB_ALLOW_DOUBLE      = 1 << 0;
-      const RB_ALLOW_SPLIT       = 1 << 1;
-      const RB_ALLOW_SURRENDER   = 1 << 2;
-      const RB_ALLOW_INSURANCE   = 1 << 3;
-      const RB_ALLOW_EVEN_MONEY  = 1 << 4;
-      const RB_ALLOW_DAS         = 1 << 5;
-      const RB_SPLIT_BJ_AS_BJ    = 1 << 6;
-      const RB_DEALER_HIT_S17    = 1 << 7;
-
-      let m = 0;
-      if ($("opt_double").checked)   m |= RB_ALLOW_DOUBLE;
-      if ($("opt_split").checked)    m |= RB_ALLOW_SPLIT;
-      if ($("opt_surrender").checked)m |= RB_ALLOW_SURRENDER;
-      if ($("opt_insurance").checked)m |= RB_ALLOW_INSURANCE;
-      if ($("opt_even_money").checked)m |= RB_ALLOW_EVEN_MONEY;
-      if ($("opt_das").checked)      m |= RB_ALLOW_DAS;
-      if ($("opt_split_bj").checked)  m |= RB_SPLIT_BJ_AS_BJ;
-      if ($("opt_h17").checked)      m |= RB_DEALER_HIT_S17;
-      return m >>> 0;
+      return getRuleMaskFromUI();
     }
 
     function refresh(){
@@ -3363,6 +3542,8 @@ function setPause(paused) {
       $("overlayHow").classList.remove("show");
       $("overlayMore") && $("overlayMore").classList.remove("show");
       $("overlayHistory") && $("overlayHistory").classList.remove("show");
+
+      if(typeof updateTableRulesText === "function") updateTableRulesText();
 
       // ── タイトル画面用UIリセット ──
       // startSession() が設定したインラインstyleを除去し、
@@ -3548,11 +3729,12 @@ function soFillStats(st){
 }
 
 async function soRequestBanner(){
-  if (window.SO.bannerShown) return;
-  if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) return; // 広告無効
-
   const wrap = document.getElementById("soBannerWrap");
-  if (wrap) wrap.style.display = "none";
+  if (window.SO.bannerShown) return;
+  if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) {
+    if (wrap) wrap.style.display = "none";
+    return;
+  }
 
   try{
     await window.CG?.p;
@@ -3569,9 +3751,12 @@ function soRequestMidgame(){
   const note = document.getElementById("soAdNote");
 
   if (typeof ENABLE_ADS !== "undefined" && !ENABLE_ADS) {
-     // 広告無効：即スキップ
+     // 広告無効：スキップし、UIも表示しない
     window.SO.adDone = true;
-    if (note) note.textContent = "";
+    if (note) {
+        note.textContent = "";
+        note.style.display = "none";
+    }
     soUpdateLock();
     return;
   }
@@ -4088,10 +4273,8 @@ if (insMode) {
         updateLevelUI();
       }
       
-      // NormalモードならBANK保存
-      if (currentMode === "normal" && state.phase === "roundOver") {
-          // 念のため少し遅延させて、最終的なbankが確定していることを期待するが
-          // state.bank は既に支払い後の値のはず
+      // NormalモードならBANK保存: プレイ中や終了時も含めて常に最新を保つ
+      if (currentMode === "normal" && (state.phase === "roundOver" || state.phase === "inHand" || state.phase === "offerInsurance" || state.phase === "sessionOver")) {
           const b = Number(state.bank);
           if (Number.isFinite(b)) {
               localStorage.setItem(BANK_KEY_NORMAL, String(b));
@@ -4319,6 +4502,15 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
         if (window.bjApi && window.apiReady && window.apiReady()) {
             syncEngine();
         }
+
+        // --- 名前設定チェック ---
+        const savedName = localStorage.getItem(NAME_KEY);
+        if (!savedName) {
+            if($("overlayNameInput")) $("overlayNameInput").classList.add("show");
+        } else {
+            if ($("rankNameDisplay")) $("rankNameDisplay").textContent = savedName;
+            if ($("initialNameInput")) $("initialNameInput").value = savedName;
+        }
     }
     function fmtK(n) {
         n = Number(n);
@@ -4380,6 +4572,16 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
 
     $("btnHowTitle").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayHow").classList.add("show"); };
     $("btnHowTitle2").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayHow").classList.add("show"); };
+
+    // フィードバックボタン
+    if ($("btnFeedback")) {
+      if (ENABLE_FEEDBACK_BUTTON) $("btnFeedback").style.display = "flex";
+      $("btnFeedback").onclick = () => {
+        if (!FEEDBACK_FORM_URL) return;
+        window.audioMgr.play("ui_click");
+        window.open(FEEDBACK_FORM_URL, "_blank", "noopener,noreferrer");
+      };
+    }
     $("btnHowPause").onclick = () => { window.audioMgr.play("ui_click"); $("overlayHow").classList.add("show"); };
 
     $("btnShuffle").onclick = async () => {
@@ -4473,9 +4675,7 @@ function fmtDur(ms){
 }
 
 function getPlayerName(){
-  const inp = $("nameInput");
-  const v = (inp ? inp.value : "").trim().slice(0,12);
-  const name = v || (localStorage.getItem(NAME_KEY) || "YOU");
+  const name = (localStorage.getItem(NAME_KEY) || "YOU").trim().slice(0,12);
   localStorage.setItem(NAME_KEY, name);
   return name;
 }
@@ -4500,6 +4700,9 @@ function addRankingRecord(rec){
 function renderRankingOverlay(){
   const box = $("rankingList");
   if (!box) return;
+
+  const current = getPlayerName();
+  if ($("rankNameDisplay")) $("rankNameDisplay").textContent = current;
 
   const list = loadRanking();
   if (!list.length){
@@ -4644,39 +4847,43 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 
     // ========= 広告連携 (Rewarded) =========
     function requestAdForTicket(after = null) {
-       if (isAdRequesting) return;
-       isAdRequesting = true;
-       $("adErrorMsg").style.display = "none";
-       toast(t("js.ad_waiting"));
+        if (!isAdsEnabled()) {
+           console.log("[CrazyGames] requestAdForTicket ignored (ads disabled)");
+           return;
+        }
+        if (isAdRequesting) return;
+        isAdRequesting = true;
+        $("adErrorMsg").style.display = "none";
+        toast(t("js.ad_waiting"));
 
-       // CrazyGames SDK
-       const callbacks = {
-         adFinished: () => {
-            isAdRequesting = false;
-            addPracTicket(1);
-            toast(t("js.ticket_get"));
-            // オーバーレイを閉じる
-            $("overlayAdConfirm").classList.remove("show");
-            // 呼び出し元が「広告後に続行したい」場合はコールバック
-            if (typeof after === "function") after();
-         },
-         adError: (error) => {
-            isAdRequesting = false;
-            console.warn("Ad Error:", error);
-            toast(t("ad.load_fail"));
-         },
-         adStarted: () => {
-            console.log("Ad Started");
-         }
-       };
+        // CrazyGames SDK
+        const callbacks = {
+          adFinished: () => {
+             isAdRequesting = false;
+             addPracTicket(1);
+             toast(t("js.ticket_get"));
+             // オーバーレイを閉じる
+             $("overlayAdConfirm").classList.remove("show");
+             // 呼び出し元が「広告後に続行したい」場合はコールバック
+             if (typeof after === "function") after();
+          },
+          adError: (error) => {
+             isAdRequesting = false;
+             console.warn("Ad Error (ticket):", error);
+             toast(t("ad.load_fail"));
+          },
+          adStarted: () => {
+             console.log("Ad Started");
+          }
+        };
 
-       if (window.CrazyGames?.SDK?.ad?.requestAd) {
-          window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
-       } else {
-          // SDKなし/ロード前 -> デバッグ用: 即成功扱い (or エラー)
-          console.warn("SDK not ready, simulating ad success");
-          setTimeout(callbacks.adFinished, 1000);
-       }
+        if (isAdsEnabled() && window.CrazyGames?.SDK?.ad?.requestAd) {
+           window.CrazyGames.SDK.ad.requestAd('rewarded', callbacks);
+        } else {
+           // 広告無効時は何もしない (シミュレーション削除)
+           isAdRequesting = false;
+           console.log("[CrazyGames] Ads disabled, ticket request ignored.");
+        }
     }
 
 
@@ -4697,8 +4904,14 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
                 desc.style.color = "#ffcc66";
                 desc.removeAttribute("data-i18n");
              } else {
-                desc.textContent = t("prac.watch_ad");
-                desc.style.color = "#ffffff";
+                // チケットなし
+                if (isAdsEnabled()) {
+                   desc.textContent = t("prac.watch_ad");
+                   desc.style.color = "#ffffff";
+                } else {
+                   desc.textContent = t("prac.no_ticket_basic");
+                   desc.style.color = "#888";
+                }
                 desc.removeAttribute("data-i18n");
              }
           }
@@ -4727,34 +4940,39 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
             const btn = $("btnNormalRevive");
             btn.disabled = true;
 
-            const callbacks = {
-                adFinished: () => {
-                    isAdRequesting = false;
-                    btn.disabled = false;
-                    // bank=50000 で保存し、Normal自動再開
-                    localStorage.setItem(BANK_KEY_NORMAL, "50000");
-                    toast(t("js.revive_done"));
-                    startSession("normal");
-                },
-                adError: (error) => {
-                    isAdRequesting = false;
-                    btn.disabled = false;
-                    console.warn("Ad Error (title revive):", error);
-                    toast(t("ad.load_fail"));
-                },
+            const doRevive = () => {
+                // bank=50000 で保存し、Normal自動再開
+                localStorage.setItem(BANK_KEY_NORMAL, "50000");
+                const msg = isAdsEnabled() ? t("js.revive_done") : t("js.revive_done_basic");
+                toast(msg);
+                startSession("normal");
             };
 
-            isAdRequesting = true;
-            try {
-                if (window.CrazyGames?.SDK?.ad?.requestAd) {
+            if (isAdsEnabled() && window.CrazyGames?.SDK?.ad?.requestAd) {
+                isAdRequesting = true;
+                const callbacks = {
+                    adFinished: () => {
+                        isAdRequesting = false;
+                        btn.disabled = false;
+                        doRevive();
+                    },
+                    adError: (error) => {
+                        isAdRequesting = false;
+                        btn.disabled = false;
+                        console.warn("Ad Error (title revive):", error);
+                        toast(t("ad.load_fail"));
+                    },
+                };
+                try {
                     window.CrazyGames.SDK.ad.requestAd("rewarded", callbacks);
-                } else {
-                    console.warn("SDK not ready, simulating ad success");
-                    setTimeout(callbacks.adFinished, 1000);
+                } catch (e) {
+                    console.error(e);
+                    callbacks.adError(e);
                 }
-            } catch (e) {
-                console.error(e);
-                callbacks.adError(e);
+            } else {
+                // 広告無効時は即座に「再開」として実行
+                doRevive();
+                btn.disabled = false;
             }
         };
     }
@@ -4768,14 +4986,20 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
            // チケットあり -> 開始
            startSession("practice");
        } else {
-           // チケットなし -> 広告確認
-           $("overlayAdConfirm").classList.add("show");
+           // チケットなし
+           if (isAdsEnabled()) {
+               $("overlayAdConfirm").classList.add("show");
+           } else {
+               toast(t("prac.no_ticket_basic"));
+           }
        }
     };
 
     // 広告確認オーバーレイ
     $("btnAdYes").onclick = () => {
-       requestAdForTicket(() => startSession("practice"));
+       if (isAdsEnabled()) {
+           requestAdForTicket(() => startSession("practice"));
+       }
     };
     $("btnAdNo").onclick = () => {
        $("overlayAdConfirm").classList.remove("show");
@@ -4785,10 +5009,12 @@ $("btnClosePause").onclick = $("btnContinue").onclick = ()=>{
 // 仕様：Retry は表示しない。選択肢は「タイトルへ戻る」「広告でもう一度」だけ。
 // 「広告でもう一度」は Rewarded Ad を見せてチケット +1 → そのまま Practice を開始（= チケット消費）する。
 $("btnPracWatchAd").onclick = () => {
-   requestAdForTicket(() => {
-      $("overlayPracticeOver").classList.remove("show");
-      startSession("practice");
-   });
+   if (isAdsEnabled()) {
+       requestAdForTicket(() => {
+          $("overlayPracticeOver").classList.remove("show");
+          startSession("practice");
+       });
+   }
 };
 $("btnPracToTitle").onclick = () => {
    $("overlayPracticeOver").classList.remove("show");
@@ -4802,7 +5028,7 @@ $("btnPracToTitle").onclick = () => {
        // 練習モードの消費処理
        if (mode === "practice") {
            if (!consumePracTicket()) {
-               toast(t("prac.no_ticket"));
+               toast(t("prac.no_ticket_basic"));
                return; 
            }
        }
@@ -4926,7 +5152,7 @@ $("btnPracToTitle").onclick = () => {
 
        // 名前の復元
        const savedName = localStorage.getItem(NAME_KEY);
-       if (savedName && $("nameInput")) $("nameInput").value = savedName;
+        if (savedName && $("rankNameDisplay")) $("rankNameDisplay").textContent = savedName;
 
        // ベット設定
        let bet = MIN_BET;
@@ -5020,13 +5246,39 @@ $("btnPracToTitle").onclick = () => {
     };
     $("btnCloseRanking").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayRanking").classList.remove("show"); };
 
-    $("nameInput")?.addEventListener("input", ()=>{
-      const v = $("nameInput").value.trim().slice(0,12) || "YOU";
-      localStorage.setItem(NAME_KEY, v);
-    });
+    // 以前の nameInput リスナーは削除
+    
+    // 初回名前保存
+    if ($("btnSaveName")) {
+      $("btnSaveName").onclick = () => {
+        const inp = $("initialNameInput");
+        const name = (inp ? inp.value : "").trim().slice(0, 12);
+        const err = $("nameErrorMsg");
+
+        if (!name) {
+          if (err) err.style.display = "block";
+          return;
+        }
+
+        localStorage.setItem(NAME_KEY, name);
+        if ($("rankNameDisplay")) $("rankNameDisplay").textContent = name;
+        if ($("overlayNameInput")) $("overlayNameInput").classList.remove("show");
+        toast(t("ui.ready"));
+      };
+
+      // Enterキーでも保存
+      $("initialNameInput")?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("btnSaveName").click();
+      });
+    }
 
     window.addEventListener("keydown", (e)=>{
       if (!apiReady() || !$("screenGame").classList.contains("active")) return;
+      // オーバーレイ表示中は無視
+      if (document.querySelector(".overlay.show") || document.querySelector(".overlay-levelup.show")) {
+        return;
+      }
+      
       const k = e.key.toLowerCase();
       if (k === "d") $("btnDeal").click();
       if (k === "h") $("btnHit").click();
@@ -5080,6 +5332,11 @@ $("btnPracToTitle").onclick = () => {
                    }
                 };
             }
+
+            // ポーズメニューのデバッグ動作セット
+            if ($("btnDebugAce")) $("btnDebugAce").style.display = "inline-block";
+            if ($("btnDebugSplit")) $("btnDebugSplit").style.display = "inline-block";
+            if ($("btnShuffle")) $("btnShuffle").style.display = "inline-block";
 
             // タイトル画面に練習チケット付与ボタン
             const titleRow = document.querySelector("#screenTitle .ctaRow");
@@ -5143,6 +5400,24 @@ $("btnPracToTitle").onclick = () => {
         lockUI(800); 
         callAction("debug_deal_ace");
         $("btnDebugAce").disabled = false; // 再度有効化
+      }, 50);
+    };
+
+    $("btnDebugSplit").onclick = () => {
+      // ポーズメニューを閉じてからDealを実行
+      if(state) callAction("set_paused", 0);
+      if (pausedAt) {
+        pausedTotal += performance.now() - pausedAt;
+        pausedAt = 0;
+      }
+      setPause(false);
+
+      $("btnDeal").disabled = true;
+      $("btnDebugSplit").disabled = true;
+      setTimeout(()=>{ 
+        lockUI(800); 
+        callAction("debug_deal_split");
+        $("btnDebugSplit").disabled = false; // 再度有効化
       }, 50);
     };
 
@@ -5237,7 +5512,8 @@ $("btnPracToTitle").onclick = () => {
        if($("opt_even_money").checked) mask |= 16;
        if($("opt_das").checked) mask |= 32;
        if($("opt_split_bj").checked) mask |= 64;
-       if($("opt_h17").checked) mask |= 128;
+       // ラジオボタンの状態を反映
+       if($("opt_rule_h17").checked) mask |= 128;
        return mask;
     }
 

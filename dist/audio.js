@@ -27,6 +27,11 @@ class AudioManager {
      * 初期化とプリロード
      */
     init() {
+        // すでにSDK等でセットされている場合は尊重、そうでなければURLクエリをチェック
+        if (this.muted === undefined) {
+            const params = new URLSearchParams(window.location.search);
+            this.muted = (params.get("muteAudio") === "true");
+        }
         Object.keys(this.config).forEach(name => {
             const item = this.config[name];
             const audio = new Audio();
@@ -34,6 +39,18 @@ class AudioManager {
             audio.load();
             this.sounds[name] = audio;
         });
+    }
+
+    /**
+     * ミュート設定
+     */
+    setMuted(flag) {
+        this.muted = !!flag;
+        console.log(`[AudioManager] Muted: ${this.muted}`);
+    }
+
+    isMuted() {
+        return this.muted;
     }
 
     /**
@@ -63,6 +80,8 @@ class AudioManager {
      * @param {number} volScale 音量の追加倍率 (オプション)
      */
     play(name, volScale = 1.0) {
+        if (this.muted) return; // ミュート中は再生しない
+
         const item = this.config[name];
         const audio = this.sounds[name];
 

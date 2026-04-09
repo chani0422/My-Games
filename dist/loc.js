@@ -35,7 +35,9 @@ const RESOURCES = {
     "opt.even_money": "Even Money",
     "opt.das": "DAS",
     "opt.split_bj": "Split BJ as BJ",
-    "opt.h17": "Dealer hits Soft 17",
+    "opt.dealer_rule": "Dealer Rule",
+    "opt.s17": "S17 (Stand on Soft 17)",
+    "opt.h17": "H17 (Hit on Soft 17)",
 
     // ゲーム画面
     "game.garage": "CASINO TABLE",
@@ -69,10 +71,10 @@ const RESOURCES = {
     "so.session_over": "SESSION OVER",
     "so.calculating": "Calculating…",
     "so.wait": "Please wait…",
-    "so.sponsored": "Sponsored",
+    "so.sponsored": "",
     "so.to_title": "To Title",
-    "so.retry": "WATCH AD & PLAY AGAIN (+5000)",
-    "so.revive": "📺 Watch Ad to Revive (+500)",
+    "so.retry": "",
+    "so.revive": "",
     "so.delay": "Add Delay Before Session Over",
 
     "pause.title": "PAUSED",
@@ -100,7 +102,7 @@ const RESOURCES = {
 
     "how.det_dealer_title": "Dealer Rules",
     "how.det_dealer_text":
-      "Dealer hits on 16 or less and stands on 17 or more.<br><b>Soft 17</b>: Depending on settings, dealer may hit or stand when holding an Ace worth 11 and a total of 17.",
+      "Dealer hits on 16 or less and stands on 17 or more (Standard).<br><b>S17 / H17</b>: Depending on settings, dealer may hit or stand on Soft 17 (Ace + 6). Default is S17 (Stand).",
 
     "how.det_table_title": "Table Rules",
     "how.det_table_text":
@@ -153,12 +155,14 @@ const RESOURCES = {
     "opt_sub.insurance": "Insurance vs Dealer Ace (Max bet/2)",
     "opt_sub.even_money": "Instant 1:1 if you have BJ vs Dealer Ace",
     "opt_sub.das": "Allow Double Down after Splitting",
-    "opt_sub.h17": "Dealer draws on Soft 17",
+    "opt_sub.s17": "Dealer stands on ALL 17s (Default)",
+    "opt_sub.h17": "Dealer hits on Soft 17 (Ace + 6)",
+    "opt.haptic": "Vibration",
     "opt_sub.haptic": "Vibration feedback on/off",
 
     // 銀行・破産
     "bank.bankruptcy": "YOU ARE BANKRUPT",
-    "bank.revive_hint": "Chips are gone.<br>Watch Ad to Revive?",
+    "bank.revive_hint": "Chips are gone.<br>Restart the session?",
     "ad.load_fail": "Ad failed to load. Please try again.",
 
     // JS dynamic
@@ -176,14 +180,14 @@ const RESOURCES = {
     "prac.ticket_left": "Tickets: ",
     "prac.start_free": "Start (Free)",
     "prac.start_ticket": "Start (1 Ticket)",
-    "prac.watch_ad": "Watch Ad (+1 Ticket)",
-    "prac.ad_again": "Watch Ad & Play Again",
+    "prac.watch_ad": "No tickets",
+    "prac.ad_again": "Play Again",
     "prac.no_ticket": "No tickets. Watch Ad to play.",
     "prac.session_over": "Practice Over",
     "prac.retry_free": "Retry (Free)",
     "prac.retry_ticket": "Retry (1 Ticket)",
     "prac.time_up": "Practice Over!",
-    "prac.confirm_ad": "Watch a video to get a play ticket?",
+    "prac.confirm_ad": "Out of tickets.",
 
     // JS localizable
     "js.ins_hint": "💰 Insurance: {0} (bet/2)",
@@ -204,11 +208,24 @@ const RESOURCES = {
       "Score attack mode to see how much you can increase chips within time limit",
     "mode.help_practice_tooltip": "Practice mode with no chip fluctuations",
     "mode.help_normal_detail":
-      "<b>Normal Mode</b><br>• No time limit<br>• Bank (chips) carrying over<br>• Level up possible<br>• Revive by watching ads on bankruptcy",
+      "<b>Normal Mode</b><br>• No time limit<br>• Bank (chips) carrying over<br>• Level up possible<br>• Restart possible on bankruptcy",
     "mode.help_challenge_detail":
       "<b>Challenge Mode</b><br>• Time limit: 5:00<br>• Fixed starting Bank (50K)<br>• Score attack mode<br>• Score tracked for ranking",
     "mode.help_practice_detail":
-      "<b>Practice Mode</b><br>• Training only mode (24 rounds/play)<br>• No Bank fluctuation<br>• No impact on history/stats<br>• Insurance OFF<br>• Limited rounds (Future: add play by ads)",
+      "<b>Practice Mode</b><br>• Training only mode (24 rounds/play)<br>• No Bank fluctuation<br>• No impact on history/stats<br>• Insurance OFF<br>• Limited rounds per day",
+
+    "prac.no_ticket_basic": "No tickets left.",
+    "mode.practice_desc_basic": "Training mode.",
+    "bank.restart": "RESTART",
+    "bank.revive_hint_basic": "Chips are gone. Restart the session?",
+    "js.revive_done_basic": "Restarted! +50000",
+    "bank.revive_free_hint": "+50000 (Free)",
+
+    "name.welcome": "WELCOME!",
+    "name.input_hint": "Please enter your name for the ranking.",
+    "name.start": "START GAME",
+    "name.error_empty": "Please enter a name.",
+    "ui.feedback": "Feedback / Bugs",
   },
 
   ja: {
@@ -246,7 +263,9 @@ const RESOURCES = {
     "opt.even_money": "Even Money",
     "opt.das": "DAS",
     "opt.split_bj": "Split BJ as BJ",
-    "opt.h17": "Dealer hits Soft 17",
+    "opt.dealer_rule": "ディーラー規則",
+    "opt.s17": "S17 (ソフト17でスタンド)",
+    "opt.h17": "H17 (ソフト17でヒット)",
 
     // Game Screen
     "game.garage": "CASINO TABLE",
@@ -280,10 +299,10 @@ const RESOURCES = {
     "so.session_over": "SESSION OVER", // Match EN
     "so.calculating": "集計中…",
     "so.wait": "Please wait…",
-    "so.sponsored": "Sponsored",
+    "so.sponsored": "",
     "so.to_title": "タイトルへ",
-    "so.retry": "📺 広告でもう一度 (+5000)",
-    "so.revive": "📺 広告を見て復活 (+500)",
+    "so.retry": "",
+    "so.revive": "",
     "so.delay": "セッション終了まで少しお待ちください",
 
     "pause.title": "PAUSED",
@@ -311,7 +330,7 @@ const RESOURCES = {
 
     "how.det_dealer_title": "ディーラーのルール",
     "how.det_dealer_text":
-      "ディーラーは16以下なら引き続け、17以上で止まります。<br><b>Soft 17</b>：Aを11として数える計17の場合、設定によりヒットかスタンドが変わります。",
+      "ディーラーは16以下なら引き続け、17以上で止まります（基本原則）。<br><b>S17 / H17</b>：Aceを11として数える合計17（ソフト17）の場合に、スタンドするかヒットするかの設定です。デフォルトはS17（スタンド）です。",
 
     "how.det_table_title": "テーブルルール",
     "how.det_table_text":
@@ -336,7 +355,7 @@ const RESOURCES = {
     "rank.title": "RANKING",
     "rank.close": "閉じる",
     "rank.msg": "セッション結果（Profit順）を保存しています（最大 50 件）。",
-    "rank.name": "Name（任意）",
+    "rank.name": "Name",
     "rank.none": "まだランキングがありません。",
     "rank.saved": "ランキングを保存しました: ",
 
@@ -365,12 +384,14 @@ const RESOURCES = {
     "opt_sub.insurance": "ディーラーAで保険（最大半額）",
     "opt_sub.even_money": "自分BJ＆ディーラーAで確定1:1",
     "opt_sub.das": "スプリット後のダブルを許可",
-    "opt_sub.h17": "Soft17ならディーラーも引く",
-    "opt_sub.haptic": "操作時の振動フィードバック",
+    "opt_sub.s17": "すべての17でスタンドする (標準)",
+    "opt_sub.h17": "Soft17 (A+6) の時のみもう1枚引く",
+    "opt.haptic": "振動",
+    "opt_sub.haptic": "振動のオンオフ切り替え",
 
     // 銀行・破産
     "bank.bankruptcy": "破産しました",
-    "bank.revive_hint": "チップがなくなりました。<br>広告を見て復活しますか？",
+    "bank.revive_hint": "チップがなくなりました。<br>はじめからやり直しますか？",
     "ad.load_fail": "広告の読み込みに失敗しました。もう一度お試しください。",
 
     // JS dynamic
@@ -388,14 +409,14 @@ const RESOURCES = {
     "prac.ticket_left": "所持チケット: ",
     "prac.start_free": "スタート（無料）",
     "prac.start_ticket": "スタート（チケット消費）",
-    "prac.watch_ad": "広告を見てチケット入手",
-    "prac.ad_again": "📺 広告でもう一度",
+    "prac.watch_ad": "チケット不足",
+    "prac.ad_again": "もう一度プレイ",
     "prac.no_ticket": "チケットが足りません。広告を見て入手してください。",
     "prac.session_over": "練習終了",
     "prac.retry_free": "もう一度（無料）",
     "prac.retry_ticket": "もう一度（チケット消費）",
     "prac.time_up": "24ラウンド終了！",
-    "prac.confirm_ad": "動画広告を見て、プレイ権（チケット）を獲得しますか？",
+    "prac.confirm_ad": "チケットがありません。",
 
     // JS localizable
     "js.ins_hint": "💰 保険: {0} (ベットの半分)",
@@ -415,11 +436,24 @@ const RESOURCES = {
       "制限時間内にどれだけ増やせるか挑戦するモード",
     "mode.help_practice_tooltip": "チップ変動なしで練習できるモード",
     "mode.help_normal_detail":
-      "<b>Normal Mode</b><br>・時間制限なし<br>・Bank（チップ）引き継ぎ<br>・レベルアップ可能<br>・破産時に広告視聴で復活可能",
+      "<b>Normal Mode</b><br>・時間制限なし<br>・Bank（チップ）引き継ぎ<br>・レベルアップ可能<br>・破産時に「復活スタート」が可能",
     "mode.help_challenge_detail":
       "<b>Challenge Mode</b><br>・制限時間あり（5:00）<br>・初期Bank固定（50K）<br>・スコアアタックモード<br>・ランキング用スコア計測",
     "mode.help_practice_detail":
-      "<b>Practice Mode</b><br>・練習専用モード（1プレイ24ラウンド）<br>・Bank変動なし<br>・履歴 / 統計に影響しない<br>・インシュランスOFF<br>・プレイ回数制限あり（将来的に広告で追加プレイ）",
+      "<b>Practice Mode</b><br>・練習専用モード（1プレイ24ラウンド）<br>・Bank変動なし<br>・履歴 / 統計に影響しない<br>・インシュランスOFF<br>・プレイ回数制限あり",
+
+    "prac.no_ticket_basic": "チケットがありません。",
+    "mode.practice_desc_basic": "練習モードです。",
+    "bank.restart": "復活スタート",
+    "bank.revive_hint_basic": "チップがなくなりました。はじめからやり直しますか？",
+    "js.revive_done_basic": "再開しました！ +50000",
+    "bank.revive_free_hint": "+50000 (無料)",
+
+    "name.welcome": "WELCOME!",
+    "name.input_hint": "ランキングに使用する名前を入力してください。",
+    "name.start": "ゲーム開始",
+    "name.error_empty": "名前を入力してください。",
+    "ui.feedback": "ご意見・不具合",
   },
 };
 
