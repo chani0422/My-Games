@@ -79,7 +79,7 @@ const RESOURCES = {
 
     "pause.title": "PAUSED",
     "pause.close": "Close",
-    "pause.msg": "Session will not end. 'Continue' to return, 'Quit' to title.",
+    "pause.msg": "'Continue' to return, 'Quit' to title.",
     "pause.continue": "Continue",
     "pause.quit": "Quit to Title",
 
@@ -125,7 +125,7 @@ const RESOURCES = {
 
     "rank.title": "RANKING",
     "rank.close": "Close",
-    "rank.msg": "Saving session results (by Profit) (Max 50).",
+    "rank.msg": "Saving Challenge Mode session results (by Profit) (Max 50).",
     "rank.name": "Name (Optional)",
     "rank.none": "No ranking yet.",
     "rank.saved": "Saved Ranking: ",
@@ -308,7 +308,7 @@ const RESOURCES = {
     "pause.title": "PAUSED",
     "pause.close": "閉じる",
     "pause.msg":
-      "セッションは終了しません。<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。",
+      "<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。",
     "pause.continue": "Continue",
     "pause.quit": "Quit to Title",
 
@@ -354,7 +354,7 @@ const RESOURCES = {
 
     "rank.title": "RANKING",
     "rank.close": "閉じる",
-    "rank.msg": "セッション結果（Profit順）を保存しています（最大 50 件）。",
+    "rank.msg": "チャレンジモードのセッション結果（Profit順）を保存しています（最大 50 件）。",
     "rank.name": "Name",
     "rank.none": "まだランキングがありません。",
     "rank.saved": "ランキングを保存しました: ",
