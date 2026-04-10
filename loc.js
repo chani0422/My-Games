@@ -1,13 +1,16 @@
 const RESOURCES = {
   en: {
-    // トップバー
+    // Top bar
     "ui.booting": "booting…",
     "ui.loading": "LOADING",
     "ui.ready": "ready.",
     "ui.engine_ready": "Engine ready!",
     "ui.engine_not_ready": "engine not ready",
+    "ui.loading_engine": "loading engine…",
+    "ui.ad_playing": "Ad playing…",
+    "ui.deck_reshuffled": "Deck Re-shuffled",
 
-    // 統計 & メニュー
+    // Stats & Menu
     "stats.bank": "Bank",
     "stats.round": "Round",
     "stats.time": "Time",
@@ -15,19 +18,17 @@ const RESOURCES = {
     "menu.history": "History",
     "menu.ranking": "Ranking",
 
-    // タイトル & ホーム
+    // Titles & Home
     "title.payout": "🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1",
     "title.main": "Blackjack",
     "title.sub": "Aim for a personal best in the ranking!!",
     "title.deal_start": "DEAL / START",
     "title.how": "How to Play",
-    "title.bet_hint":
-      "Bet (Even number recommended to avoid fractional insurance)",
+    "title.bet_hint": "Bet (Even number recommended)",
     "title.options": "Options (Toggle ON/OFF)",
-
     "title.marking": "Markings/Controls",
 
-    // オプション
+    // Options
     "opt.double": "Double Down",
     "opt.split": "Split",
     "opt.surrender": "Surrender (Late)",
@@ -39,7 +40,7 @@ const RESOURCES = {
     "opt.s17": "S17 (Stand on Soft 17)",
     "opt.h17": "H17 (Hit on Soft 17)",
 
-    // ゲーム画面
+    // Game Screen
     "game.garage": "CASINO TABLE",
     "game.bet_info": "BET / INFO",
     "game.bet": "Bet",
@@ -49,25 +50,27 @@ const RESOURCES = {
     "game.more_title": "More actions",
     "game.more_hint": "※Functions only when available.",
 
-    // サイドパネルコマンド
+    // Side Panel commands
+    "cmd.title": "ACTIONS",
     "cmd.double": "Double",
     "cmd.split": "Split",
     "cmd.surrender": "Surrender",
     "cmd.even_money": "Even Money",
 
-    // インシュランス (サイド)
+    // Insurance Side
+    "ins.title": "INSURANCE",
     "ins.insurance": "Insurance",
     "ins.max": "MAX",
     "ins.dock_hint": "Select YES / NO in DOCK below",
     "ins.yes": "YES",
     "ins.no": "NO",
 
-    // ドック (DOCK)
+    // DOCK
     "dock.deal": "DEAL",
     "dock.hit": "HIT",
     "dock.stand": "STAND",
 
-    // オーバーレイ
+    // Overlays
     "so.session_over": "SESSION OVER",
     "so.calculating": "Calculating…",
     "so.wait": "Please wait…",
@@ -76,6 +79,14 @@ const RESOURCES = {
     "so.retry": "",
     "so.revive": "",
     "so.delay": "Add Delay Before Session Over",
+
+    "so.final_bank": "Final Bank",
+    "so.profit": "Profit",
+    "so.total_net": "Total Net",
+    "so.max_streak": "Max Streak",
+    "so.rounds": "Rounds",
+    "so.time_left": "Time Left",
+    "so.duration": "Duration",
 
     "pause.title": "PAUSED",
     "pause.close": "Close",
@@ -88,10 +99,8 @@ const RESOURCES = {
 
     // Compact summary
     "how.summary_title": "QUICK SUMMARY",
-    "how.summary_goal":
-      "Goal: Get closer to 21 than the dealer (22+ is a bust/loss).",
-    "how.summary_val":
-      "Values: 2-10 face value / JQK=10 / A=1 or 11 (auto-best).",
+    "how.summary_goal": "Goal: Get closer to 21 than the dealer (22+ is a bust/loss).",
+    "how.summary_val": "Values: 2-10 face value / JQK=10 / A=1 or 11 (auto-best).",
     "how.summary_act": "Actions: HIT to draw / STAND to end turn.",
     "how.summary_pay": "Payouts: Win 1:1 / BJ 3:2 / Insurance 2:1 / Push 0",
 
@@ -99,23 +108,18 @@ const RESOURCES = {
     "how.det_action_title": "Action Details",
     "how.det_action_text":
       "<b>Hit</b>: Draw another card to increase your total score. You can hit as many times as you like until you reach 21 or bust (go over 21).<br><b>Stand</b>: Keep your current hand and end your turn. The dealer will then play their hand.<br><b>Double Down</b>: Double your original bet in exchange for receiving exactly one more card and then standing. Best used on totals of 9, 10, or 11.<br><b>Split</b>: If your first two cards have the same rank (e.g., two 8s), you can split them into two separate hands by adding an identical bet. Each hand is played independently.<br><b>Surrender (Late)</b>: If offered, you can give up half of your bet and end your hand before drawing any cards (after the dealer checks for Blackjack).<br><b>Insurance</b>: A side bet offered when the dealer's upcard is an Ace. You bet up to half of your original bet; if the dealer has Blackjack, it pays 2:1.<br><b>Even Money</b>: A special form of insurance for when you have Blackjack and the dealer shows an Ace. You can choose to take a guaranteed 1:1 payout immediately.",
-
     "how.det_dealer_title": "Dealer Rules",
     "how.det_dealer_text":
       "Dealer hits on 16 or less and stands on 17 or more (Standard).<br><b>S17 / H17</b>: Depending on settings, dealer may hit or stand on Soft 17 (Ace + 6). Default is S17 (Stand).",
-
     "how.det_table_title": "Table Rules",
     "how.det_table_text":
       "6 decks are used.<br>The shoe is reshuffled when the cut card is reached.<br>Maximum of 3 hands per round (Split limit).<br><b>Split Aces</b>: Each hand receives only one card and then stands.<br>Blackjack (3:2) is only on the first two cards. Split 21 is a regular win (1:1).",
-
     "how.det_terms_title": "Terms",
     "how.det_terms_text":
       "<b>Blackjack</b>: An Ace and any 10-value card (10/J/Q/K) as your first two cards.<br><b>Soft</b>: A hand where an Ace can be counted as 11 without busting.<br><b>Hard</b>: A hand without an Ace, or where all Aces must be counted as 1.",
-
     "how.det_payout_title": "Payouts",
     "how.det_payout_text":
       "<b>Standard Win</b>: +Original Bet amount (= 1:1)<br><b>Blackjack</b>: +1.5x Bet amount (= 3:2)<br><b>Insurance</b>: +2x Insurance Bet amount (= 2:1)<br><b>Push (Tie)</b>: No profit/loss (±0)",
-
     "how.note": "※Buttons are only shown when the action is available.",
 
     "hist.title": "HISTORY",
@@ -130,10 +134,56 @@ const RESOURCES = {
     "rank.none": "No ranking yet.",
     "rank.saved": "Saved Ranking: ",
 
+    "table.rank": "#",
+    "table.name": "Name",
+    "table.profit": "Profit",
+    "table.final": "Final",
+    "table.streak": "Streak",
+    "table.time": "Time",
+    "table.when": "When",
+    "table.round": "Round",
+    "table.bet": "Bet",
+    "table.net": "Net",
+    "table.bank": "Bank",
+
     // Debug/Toasts
     "toast.good_luck": "Good luck!",
     "toast.bet_adjusted": "Bet adjusted to Bank",
     "toast.ranking_cleared": "Ranking cleared",
+    "toast.reset_done": "Reset complete",
+    "toast.level_up_reward": "+{0} chips",
+
+    // Error messages (keys from C++)
+    "err.paused": "Paused",
+    "err.not_in_betting": "Not in betting state",
+    "err.bet_even": "Bet must be even",
+    "err.bet_min": "Bet < Minimum Bet",
+    "err.bet_bank": "Bet > Bank",
+    "err.not_in_hand": "Not in a hand",
+    "err.no_active_hand": "No active hand",
+    "err.session_not_over": "Session is not over",
+    "err.not_bankrupt": "Not bankrupt",
+    "err.not_ready_to_deal": "Not ready to deal",
+    "err.session_over_state": "Session over",
+    "err.not_in_round_over": "Not in round over state",
+    "err.bankrupt": "Bankrupt",
+    "err.no_insurance_offer": "No insurance offer",
+    "err.insurance_max": "Insurance exceeds maximum",
+    "err.no_even_money_offer": "No even money offer",
+    "err.cannot_hit": "Cannot hit now",
+    "err.surrender_disabled": "Surrender is disabled",
+    "err.surrender_after_split": "Cannot surrender after split",
+    "err.surrender_first_two": "Can only surrender on first two cards",
+    "err.already_bj": "Already Blackjack",
+    "err.double_disabled": "Double down is disabled",
+    "err.cannot_double": "Cannot double down now",
+    "err.double_first_two": "Can only double on first two cards",
+    "err.surrender_not_available_yet": "Surrender is only available after dealer check",
+    "err.double_after_split_aces": "Cannot double down after splitting Aces",
+    "err.split_limit": "Split limit reached (3 hands max)",
+    "err.split_rank_mismatch": "Cannot split different ranks",
+    "err.split_first_two": "Can only split on first two cards",
+    "err.cannot_split": "Cannot split now",
 
     // Dynamic parts
     "dyn.win": "WIN",
@@ -168,6 +218,7 @@ const RESOURCES = {
     // JS dynamic
     "js.result_showing": "Showing results…",
     "js.ad_waiting": "Waiting for ad…",
+    "js.choose_reward": "Please choose a reward!",
     "js.selectable": "Selectable",
 
     "mode.challenge": "CHALLENGE",
@@ -231,28 +282,30 @@ const RESOURCES = {
   ja: {
     // Top bar
     "ui.booting": "起動中…",
-    "ui.loading": "LOADING",
-    "ui.ready": "ready.",
-    "ui.engine_ready": "Engine ready!",
+    "ui.loading": "読み込み中",
+    "ui.ready": "準備完了",
+    "ui.engine_ready": "エンジンの準備が完了しました",
     "ui.engine_not_ready": "準備中...",
+    "ui.loading_engine": "エンジンを読み込み中…",
+    "ui.ad_playing": "広告再生中…",
+    "ui.deck_reshuffled": "デッキリシャッフル（再配分）",
 
     // Stats & Menu
-    "stats.bank": "Bank",
-    "stats.round": "Round",
-    "stats.time": "Time",
-    "menu.menu": "MENU",
+    "stats.bank": "所持金",
+    "stats.round": "ラウンド",
+    "stats.time": "時間",
+    "menu.menu": "メニュー",
     "menu.history": "履歴",
-    "menu.ranking": "Ranking",
+    "menu.ranking": "ランキング",
 
     // Titles & Home
     "title.payout": "🎰 BLACKJACK PAYS 3 TO 2 • INSURANCE PAYS 2 TO 1",
     "title.main": "Blackjack",
-    "title.sub": "ランキングで自己ベスト更新を目指せ！！",
+    "title.sub": "ランキングで自己ベスト更新を目指そう！",
     "title.deal_start": "DEAL / START",
     "title.how": "遊び方",
-    "title.bet_hint": "Bet（偶数推奨：Insurance = bet/2 で端数回避）",
-    "title.options": "Options（タイトルでON/OFF）",
-
+    "title.bet_hint": "ベット額（偶数推奨：保険額が半額になるため）",
+    "title.options": "オプション（タイトル画面で切り替え）",
     "title.marking": "マーキング/操作",
 
     // Options
@@ -271,22 +324,24 @@ const RESOURCES = {
     "game.garage": "CASINO TABLE",
     "game.bet_info": "BET / INFO",
     "game.bet": "Bet",
-    "game.set": "SET",
-    "game.dock_hint": "Main actions are in DOCK",
-    "game.more": "MORE",
-    "game.more_title": "More actions",
-    "game.more_hint": "※押せる場合に限り機能します。",
+    "game.set": "決定",
+    "game.dock_hint": "メイン操作は DOCK にあります",
+    "game.more": "その他",
+    "game.more_title": "追加のアクション",
+    "game.more_hint": "※操作可能な状況でのみ表示されます。",
 
     // Side Panel commands
+    "cmd.title": "アクション",
     "cmd.double": "Double",
     "cmd.split": "Split",
     "cmd.surrender": "Surrender",
     "cmd.even_money": "Even Money",
 
     // Insurance Side
+    "ins.title": "インシュランス",
     "ins.insurance": "Insurance",
-    "ins.max": "MAX",
-    "ins.dock_hint": "下のDOCKで YES / NO を選択",
+    "ins.max": "最大",
+    "ins.dock_hint": "下の DOCK で YES / NO を選択",
     "ins.yes": "YES",
     "ins.no": "NO",
 
@@ -296,21 +351,28 @@ const RESOURCES = {
     "dock.stand": "STAND",
 
     // Overlays
-    "so.session_over": "SESSION OVER", // Match EN
+    "so.session_over": "セッション終了",
     "so.calculating": "集計中…",
-    "so.wait": "Please wait…",
+    "so.wait": "少々お待ちください…",
     "so.sponsored": "",
     "so.to_title": "タイトルへ",
     "so.retry": "",
     "so.revive": "",
     "so.delay": "セッション終了まで少しお待ちください",
 
-    "pause.title": "PAUSED",
+    "so.final_bank": "最終所持金",
+    "so.profit": "損益",
+    "so.total_net": "累計収支",
+    "so.max_streak": "最大連勝数",
+    "so.rounds": "ラウンド数",
+    "so.time_left": "残り時間",
+    "so.duration": "プレイ時間",
+
+    "pause.title": "一時停止",
     "pause.close": "閉じる",
-    "pause.msg":
-      "<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。",
-    "pause.continue": "Continue",
-    "pause.quit": "Quit to Title",
+    "pause.msg": "<b>Continue</b>で復帰、<b>Quit</b>でタイトルに戻れます。",
+    "pause.continue": "再開する",
+    "pause.quit": "タイトルに戻る",
 
     "how.title": "遊び方",
     "how.close": "閉じる",
@@ -318,58 +380,97 @@ const RESOURCES = {
     // 超要約
     "how.summary_title": "概要（クイックガイド）",
     "how.summary_goal": "目標：21に近い方が勝ち（22以上は負け）",
-    "how.summary_val":
-      "点数：2-10はそのまま / JQK=10 / A=1 or 11（有利な方を自動）",
+    "how.summary_val": "点数：2〜10は数字どおり / J・Q・Kは10 / Aは1または11（有利な方を自動で採用）",
     "how.summary_act": "操作：HIT=1枚引く / STAND=引かずに終了",
-    "how.summary_pay": "配当：勝ち1:1 / BJ 3:2 / 保険2:1 / 引き分け0",
+    "how.summary_pay": "配当：通常勝ち1:1 / BJ 3:2 / 保険2:1 / 引き分け0",
 
     // 詳細（アコーディオン）
     "how.det_action_title": "アクション詳細",
     "how.det_action_text":
       "<b>ヒット (Hit)</b>：カードを1枚追加します。21を超える（バースト）まで何度でも引けます。<br><b>スタンド (Stand)</b>：現在の点数で確定し、ターンを終了します。<br><b>ダブルダウン (Double)</b>：賭け金を2倍にし、カードを「あと1枚だけ」引いて強制的にスタンドします。9〜11点の時に有効な戦略です。<br><b>スプリット (Split)</b>：最初に出た2枚が同じランク（8のペアなど）の場合、追加の賭け金を払ってそれらを2つの独立した手に分割できます。<br><b>サレンダー (Surrender)</b>：不利な状況の際、賭け金の半分を放棄してそのラウンドを降ります（ディーラーのBJチェック後に行う「レイト」形式です）。<br><b>保険 (Insurance)</b>：ディーラーの表カードがAの時のサイドベット。元の賭け金の半分まで賭けられ、ディーラーがBJなら2:1の配当を得ます。<br><b>イーブンマネー (Even Money)</b>：自分がBJ、ディーラーがAの時に選べます。ディーラーの結果に関わらず、即座に1:1（等倍）の配当を得て終了します。",
-
     "how.det_dealer_title": "ディーラーのルール",
     "how.det_dealer_text":
       "ディーラーは16以下なら引き続け、17以上で止まります（基本原則）。<br><b>S17 / H17</b>：Aceを11として数える合計17（ソフト17）の場合に、スタンドするかヒットするかの設定です。デフォルトはS17（スタンド）です。",
-
     "how.det_table_title": "テーブルルール",
     "how.det_table_text":
-      "6デッキ（312枚）を使用します。<br>カードの残りが少なくなると、再シャッフルが行われます。<br>最大3ハンドまで分割可能です。<br><b>Split Aces</b>：Aのスプリット後は各手1枚のみ配られ、強制スタンドとなります。<br>Blackjack(3:2)は最初の2枚のみ。スプリット後の21は通常勝ち(1:1)です。",
-
+      "6デッキ（312枚）を使用します。<br>カードの残りが少なくなると、再シャッフルが行われます。<br>最大3ハンドまで分割可能です。<br><b>Aのスプリット</b>：Aのスプリット後は各手1枚のみ配られ、強制スタンドとなります。<br>ブラックジャック(3:2)は最初の2枚のみ。スプリット後の21は通常勝ち(1:1)として扱われます。",
     "how.det_terms_title": "用語の解説",
     "how.det_terms_text":
       "<b>ブラックジャック</b>：最初の2枚が「Ace + 10点札(10/J/Q/K)」の組み合わせ。<br><b>ソフト</b>：Aceを11として数えても合計が21を超えない状態の手。<br><b>ハード</b>：Aceを含まない、またはAceを1としてしか数えられない状態の手。",
-
     "how.det_payout_title": "配当について",
     "how.det_payout_text":
       "<b>通常勝ち</b>：+ベットと同額（= 1:1）<br><b>ブラックジャック</b>：+ベットの1.5倍（= 3:2）<br><b>保険</b>：+保険ベットの2倍（= 2:1）<br><b>引き分け</b>：増減なし（Push）",
+    "how.note": "※状況に応じてルール上可能なボタンのみが表示されます。",
 
-    "how.note": "※ボタンは状況に応じて、ルール上可能なものだけが表示されます。",
-
-    "hist.title": "HISTORY",
+    "hist.title": "履歴",
     "hist.close": "閉じる",
-    "hist.msg":
-      "直近のラウンド結果を記録しています（最大 100 件）。ページを閉じてもブラウザに保存されます。",
+    "hist.msg": "直近のラウンド結果を記録しています（最大100件）。ブラウザに保存されます。",
     "hist.none": "まだ履歴がありません。",
 
-    "rank.title": "RANKING",
+    "rank.title": "ランキング",
     "rank.close": "閉じる",
-    "rank.msg": "チャレンジモードのセッション結果（Profit順）を保存しています（最大 50 件）。",
-    "rank.name": "Name",
+    "rank.msg": "チャレンジモードのセッション結果を利益順で保存しています（最大50件）。",
+    "rank.name": "名前",
     "rank.none": "まだランキングがありません。",
     "rank.saved": "ランキングを保存しました: ",
 
+    "table.rank": "順位",
+    "table.name": "名前",
+    "table.profit": "損益",
+    "table.final": "最終資金",
+    "table.streak": "連勝数",
+    "table.time": "タイム",
+    "table.when": "日時",
+    "table.round": "回数",
+    "table.bet": "ベット",
+    "table.net": "収支",
+    "table.bank": "所持金",
+
     // Debug/Toasts
-    "toast.good_luck": "Good luck!",
-    "toast.bet_adjusted": "Bet adjusted to Bank",
-    "toast.ranking_cleared": "Ranking cleared",
+    "toast.good_luck": "グッドラック！",
+    "toast.bet_adjusted": "所持金に合わせてベット額を調整しました",
+    "toast.ranking_cleared": "ランキングを消去しました",
+    "toast.reset_done": "リセットが完了しました",
+    "toast.level_up_reward": "+{0} チップ獲得！",
+
+    // エラーメッセージ (C++からのキー)
+    "err.paused": "一時停止中です",
+    "err.not_in_betting": "ベット受付中ではありません",
+    "err.bet_even": "ベット額は偶数で入力してください",
+    "err.bet_min": "最小ベット額に達していません",
+    "err.bet_bank": "所持金が足りません",
+    "err.not_in_hand": "プレイ中ではありません",
+    "err.no_active_hand": "有効なハンドが見つかりません",
+    "err.session_not_over": "セッションは終了していません",
+    "err.not_bankrupt": "破産していません",
+    "err.not_ready_to_deal": "ディールの準備ができていません",
+    "err.session_over_state": "セッション終了です",
+    "err.not_in_round_over": "ラウンド終了中ではありません",
+    "err.bankrupt": "破産",
+    "err.no_insurance_offer": "インシュランスのオファーがありません",
+    "err.insurance_max": "保険額が上限を超えています",
+    "err.no_even_money_offer": "イーブンマネーのオファーがありません",
+    "err.cannot_hit": "現在はヒットできません",
+    "err.surrender_disabled": "サレンダーは無効です",
+    "err.surrender_after_split": "スプリット後にサレンダーはできません",
+    "err.surrender_first_two": "サレンダーは最初の2枚でのみ可能です",
+    "err.already_bj": "既にブラックジャックです",
+    "err.double_disabled": "ダブルダウンは無効です",
+    "err.cannot_double": "現在はダブルダウンできません",
+    "err.double_first_two": "ダブルダウンは最初の2枚でのみ可能です",
+    "err.surrender_not_available_yet": "サレンダーはディーラーのチェック後にのみ可能です",
+    "err.double_after_split_aces": "Aのスプリット後はダブルダウンできません",
+    "err.split_limit": "ハンドの最大数（3）に達しました",
+    "err.split_rank_mismatch": "ランクが異なるためスプリットできません",
+    "err.split_first_two": "スプリットは最初の2枚でのみ可能です",
+    "err.cannot_split": "現在はスプリットできません",
 
     // Dynamic parts
-    "dyn.win": "WIN",
-    "dyn.lose": "LOSE",
-    "dyn.push": "PUSH",
-    "dyn.streak": "streak",
-    "dyn.bonus": "bonus",
+    "dyn.win": "勝ち",
+    "dyn.lose": "負け",
+    "dyn.push": "引き分け",
+    "dyn.streak": "連勝数",
+    "dyn.bonus": "ボーナス",
     "dyn.input": "入力",
     "dyn.even": "偶数化",
     "dyn.hole_open": "ホールカード公開",
@@ -380,12 +481,12 @@ const RESOURCES = {
     // Options Subtext
     "opt_sub.double": "Bet2倍で1枚引いて終了",
     "opt_sub.split": "同ランク2枚を分割し2ハンド化",
-    "opt_sub.surrender": "降りて半額負け（レイト）",
+    "opt_sub.surrender": "半分を放棄して降りる（レイト）",
     "opt_sub.insurance": "ディーラーAで保険（最大半額）",
-    "opt_sub.even_money": "自分BJ＆ディーラーAで確定1:1",
+    "opt_sub.even_money": "自分BJ＆ディーラーAで確定1:1配当",
     "opt_sub.das": "スプリット後のダブルを許可",
     "opt_sub.s17": "すべての17でスタンドする (標準)",
-    "opt_sub.h17": "Soft17 (A+6) の時のみもう1枚引く",
+    "opt_sub.h17": "ソフト17 (A+6) の時のみもう1枚引く",
     "opt.haptic": "振動",
     "opt_sub.haptic": "振動のオンオフ切り替え",
 
@@ -397,6 +498,7 @@ const RESOURCES = {
     // JS dynamic
     "js.result_showing": "結果を表示中…",
     "js.ad_waiting": "広告の終了を待っています…",
+    "js.choose_reward": "報酬を選んでください！",
     "js.selectable": "選択できます",
 
     "mode.challenge": "チャレンジ",
@@ -404,7 +506,7 @@ const RESOURCES = {
     "mode.normal": "ノーマル",
     "mode.normal_desc": "所持金が保存される通常モードです。",
     "mode.practice": "練習モード",
-    "prac.desc": "24ラウンドの練習モードです。Bankは変動しません。",
+    "prac.desc": "24ラウンドの練習モードです。所持金は変動しません。",
     "prac.free_left": "本日の無料枠: ",
     "prac.ticket_left": "所持チケット: ",
     "prac.start_free": "スタート（無料）",
@@ -425,29 +527,28 @@ const RESOURCES = {
       "レベルを1にリセットしますか？\nXPと報酬付与履歴もリセットされます。",
     "js.lvl_reset_done": "レベルをリセットしました",
     "js.ticket_get": "チケットを1枚獲得しました！",
-    "js.revive_done": "復活しました！ +50000",
+    "js.revive_done": "50,000チップで再開しました",
     "js.engine_not_ready": "エンジンの準備ができていません",
     "js.session_start_err": "セッション開始エラー",
     "js.bet_hint_full": "入力={0} → 偶数化={1}",
 
     // モードヘルプ
     "mode.help_normal_tooltip": "チップを引き継いで自由に遊べる基本モード",
-    "mode.help_challenge_tooltip":
-      "制限時間内にどれだけ増やせるか挑戦するモード",
+    "mode.help_challenge_tooltip": "制限時間内にどれだけ増やせるか挑戦するモード",
     "mode.help_practice_tooltip": "チップ変動なしで練習できるモード",
     "mode.help_normal_detail":
-      "<b>Normal Mode</b><br>・時間制限なし<br>・Bank（チップ）引き継ぎ<br>・レベルアップ可能<br>・破産時に「復活スタート」が可能",
+      "<b>ノーマルモード</b><br>・時間制限なし<br>・所持金（チップ）引き継ぎ<br>・レベルアップ可能<br>・破産時に「再開」が可能",
     "mode.help_challenge_detail":
-      "<b>Challenge Mode</b><br>・制限時間あり（5:00）<br>・初期Bank固定（50K）<br>・スコアアタックモード<br>・ランキング用スコア計測",
+      "<b>チャレンジモード</b><br>・制限時間あり（5:00）<br>・初期所持金固定（50,000）<br>・スコアアタック形式<br>・ランキングにスコアを登録",
     "mode.help_practice_detail":
-      "<b>Practice Mode</b><br>・練習専用モード（1プレイ24ラウンド）<br>・Bank変動なし<br>・履歴 / 統計に影響しない<br>・インシュランスOFF<br>・プレイ回数制限あり",
+      "<b>練習モード</b><br>・練習専用（1プレイ24ラウンド）<br>・所持金の増減なし（無料）<br>・履歴や統計に影響しません<br>・インシュランスOFF<br>・プレイ回数に制限があります",
 
     "prac.no_ticket_basic": "チケットがありません。",
     "mode.practice_desc_basic": "練習モードです。",
-    "bank.restart": "復活スタート",
-    "bank.revive_hint_basic": "チップがなくなりました。はじめからやり直しますか？",
-    "js.revive_done_basic": "再開しました！ +50000",
-    "bank.revive_free_hint": "+50000 (無料)",
+    "bank.restart": "再開する",
+    "bank.revive_hint_basic": "チップがなくなりました。50,000チップで再開しますか？",
+    "js.revive_done_basic": "50,000チップで再開しました",
+    "bank.revive_free_hint": "+50,000 (無料)",
 
     "name.welcome": "WELCOME!",
     "name.input_hint": "ランキングに使用する名前を入力してください。",

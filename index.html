@@ -1728,6 +1728,12 @@ body{
   </style>
 </head>
 
+<!-- Core Scripts -->
+<script src="loc.js?v=20260410"></script>
+<script src="audio.js"></script>
+<script src="blackjack.js?v=20260410"></script>
+<script src="blackjack_ui.js?v=20260410"></script>
+
 <!-- CrazyGames SDK v3 (安全な初期化) -->
 <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script>
@@ -1759,11 +1765,13 @@ body{
           window.audioMgr.setMuted(sdk.game.settings.muteAudio);
         }
         // 変更の監視
-        sdk.game.settings.addSettingsChangeListener((s) => {
-          if (s.muteAudio !== undefined) {
-            window.audioMgr.setMuted(s.muteAudio);
-          }
-        });
+        if (typeof sdk.game.settings.addSettingsChangeListener === 'function') {
+          sdk.game.settings.addSettingsChangeListener((s) => {
+            if (s.muteAudio !== undefined) {
+              window.audioMgr.setMuted(s.muteAudio);
+            }
+          });
+        }
       }
 
       return true;
@@ -2528,9 +2536,9 @@ body{
     <div class="levelup-modal">
       <div class="levelup-title">LEVEL UP!</div>
       <div class="levelup-level" id="levelupLevel">Lv 2</div>
-      <div class="levelup-reward" id="levelupReward">+1000 chips</div>
+      <div class="levelup-reward" id="levelupReward"></div>
       <div class="levelup-choices" id="levelupChoices" style="display:none; margin-top:12px; gap:10px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn primary" id="btnRewardNormal" style="min-width:120px;">+1,000 受け取る</button>
+        <button class="btn primary" id="btnRewardNormal" style="min-width:120px;"></button>
         <button class="btn" id="btnRewardAd" style="min-width:120px; background:linear-gradient(135deg,#ffd700,#ff9800); color:#1a1a2e; font-weight:bold;">🎬 ×5 (+5,000)</button>
       </div>
     </div>
@@ -2855,12 +2863,12 @@ body{
 
       if (currentMode === "normal" && levelsUp > 0) {
         // Normalモード: 選択式UI表示
-        if (rewardEl) { rewardEl.textContent = `報酬を選んでください！`; rewardEl.style.display = ""; }
+        if (rewardEl) { rewardEl.textContent = t("js.choose_reward"); rewardEl.style.display = ""; }
         if (choicesEl) {
           choicesEl.style.display = "flex";
           const btnNormal = $("btnRewardNormal");
           const btnAd = $("btnRewardAd");
-          if (btnNormal) btnNormal.textContent = `+${normalReward.toLocaleString()} 受け取る`;
+          if (btnNormal) btnNormal.textContent = t("toast.level_up_reward", normalReward.toLocaleString());
           if (btnAd) btnAd.textContent = `\ud83c\udfac \u00d75 (+${adReward.toLocaleString()})`;
         }
         pendingLevelReward = { level, levelsUp };
@@ -3264,12 +3272,12 @@ body{
 
       let html = '<table class="small" style="width:100%; border-collapse:collapse;">';
       html += '<thead><tr>';
-      html += '<th style="text-align:left;padding:4px 8px;">Time</th>';
-      html += '<th style="text-align:right;padding:4px 8px;">Round</th>';
-      html += '<th style="text-align:right;padding:4px 8px;">Bet</th>';
-      html += '<th style="text-align:right;padding:4px 8px;">Net</th>';
-      html += '<th style="text-align:right;padding:4px 8px;">Bank</th>';
-      html += '<th style="text-align:right;padding:4px 8px;">Streak</th>';
+      html += `<th style="text-align:left;padding:4px 8px;">${t("table.time")}</th>`;
+      html += `<th style="text-align:right;padding:4px 8px;">${t("table.round")}</th>`;
+      html += `<th style="text-align:right;padding:4px 8px;">${t("table.bet")}</th>`;
+      html += `<th style="text-align:right;padding:4px 8px;">${t("table.net")}</th>`;
+      html += `<th style="text-align:right;padding:4px 8px;">${t("table.bank")}</th>`;
+      html += `<th style="text-align:right;padding:4px 8px;">${t("table.streak")}</th>`;
       html += '</tr></thead><tbody>';
 
       hist.slice(0, 40).forEach(e=>{
@@ -3327,7 +3335,7 @@ function apiReady(){
   }
   // まだ準備できていない場合（通常ここには来ないはずだが念のため）
   setEngineBadge("LOADING", null);
-  $("subLine").textContent = "loading engine…";
+  $("subLine").textContent = t("ui.loading_engine");
 }
 
     // イベントリスナで初期化検知
@@ -3481,7 +3489,7 @@ if ($("btnBankruptRestart")) {
       const st = refresh();
       if (rc !== 0 || st.lastErrorCode !== 0){
         if (st.lastError) {
-            toast(st.lastError);
+            toast(t(st.lastError));
             window.audioMgr.play("ui_error");
         }
         console.warn("action", fnName, "rc=", rc, "err=", st.lastErrorCode, st.lastError);
@@ -3708,13 +3716,13 @@ function soFillStats(st){
   const timeLeft = st.session ? fmtTime(st.session.timeLeftMs) : "-";
 
   const items = [
-    ["Final Bank", String(finalBank)],
-    ["Profit", (profit>=0? "+":"") + String(profit)],
-    ["Total Net", (totalNet>=0? "+":"") + String(totalNet)],
-    ["Max Streak", String(maxStreak)],
-    ["Rounds", rounds],
-    ["Time Left", timeLeft],
-    ["Duration", fmtTime(durMs)],
+    [t("so.final_bank"), String(finalBank)],
+    [t("so.profit"),     (profit>=0? "+":"") + String(profit)],
+    [t("so.total_net"),  (totalNet>=0? "+":"") + String(totalNet)],
+    [t("so.max_streak"), String(maxStreak)],
+    [t("so.rounds"),     rounds],
+    [t("so.time_left"),  timeLeft],
+    [t("so.duration"),   fmtTime(durMs)],
   ];
 
   stats.innerHTML = "";
@@ -3786,7 +3794,7 @@ function soRequestMidgame(){
 
   try{
     const callbacks = {
-      adStarted: () => { if (note) note.textContent = "Ad playing…"; },
+      adStarted: () => { if (note) note.textContent = t("ui.ad_playing"); },
       adFinished: finish,
       adError: () => finish(),
     };
@@ -4597,7 +4605,7 @@ if (state && (state.phase === "betting" || state.phase === "roundOver")) {
       // エンジン実行
       callAction("force_shuffle");
       
-      toast("Deck Re-shuffled");
+      toast(t("ui.deck_reshuffled"));
       render();
     };
     $("btnCloseHow").onclick = ()=> { window.audioMgr.play("ui_click"); $("overlayHow").classList.remove("show"); };
@@ -4712,13 +4720,13 @@ function renderRankingOverlay(){
 
   let html = '<table class="small" style="width:100%; border-collapse:collapse;">';
   html += '<thead><tr>';
-  html += '<th style="text-align:left;padding:4px 8px;">#</th>';
-  html += '<th style="text-align:left;padding:4px 8px;">Name</th>';
-  html += '<th style="text-align:right;padding:4px 8px;">Profit</th>';
-  html += '<th style="text-align:right;padding:4px 8px;">Final</th>';
-  html += '<th style="text-align:right;padding:4px 8px;">Streak</th>';
-  html += '<th style="text-align:right;padding:4px 8px;">Time</th>';
-  html += '<th style="text-align:left;padding:4px 8px;">When</th>';
+  html += `<th style="text-align:left;padding:4px 8px;">${t("table.rank")}</th>`;
+  html += `<th style="text-align:left;padding:4px 8px;">${t("table.name")}</th>`;
+  html += `<th style="text-align:right;padding:4px 8px;">${t("table.profit")}</th>`;
+  html += `<th style="text-align:right;padding:4px 8px;">${t("table.final")}</th>`;
+  html += `<th style="text-align:right;padding:4px 8px;">${t("table.streak")}</th>`;
+  html += `<th style="text-align:right;padding:4px 8px;">${t("table.time")}</th>`;
+  html += `<th style="text-align:left;padding:4px 8px;">${t("table.when")}</th>`;
   html += '</tr></thead><tbody>';
 
   list.slice(0, 30).forEach((e, i)=>{
@@ -5540,10 +5548,6 @@ $("btnQuit").onclick = ()=> doResetToTitle();
 
   </script>
 <!-- Last Build Scripts -->
-<script src="loc.js?v=1772708114"></script>
-<script src="audio.js"></script>
-<script src="blackjack.js?v=1772708114"></script>
-<script src="blackjack_ui.js?v=1772708114"></script>
 <script>
   // すべてのスクリプトとアセットがロードされた後に初期化
   window.addEventListener("load", () => {
