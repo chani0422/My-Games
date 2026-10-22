@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#080d1b" />
+    <title>STAR DODGE — 宇宙サバイバル</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="arcade">
+      <header class="masthead">
+        <a class="brand" href="../" aria-label="My Games のトップへ"
+          ><span class="brand-icon">✦</span> MY GAMES<span class="brand-divider"
+            >/</span
+          ><span class="brand-current">ARCADE 001</span></a
+        ><button id="sound" class="quiet" aria-pressed="false">
+          SOUND OFF
+        </button>
+      </header>
+      <div class="layout">
+        <aside class="brief">
+          <div class="eyebrow">
+            <span class="live-dot"></span> ENDLESS SPACE SURVIVAL
+          </div>
+          <h1>STAR<br /><span>DODGE</span><b>✦</b></h1>
+          <p class="intro">
+            よける。撃つ。生き残る。<br />その先の、自己ベストへ。
+          </p>
+          <div class="record-card">
+            <span class="eyebrow">PERSONAL BEST</span>
+            <div><strong id="side-best">0.0</strong><span> SEC</span></div>
+            <span class="record-note"
+              >このブラウザに保存される、あなたの記録</span
+            >
+          </div>
+          <div class="guide">
+            <h2>FLIGHT MANUAL <span>01 — 03</span></h2>
+            <p>
+              <b>01</b
+              ><span
+                >機体を動かして隕石を回避。<small
+                  >WASD / 矢印キー / ドラッグ</small
+                ></span
+              >
+            </p>
+            <p>
+              <b>02</b
+              ><span
+                >射撃はオート。生存に集中。<small
+                  >HP は3。一瞬の判断が、記録を変える。</small
+                ></span
+              >
+            </p>
+            <p>
+              <b>03</b
+              ><span
+                >15秒ごとのアイテムで強化。<small
+                  >弾速 → 弾数 → ドローンの順で出現</small
+                ></span
+              >
+            </p>
+          </div>
+          <div class="item-legend">
+            <span><i class="speed">↑</i> SPEED</span
+            ><span><i class="multi">⋮</i> MULTI</span
+            ><span><i class="sub">✧</i> SUB</span>
+          </div>
+          <p class="mission-note">NO TIME LIMIT. JUST ONE MORE SECOND.</p>
+        </aside>
+        <section class="game-column" aria-label="STAR DODGE ゲーム">
+          <div class="instrument">
+            <div>
+              <span>SURVIVAL TIME</span
+              ><strong id="time">0.0<small> SEC</small></strong>
+            </div>
+            <div class="hull">
+              <span>HULL INTEGRITY</span
+              ><strong id="hp" aria-label="残りHP 3">♥ ♥ ♥</strong>
+            </div>
+            <button
+              id="pause"
+              class="pause-button"
+              aria-label="一時停止"
+              disabled
+            >
+              Ⅱ
+            </button>
+          </div>
+          <div class="viewport">
+            <canvas
+              id="game"
+              width="480"
+              height="720"
+              tabindex="0"
+              aria-label="宇宙サバイバルゲーム。矢印キー、WASD またはドラッグで移動"
+            ></canvas>
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
+            <div id="overlay" class="overlay">
+              <div id="panel" class="panel"></div>
+            </div>
+            <div id="count" class="count" hidden></div>
+            <div
+              id="toast"
+              class="toast"
+              role="status"
+              aria-live="polite"
+            ></div>
+          </div>
+          <div class="loadout">
+            <div>
+              <span class="speed">↑</span>
+              <p>
+                SPEED<strong id="speed-level">Lv. 1 <small>/ 5</small></strong>
+              </p>
+            </div>
+            <div>
+              <span class="multi">⋮</span>
+              <p>
+                MULTI<strong id="multi-level">1 発 <small>/ 3</small></strong>
+              </p>
+            </div>
+            <div>
+              <span class="sub">✧</span>
+              <p>
+                DRONE<strong id="sub-level">Lv. 0 <small>/ 3</small></strong>
+              </p>
+            </div>
+          </div>
+          <div class="game-footer">
+            <span><i></i> SYSTEM ONLINE</span
+            ><span id="live-best">BEST 0.0 SEC</span
+            ><span>P / ESC TO PAUSE</span>
+          </div>
+        </section>
+      </div>
+      <footer class="page-footer">
+        <span>STAR DODGE <b>✦</b> FLIGHT TEST / V1.0</span
+        ><span>ひとつ先の星まで、生き残ろう。</span>
+      </footer>
+      <p id="storage-note" class="storage-note" role="status"></p>
+    </main>
+    <script src="engine.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
