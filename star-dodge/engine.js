@@ -156,8 +156,29 @@
       this.events = [];
       this.input = { x: 0, y: 0 };
     }
-    start() {
+    start(loadout = {}) {
       this.reset();
+      // Permanent upgrades apply only at the beginning of a new run.
+      this.player.hp = clamp(
+        Math.floor(loadout.hp || this.config.player.hp),
+        1,
+        8,
+      );
+      this.player.maxHp = this.player.hp;
+      this.player.speed = clamp(
+        loadout.speed || this.config.player.speed,
+        150,
+        450,
+      );
+      this.player.color = loadout.color || "#71f3e0";
+      for (const type of ["speed", "multi", "sub"]) {
+        const minimum = type === "sub" ? 0 : 1;
+        this.levels[type] = clamp(
+          Math.floor(loadout.levels?.[type] ?? minimum),
+          minimum,
+          this.maxLevel(type),
+        );
+      }
       this.state = "countdown";
     }
     pause() {
@@ -321,8 +342,12 @@
       const length = Math.hypot(this.input.x, this.input.y);
       if (length)
         this.moveBy(
-          (this.input.x / Math.max(1, length)) * c.player.speed * dt,
-          (this.input.y / Math.max(1, length)) * c.player.speed * dt,
+          (this.input.x / Math.max(1, length)) *
+            (p.speed || c.player.speed) *
+            dt,
+          (this.input.y / Math.max(1, length)) *
+            (p.speed || c.player.speed) *
+            dt,
         );
       while (this.time + 1e-8 >= this.mainAt) {
         this.fire();

@@ -1,0 +1,7 @@
+{
+  "appId": "dev.stardodge.app",
+  "appName": "STAR DODGE",
+  "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "android": { "allowMixedContent": false, "backgroundColor": "#080d1b" }
+}

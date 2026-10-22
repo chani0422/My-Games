@@ -7,6 +7,17 @@
   try {
     storage = window.localStorage;
   } catch {}
+  const progress = new StarProgress.Progress(storage);
+  let sessionStorage;
+  try {
+    sessionStorage = window.sessionStorage;
+  } catch {}
+  const account = new StarServices.Account(window.STAR_DODGE_CONFIG, {
+    storage: sessionStorage,
+  });
+  const monetization = new StarServices.Monetization();
+  let runId = "",
+    runReward = 0;
   const records = new Records(storage),
     game = new Game(),
     canvas = $("game"),
@@ -86,9 +97,8 @@
   function refreshRecords() {
     $("side-best").textContent = formatTime(records.data.best);
     $("live-best").textContent = `BEST ${formatTime(records.data.best)} SEC`;
-    $("storage-note").textContent = records.tabOnly
-      ? "記録はこのタブ内のみ保持"
-      : "";
+    $("storage-note").textContent =
+      records.tabOnly || progress.tabOnly ? "記録はこのタブ内のみ保持" : "";
     $("sound").textContent = records.data.sound ? "SOUND ON" : "SOUND OFF";
     $("sound").setAttribute("aria-pressed", String(records.data.sound));
   }
@@ -105,7 +115,10 @@
   function start() {
     silence();
     clearControls();
-    game.start();
+    game.start(progress.loadout());
+    runId =
+      globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+    runReward = 0;
     particles = [];
     toastUntil = 0;
     newBest = false;
@@ -129,22 +142,14 @@
     silence();
     clearControls();
     game.title();
+    renderHome();
     particles = [];
     toastUntil = 0;
   }
-  function bindPanel() {
-    document.querySelectorAll("[data-action]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const action = button.dataset.action;
-        if (action === "start") start();
-        if (action === "resume") resume();
-        if (action === "title") title();
-        updateUI();
-      }),
-    );
-  }
   function panel() {
     const state = game.state;
+    $("home").hidden = state !== "title";
+    $("flight-layout").hidden = state === "title";
     if (state === uiState) return;
     uiState = state;
     const overlay = $("overlay");
@@ -164,8 +169,8 @@
         '<span class="overline">FLIGHT ON HOLD</span><h2>一時停止</h2><p>ひと息ついたら、もう一度宇宙へ。</p><button class="primary" data-action="resume">フライトを再開</button><button class="secondary" data-action="start">最初から</button><button class="secondary" data-action="title">タイトルへ</button>';
     if (state === "result")
       $("panel").innerHTML =
-        `<span class="overline">FLIGHT COMPLETE</span><h2>次は、もう1秒先へ。</h2><div class="result-time">${formatTime(game.time * 1000)}<small> SEC</small></div><span class="best-badge">${newBest ? "✦ NEW PERSONAL BEST" : "SURVIVAL RECORD"}</span><p>自己ベスト ${formatTime(records.data.best)} 秒</p><div class="result-grid">破壊した隕石 <strong>${game.destroyed}</strong> 個<br>SPEED <strong>Lv.${game.levels.speed}</strong>　MULTI <strong>${c.main.angles[game.levels.multi - 1].length}発</strong>　SUB <strong>Lv.${game.levels.sub}</strong></div><button class="primary" data-action="start">もう一度フライト ↗</button><button class="secondary" data-action="title">タイトルへ</button>`;
-    bindPanel();
+        `<span class="overline">FLIGHT COMPLETE</span><h2>次は、もう1秒先へ。</h2><div class="result-time">${formatTime(game.time * 1000)}<small> SEC</small></div><span class="best-badge">${newBest ? "✦ NEW PERSONAL BEST" : "SURVIVAL RECORD"}</span><p>自己ベスト ${formatTime(records.data.best)} 秒</p><p class="flight-reward">+${runReward} CR <small>フライト報酬</small></p><div class="result-grid">破壊した隕石 <strong>${game.destroyed}</strong> 個<br>SPEED <strong>Lv.${game.levels.speed}</strong>　MULTI <strong>${c.main.angles[game.levels.multi - 1].length}発</strong>　SUB <strong>Lv.${game.levels.sub}</strong></div><button class="primary" data-action="start">もう一度フライト ↗</button><button class="secondary" data-action="title">ホームへ</button><button class="secondary ad-placeholder" disabled>短い動画で追加報酬 · 準備中</button>`;
+
     if (state === "paused" || state === "result")
       document.querySelector("#panel .primary")?.focus({ preventScroll: true });
   }
@@ -178,7 +183,7 @@
         formatTime(game.time * 1000) + "<small> SEC</small>";
       $("hp").textContent =
         "♥ ".repeat(game.player.hp) +
-        "♡ ".repeat(c.player.hp - game.player.hp);
+        "♡ ".repeat((game.player.maxHp || c.player.hp) - game.player.hp);
       $("hp").setAttribute("aria-label", `残りHP ${game.player.hp}`);
       $("speed-level").innerHTML =
         `Lv. ${game.levels.speed} <small>/ ${c.main.speeds.length}</small>`;
@@ -199,6 +204,8 @@
     for (const e of game.events) {
       if (e.type === "gameover") {
         newBest = records.finish(e.ms);
+        runReward = progress.finish(runId, e.ms, game.destroyed).credits;
+        renderHome();
         refreshRecords();
         clearControls();
       }
@@ -250,7 +257,7 @@
     ctx.scale(scale, scale);
     ctx.shadowColor = "#71f3e0";
     ctx.shadowBlur = reduced ? 0 : 12;
-    ctx.fillStyle = "#71f3e0";
+    ctx.fillStyle = drone ? "#71f3e0" : game.player.color || "#71f3e0";
     ctx.beginPath();
     ctx.moveTo(0, -21);
     ctx.lineTo(17, 14);
@@ -473,6 +480,8 @@
       (keys.has("arrowup") || keys.has("w") ? 1 : 0);
   }
   window.addEventListener("keydown", (event) => {
+    if ($("hub").open || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))
+      return;
     const key = event.key.toLowerCase();
     if (
       movement.has(key) &&
@@ -538,8 +547,274 @@
       updateUI();
     }
   });
+  const escapeHTML = (text) =>
+    String(text).replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  function renderHome() {
+    const ship = StarProgress.SHIPS.find(
+        (s) => s.id === progress.data.selectedShip,
+      ),
+      load = progress.loadout();
+    const mission = StarProgress.MISSIONS.find(
+      (m) => !progress.data.claimed.includes(m.id),
+    );
+    $("home").innerHTML =
+      `<div class="home-bar"><span class="eyebrow"><span class="live-dot"></span> PILOT HEADQUARTERS</span><span class="pilot-status">${account.user ? "アカウント接続中" : "ゲストパイロット"} <b>${progress.data.credits.toLocaleString()} <small>CR</small></b></span></div>
+    <div class="home-grid"><div class="home-hero"><span class="eyebrow">YOUR NEXT FLIGHT STARTS HERE</span><h1>STAR<br><span>DODGE</span><b>✦</b></h1><p class="intro">ひとつのフライトが、次の力になる。<br>育てた相棒で、まだ見ぬ記録へ。</p><div class="hangar-art" style="--ship-color:${ship.color}" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><svg viewBox="0 0 160 180"><path d="M80 8 145 143 105 130 80 157 55 130 15 143Z" fill="currentColor"/><path d="M80 35 97 113 63 113Z" fill="#e9fffa"/><path d="M73 87h14v45H73z" fill="#153747"/><path d="m67 151 13 27 13-27" fill="#66bfff"/></svg><span>${ship.tag} / ${escapeHTML(ship.name)}</span></div><div class="home-best"><span>PERSONAL BEST</span><strong>${formatTime(records.data.best)}<small> SEC</small></strong></div><button class="primary launch" data-action="start">フライト開始 ↗</button><p class="home-controls">WASD・矢印キー / スマホはドラッグ · 射撃は自動</p></div>
+    <div class="home-dashboard"><div class="pilot-card"><div><span class="eyebrow">CURRENT LOADOUT</span><h2>${escapeHTML(ship.name)}</h2><p>HP ${load.hp} · SPEED Lv.${load.levels.speed} · ${c.main.angles[load.levels.multi - 1].length}発 · SUB Lv.${load.levels.sub}</p></div><span class="pilot-emblem" style="color:${ship.color}">⟐</span></div><nav class="home-nav" aria-label="パイロットメニュー"><button data-hub="hangar"><i>⟐</i><span>機体ハンガー<small>3種類の機体を解放・選択</small></span><b>↗</b></button><button data-hub="upgrades"><i>↑</i><span>初期スキル強化<small>フライトのスタートを強くする</small></span><b>↗</b></button><button data-hub="missions"><i>◎</i><span>チャレンジ<small>目標を達成して報酬を受け取る</small></span><b>↗</b></button><button data-hub="account"><i>☁</i><span>アカウント・保存<small>${account.user ? "クラウドに育成をバックアップ" : "ゲストのままでもプレイできます"}</small></span><b>↗</b></button><button data-hub="shop"><i>✦</i><span>ショップ<small>スキンなどを準備中</small></span><b>↗</b></button></nav>${mission ? `<div class="next-goal"><span class="eyebrow">NEXT CHALLENGE</span><h3>${mission.name}</h3><p>${mission.description} <b>+${mission.reward} CR</b></p><progress value="${Math.min(progress.data[mission.field], mission.goal)}" max="${mission.goal}"></progress></div>` : '<div class="next-goal"><span class="eyebrow">ALL CHALLENGES COMPLETE</span><h3>次は、自己ベストのその先へ。</h3></div>'}<p class="earned-note">CR はフライトで獲得。育成は何度でも次の挑戦に引き継がれます。</p></div></div>`;
+    refreshRecords();
+  }
+  let hubPage = "",
+    hubBusy = false,
+    pendingBackup = null;
+  function showHub(page) {
+    hubPage = page;
+    pendingBackup = null;
+    renderHub();
+    if (!$("hub").open) $("hub").showModal();
+  }
+  function renderHub() {
+    const titles = {
+      hangar: "機体ハンガー",
+      upgrades: "初期スキル強化",
+      missions: "チャレンジ",
+      account: "アカウント・保存",
+      shop: "ショップ",
+    };
+    $("hub-title").textContent = titles[hubPage];
+    $("hub-message").textContent = "";
+    const balance = `<div class="hub-balance">所持クレジット <b>${progress.data.credits.toLocaleString()} CR</b></div>`;
+    if (hubPage === "hangar")
+      $("hub-content").innerHTML =
+        balance +
+        StarProgress.SHIPS.map((ship) => {
+          const owned = progress.data.unlocked.includes(ship.id),
+            selected = progress.data.selectedShip === ship.id;
+          return `<article class="upgrade-card"><span class="ship-mini" style="color:${ship.color}">⟐</span><div><span class="eyebrow">${ship.tag}</span><h3>${ship.name}</h3><p>${ship.description}</p><small>基本HP ${ship.hp} / 移動速度 ${ship.speed}</small></div><button class="secondary" data-ship="${ship.id}" ${selected || (!owned && progress.data.credits < ship.cost) ? "disabled" : ""}>${selected ? "選択中" : owned ? "この機体を選ぶ" : `${ship.cost} CR で解放`}</button></article>`;
+        }).join("");
+    if (hubPage === "upgrades")
+      $("hub-content").innerHTML =
+        balance +
+        '<p class="hub-intro">強化は次のフライトからずっと有効です。飛行中に拾うアイテムでも、さらに成長できます。</p>' +
+        StarProgress.UPGRADES.map((up) => {
+          const level = progress.data.upgrades[up.id],
+            cost = up.costs[level];
+          return `<article class="upgrade-card"><span class="ship-mini">${up.icon}</span><div><h3>${up.name} <small>Lv.${level} / ${up.costs.length}</small></h3><p>${up.description}</p></div><button class="secondary" data-upgrade="${up.id}" ${cost === undefined || progress.data.credits < cost ? "disabled" : ""}>${cost === undefined ? "最大まで強化済み" : `${cost} CR で強化`}</button></article>`;
+        }).join("");
+    if (hubPage === "missions")
+      $("hub-content").innerHTML =
+        balance +
+        StarProgress.MISSIONS.map((m) => {
+          const claimed = progress.data.claimed.includes(m.id),
+            done = progress.data[m.field] >= m.goal;
+          const current = Math.min(progress.data[m.field], m.goal);
+          return `<article class="mission-card"><h3>${m.name}<span>+${m.reward} CR</span></h3><p>${m.description}</p><progress value="${current}" max="${m.goal}"></progress><small>${m.field === "bestMs" ? formatTime(current) + " / " + formatTime(m.goal) + "秒" : current + " / " + m.goal}</small><button class="secondary" data-claim="${m.id}" ${claimed || !done ? "disabled" : ""}>${claimed ? "受取済み" : done ? "報酬を受け取る" : "挑戦中"}</button></article>`;
+        }).join("");
+    if (hubPage === "shop")
+      $("hub-content").innerHTML =
+        '<div class="coming-soon"><span>✦</span><h3>自分らしい機体で、宇宙へ。</h3><p>機体スキンやサポーターパックを準備中です。<br>今は購入や支払いはできません。</p><button class="secondary" disabled>ショップ · 準備中</button><p>短い動画を見て追加報酬を受け取る機能も、今後追加する予定です。広告の配信はまだありません。</p></div>';
+    if (hubPage === "account") {
+      if (!account.enabled)
+        $("hub-content").innerHTML =
+          '<div class="coming-soon"><span>☁</span><h3>いまは、ゲストで自由に。</h3><p>アカウント接続は準備中です。育成と記録はこのブラウザに保存されます。ブラウザのデータを消すと失われます。</p><button class="secondary" disabled>メールでログイン · 準備中</button></div>';
+      else if (!account.user)
+        $("hub-content").innerHTML =
+          '<p class="hub-intro">メールに届く確認コードでログイン。パスワードは不要です。ログイン後に、育成と記録をクラウドへバックアップできます。</p><form id="login-form"><label>メールアドレス<input type="email" name="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></label><button class="secondary" type="submit" name="step" value="send">確認コードを送る</button><label>確認コード<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" placeholder="メールに届いたコード"></label><button class="primary" type="submit" name="step" value="verify">ログイン</button></form><p class="hub-intro">ログインはこのタブで維持されます。メール送信の扱いは公開時のプライバシーポリシーに記載します。</p>';
+      else
+        $("hub-content").innerHTML =
+          `<p class="hub-intro">${escapeHTML(account.user.email || "パイロット")} として接続中</p><p class="hub-intro">自動で上書きせず、好きなタイミングで育成と記録を保存・復元できます。</p><button class="primary" data-account="save">クラウドにバックアップ</button><button class="secondary" data-account="load">バックアップを確認する</button><button class="secondary" data-account="logout">ログアウト</button><details class="account-danger"><summary>アカウントの削除</summary><p>アカウントとクラウドのバックアップを削除します。この操作は取り消せません。この端末の育成はゲストとして残ります。</p><button class="secondary" data-account="confirm-delete">削除の確認へ</button></details>`;
+    }
+  }
+  async function accountTask(action) {
+    if (hubBusy) return;
+    hubBusy = true;
+    let message = "";
+    try {
+      $("hub-message").textContent = "接続中…";
+      if (action === "save") {
+        await account.saveBackup({
+          version: 1,
+          pilot: progress.snapshot(),
+          records: { best: records.data.best, last: records.data.last },
+        });
+        message = "育成と記録をクラウドに保存しました。";
+      }
+      if (action === "load") {
+        const backup = await account.loadBackup();
+        if (!backup?.progress?.pilot || backup.progress.version !== 1)
+          throw Error("利用できるバックアップがありません。");
+        pendingBackup = backup.progress;
+        $("hub-content").innerHTML =
+          `<p class="hub-intro">バックアップを読み込むと、この端末の育成を置き換えます。</p><p>${StarProgress.sanitize(pendingBackup.pilot).credits} CR / ${StarProgress.sanitize(pendingBackup.pilot).flights} フライト</p><button class="primary" data-account="restore">このバックアップで復元</button><button class="secondary" data-hub="account">やめる</button>`;
+        message = "内容を確認してから復元してください。";
+      }
+      if (action === "restore") {
+        if (!pendingBackup) throw Error("バックアップを選んでください。");
+        progress.restore(pendingBackup.pilot);
+        const best = pendingBackup.records?.best;
+        const last = pendingBackup.records?.last;
+        if (Number.isFinite(best) && best >= 0)
+          records.data.best = Math.max(records.data.best, best);
+        if (Number.isFinite(last) && last >= 0) records.data.last = last;
+        records.save();
+        renderHome();
+        renderHub();
+        message = "育成と記録を復元しました。";
+      }
+      if (action === "logout") {
+        await account.logout();
+        renderHome();
+        renderHub();
+        message = "ログアウトしました。";
+      }
+      if (action === "confirm-delete") {
+        $("hub-content").innerHTML =
+          '<p class="hub-intro">アカウントとクラウドデータを完全に削除しますか？</p><button class="secondary" data-account="delete">アカウントを完全に削除する</button><button class="primary" data-hub="account">やめる</button>';
+      }
+      if (action === "delete") {
+        await account.deleteAccount();
+        renderHome();
+        renderHub();
+        message = "アカウントとクラウドデータを削除しました。";
+      }
+    } catch (error) {
+      message =
+        error instanceof TypeError
+          ? "ネットワークに接続できませんでした。端末の育成はそのままです。"
+          : error.message;
+    } finally {
+      hubBusy = false;
+      $("hub-message").textContent = message;
+    }
+  }
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button || button.disabled) return;
+    if (button.dataset.hub) {
+      if (!hubBusy) showHub(button.dataset.hub);
+      return;
+    }
+    if (button.dataset.ship) {
+      if (progress.selectShip(button.dataset.ship)) {
+        renderHome();
+        renderHub();
+      }
+      return;
+    }
+    if (button.dataset.upgrade) {
+      if (progress.purchaseUpgrade(button.dataset.upgrade)) {
+        renderHome();
+        renderHub();
+      }
+      return;
+    }
+    if (button.dataset.claim) {
+      if (progress.claim(button.dataset.claim)) {
+        renderHome();
+        renderHub();
+      }
+      return;
+    }
+    if (button.dataset.account) {
+      accountTask(button.dataset.account);
+      return;
+    }
+    const action = button.dataset.action;
+    if (action === "start") {
+      if ($("hub").open) $("hub").close();
+      start();
+    }
+    if (action === "resume") resume();
+    if (action === "title") title();
+    if (action) updateUI();
+  });
+  $("hub-close").addEventListener("click", () => {
+    if (!hubBusy) $("hub").close();
+  });
+  $("hub").addEventListener("cancel", (event) => {
+    if (hubBusy) event.preventDefault();
+  });
+  $("hub").addEventListener("submit", async (event) => {
+    if (event.target.id !== "login-form") return;
+    event.preventDefault();
+    if (hubBusy) return;
+    const form = event.target,
+      email = form.elements.email.value.trim(),
+      code = form.elements.code.value.trim(),
+      action = event.submitter?.value;
+    if (action === "verify" && !code) {
+      $("hub-message").textContent =
+        "メールに届いた確認コードを入力してください。";
+      return;
+    }
+    hubBusy = true;
+    const button = event.submitter;
+    button.disabled = true;
+    $("hub-message").textContent = "接続中…";
+    try {
+      if (action === "send") {
+        await account.sendCode(email);
+        $("hub-message").textContent =
+          "確認コードを送信しました。メールをご確認ください。";
+        form.elements.code.focus();
+      } else {
+        await account.verifyCode(email, code);
+        renderHome();
+        renderHub();
+        $("hub-message").textContent = "ログインしました。";
+      }
+    } catch (error) {
+      $("hub-message").textContent =
+        error instanceof TypeError
+          ? "接続できませんでした。もう一度お試しください。"
+          : error.message;
+    } finally {
+      hubBusy = false;
+      if (button.isConnected) button.disabled = false;
+    }
+  });
+  if ("serviceWorker" in navigator && !window.Capacitor)
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+
+  if (window.Capacitor?.isNativePlatform?.()) {
+    const nativeApp = window.Capacitor.registerPlugin("App");
+    nativeApp
+      .addListener("appStateChange", ({ isActive }) => {
+        if (!isActive) {
+          pause();
+          updateUI();
+        }
+      })
+      .catch(() => {});
+    nativeApp
+      .addListener("backButton", () => {
+        if ($("hub").open) {
+          if (!hubBusy) $("hub").close();
+          return;
+        }
+        if (["playing", "countdown"].includes(game.state)) pause();
+        else if (["paused", "result"].includes(game.state)) title();
+        else nativeApp.minimizeApp().catch(() => {});
+        updateUI();
+      })
+      .catch(() => {});
+  }
   window.addEventListener("resize", resize);
   refreshRecords();
+  renderHome();
+  if (new URLSearchParams(location.search).get("screen") === "account")
+    showHub("account");
   resize();
   updateUI();
   requestAnimationFrame(frame);

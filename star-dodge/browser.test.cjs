@@ -62,16 +62,17 @@ fs.mkdirSync(output, { recursive: true });
         ),
         true,
       );
-      const box = await page.locator("canvas").boundingBox();
-      assert.ok(Math.abs(box.width / box.height - 2 / 3) < 0.002);
-      assert.ok(box.x >= 0);
-      assert.ok(box.x + box.width <= (mobile ? 390 : 1440));
       await page.screenshot({
         path: `${output}/${mobile ? "mobile" : "desktop"}-title.png`,
         fullPage: true,
       });
       await page.getByRole("button", { name: "フライト開始" }).click();
       await page.clock.runFor(600);
+      const box = await page.locator("canvas").boundingBox();
+      assert.ok(Math.abs(box.width / box.height - 2 / 3) < 0.002);
+      assert.ok(box.x >= 0);
+      assert.ok(box.x + box.width <= (mobile ? 390 : 1440));
+
       assert.equal(await page.evaluate(() => testGame.time), 0);
       await page.getByRole("button", { name: "一時停止", exact: true }).click();
       const countdown = await page.evaluate(() => testGame.countdown);

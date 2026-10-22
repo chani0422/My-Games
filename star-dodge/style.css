@@ -743,3 +743,559 @@ canvas {
     padding: 5px 0;
   }
 }
+/* Pilot headquarters */
+[hidden] {
+  display: none !important;
+}
+.home-screen {
+  padding: 30px 0 40px;
+}
+.home-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 0 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+.pilot-status {
+  font-size: 11px;
+  color: var(--muted);
+}
+.pilot-status b {
+  color: var(--amber);
+  font:
+    700 19px ui-monospace,
+    monospace;
+  margin-left: 25px;
+}
+.pilot-status small {
+  font-size: 10px;
+}
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  padding-top: 35px;
+}
+.home-hero {
+  position: relative;
+  min-width: 0;
+}
+.home-hero h1 {
+  font-size: 76px;
+  margin-top: 18px;
+}
+.home-hero .intro {
+  font-size: 13px;
+  margin-bottom: 0;
+}
+.hangar-art {
+  height: 210px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--ship-color);
+  overflow: hidden;
+  margin: 5px 0;
+}
+.hangar-art svg {
+  width: 92px;
+  height: 115px;
+  z-index: 1;
+  filter: drop-shadow(
+    0 0 22px color-mix(in srgb, var(--ship-color) 25%, transparent)
+  );
+  transform: rotate(-12deg);
+}
+.hangar-art > span {
+  position: absolute;
+  bottom: 12px;
+  color: var(--muted);
+  font:
+    8px ui-monospace,
+    monospace;
+  letter-spacing: 2px;
+}
+.orbit {
+  position: absolute;
+  border: 1px solid #34506b66;
+  border-radius: 50%;
+  width: 235px;
+  height: 110px;
+  transform: rotate(-18deg);
+}
+.orbit-two {
+  width: 300px;
+  height: 160px;
+  border-style: dashed;
+  opacity: 0.6;
+}
+.home-best {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+.home-best > span {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+.home-best strong {
+  font:
+    500 29px ui-monospace,
+    monospace;
+}
+.home-best small {
+  font-size: 10px;
+  color: var(--cyan);
+}
+.launch {
+  padding: 18px;
+  margin-top: 20px;
+  font-size: 14px;
+}
+.home-controls {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+}
+.home-dashboard {
+  min-width: 0;
+}
+.pilot-card {
+  padding: 23px;
+  border: 1px solid #2e455b;
+  background: linear-gradient(130deg, #172b3b, #101a2b);
+  border-radius: 9px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pilot-card h2 {
+  font-size: 21px;
+  margin: 10px 0;
+}
+.pilot-card p {
+  font:
+    10px ui-monospace,
+    monospace;
+  color: #a3b9c9;
+  margin: 0;
+  line-height: 1.8;
+}
+.pilot-emblem {
+  font-size: 49px;
+}
+.home-nav {
+  display: grid;
+  gap: 10px;
+  margin-top: 17px;
+}
+.home-nav button {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #111a2b;
+  text-align: left;
+}
+.home-nav button:hover {
+  border-color: #57778b;
+  background: #152539;
+}
+.home-nav i {
+  font:
+    27px ui-monospace,
+    monospace;
+  width: 28px;
+  color: var(--cyan);
+  font-style: normal;
+}
+.home-nav span {
+  font-size: 13px;
+  font-weight: 650;
+}
+.home-nav small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.home-nav b {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 15px;
+}
+.next-goal {
+  padding: 20px;
+  border: 1px solid #3c3a31;
+  border-radius: 8px;
+  background: #24221844;
+  margin-top: 20px;
+}
+.next-goal h3 {
+  font-size: 15px;
+  margin: 12px 0 8px;
+}
+.next-goal p {
+  font-size: 11px;
+  color: var(--muted);
+}
+.next-goal p b {
+  color: var(--amber);
+  float: right;
+}
+.earned-note {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-top: 17px;
+}
+progress {
+  width: 100%;
+  height: 5px;
+  accent-color: var(--cyan);
+  border: 0;
+  border-radius: 4px;
+  background: #26364b;
+}
+progress::-webkit-progress-bar {
+  background: #26364b;
+  border-radius: 4px;
+}
+progress::-webkit-progress-value {
+  background: var(--cyan);
+  border-radius: 4px;
+}
+dialog {
+  color: var(--text);
+  background: #0d1728;
+  border: 1px solid #3b536a;
+  border-radius: 12px;
+  padding: 26px;
+  width: min(560px, calc(100% - 28px));
+  max-height: 85svh;
+  box-shadow: 0 25px 100px #0008;
+}
+dialog::backdrop {
+  background: #020813ba;
+  backdrop-filter: blur(6px);
+}
+.hub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 17px;
+  margin-bottom: 18px;
+  gap: 20px;
+}
+.hub-header h2 {
+  font-size: 19px;
+  margin: 0;
+}
+.hub-balance {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  padding-bottom: 10px;
+}
+.hub-balance b {
+  color: var(--amber);
+  font:
+    600 16px ui-monospace,
+    monospace;
+}
+.hub-intro {
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+.upgrade-card {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 12px;
+  padding: 16px;
+  background: #142034;
+}
+.upgrade-card h3 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+.upgrade-card p {
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 0 0 5px;
+  color: var(--muted);
+}
+.upgrade-card small {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.upgrade-card button {
+  grid-column: 1/-1;
+  margin-top: 4px;
+}
+.ship-mini {
+  font-size: 35px;
+  color: var(--cyan);
+  text-align: center;
+}
+.secondary:disabled {
+  color: #74869f;
+  background: #142033;
+  opacity: 0.65;
+  cursor: default;
+}
+.mission-card {
+  border: 1px solid var(--line);
+  padding: 17px;
+  border-radius: 7px;
+  margin-top: 12px;
+}
+.mission-card h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+.mission-card h3 span {
+  float: right;
+  font-size: 12px;
+  color: var(--amber);
+}
+.mission-card p {
+  font-size: 11px;
+  color: var(--muted);
+}
+.mission-card small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.coming-soon {
+  text-align: center;
+  padding: 20px 5px;
+}
+.coming-soon > span {
+  font-size: 52px;
+  color: var(--cyan);
+}
+.coming-soon h3 {
+  font-size: 19px;
+  margin-top: 20px;
+}
+.coming-soon p {
+  font-size: 12px;
+  line-height: 2;
+  color: var(--muted);
+}
+#hub-message {
+  font-size: 12px;
+  color: var(--cyan);
+  line-height: 1.8;
+  margin: 15px 0 0;
+}
+#login-form label {
+  display: block;
+  font-size: 12px;
+  color: #bccad9;
+  margin-top: 20px;
+}
+#login-form input {
+  width: 100%;
+  font: 14px system-ui;
+  background: #081221;
+  color: white;
+  border: 1px solid #3b536a;
+  border-radius: 5px;
+  padding: 13px;
+  margin-top: 9px;
+}
+#login-form input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+.account-danger {
+  margin-top: 25px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+.account-danger button {
+  border-color: #724450;
+  color: #ffb7c0;
+}
+.flight-reward {
+  color: var(--amber) !important;
+  font:
+    600 19px ui-monospace,
+    monospace !important;
+  margin: 10px 0 !important;
+}
+.flight-reward small {
+  color: var(--muted);
+  font: 10px system-ui;
+}
+.panel .ad-placeholder {
+  font-size: 9px;
+  margin-top: 9px;
+  padding: 8px;
+}
+.panel .result-grid {
+  margin: 12px 0;
+}
+.panel .result-time {
+  margin-top: 10px;
+}
+@media (max-width: 850px) {
+  .home-screen {
+    padding-top: 22px;
+  }
+  .home-bar {
+    padding-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .pilot-status {
+    font-size: 10px;
+  }
+  .pilot-status b {
+    margin-left: 12px;
+    font-size: 17px;
+  }
+  .home-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-top: 26px;
+  }
+  .home-hero {
+    display: grid;
+    grid-template-columns: 1fr 100px;
+    align-items: start;
+  }
+  .home-hero > .eyebrow {
+    grid-column: 1/-1;
+    font-size: 8px;
+  }
+  .home-hero h1 {
+    font-size: 48px;
+    margin: 14px 0 10px;
+    letter-spacing: -2px;
+  }
+  .home-hero h1 b {
+    font-size: 20px;
+    margin-left: 8px;
+  }
+  .home-hero .intro {
+    font-size: 11px;
+    grid-column: 1;
+  }
+  .hangar-art {
+    grid-column: 2;
+    grid-row: 2/4;
+    height: 160px;
+    margin: 0 -12px 0 0;
+  }
+  .hangar-art svg {
+    width: 60px;
+    height: 85px;
+  }
+  .hangar-art > span {
+    display: none;
+  }
+  .orbit-one {
+    width: 115px;
+    height: 70px;
+  }
+  .orbit-two {
+    width: 155px;
+    height: 100px;
+  }
+  .home-best {
+    grid-column: 1/-1;
+    margin-top: 20px;
+  }
+  .launch,
+  .home-controls {
+    grid-column: 1/-1;
+  }
+  .pilot-card {
+    padding: 18px;
+  }
+  .home-nav {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+  .home-nav button {
+    display: block;
+    padding: 15px 12px;
+    position: relative;
+  }
+  .home-nav i {
+    display: block;
+    margin-bottom: 9px;
+    font-size: 22px;
+  }
+  .home-nav span {
+    font-size: 12px;
+  }
+  .home-nav small {
+    font-size: 9px;
+    line-height: 1.6;
+  }
+  .home-nav b {
+    position: absolute;
+    top: 14px;
+    right: 13px;
+  }
+  .home-nav button:last-child {
+    grid-column: 1/-1;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+  }
+  .home-nav button:last-child i {
+    margin-bottom: 0;
+  }
+  .home-nav button:last-child b {
+    top: 25px;
+  }
+  .next-goal {
+    margin-top: 17px;
+  }
+  dialog {
+    padding: 19px;
+  }
+  .hub-header h2 {
+    font-size: 17px;
+  }
+  .mission-card h3 {
+    font-size: 12px;
+  }
+  .mission-card h3 span {
+    font-size: 10px;
+  }
+  .home-hero .intro br {
+    display: block;
+  }
+  .home-hero h1 br {
+    display: block;
+  }
+  .panel .result-time {
+    font-size: 37px;
+  }
+  .panel .result-grid {
+    font-size: 10px;
+  }
+}

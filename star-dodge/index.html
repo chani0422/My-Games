@@ -9,6 +9,9 @@
     <meta name="theme-color" content="#080d1b" />
     <title>STAR DODGE — 宇宙サバイバル</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
   </head>
   <body>
     <main class="arcade">
@@ -21,7 +24,8 @@
           SOUND OFF
         </button>
       </header>
-      <div class="layout">
+      <section id="home" class="home-screen" aria-label="ホーム"></section>
+      <div class="layout" id="flight-layout" hidden>
         <aside class="brief">
           <div class="eyebrow">
             <span class="live-dot"></span> ENDLESS SPACE SURVIVAL
@@ -146,6 +150,17 @@
       </footer>
       <p id="storage-note" class="storage-note" role="status"></p>
     </main>
+    <dialog id="hub" aria-labelledby="hub-title">
+      <header class="hub-header">
+        <h2 id="hub-title"></h2>
+        <button class="quiet" id="hub-close" aria-label="閉じる">✕</button>
+      </header>
+      <div id="hub-content"></div>
+      <p id="hub-message" role="status" aria-live="polite"></p>
+    </dialog>
+    <script src="config.js"></script>
+    <script src="progression.js"></script>
+    <script src="services.js"></script>
     <script src="engine.js"></script>
     <script src="app.js"></script>
   </body>
