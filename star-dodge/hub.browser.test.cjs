@@ -156,7 +156,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
     let backup = null,
       sends = 0,
       deletions = 0;
-    await auth.route("**/config.js", (route) =>
+    await auth.route("**/config.js*", (route) =>
       route.fulfill({
         contentType: "text/javascript",
         body: 'window.STAR_DODGE_CONFIG={supabaseUrl:"https://test.supabase.co",supabasePublishableKey:"public-test"}',

@@ -31,7 +31,7 @@ const html = fs.readFileSync(path.join(dest, "index.html"), "utf8");
 fs.writeFileSync(
   path.join(dest, "index.html"),
   html.replace(
-    '<script src="config.js"></script>',
-    '<script src="native-capacitor.js"></script><script src="config.js"></script>',
+    /(<script src="config\.js[^"]*"><\/script>)/,
+    '<script src="native-capacitor.js"></script>$1',
   ),
 );

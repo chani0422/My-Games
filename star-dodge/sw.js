@@ -15,7 +15,17 @@ const FILES = [
   "icons/icon-512.png",
 ];
 self.addEventListener("install", (event) =>
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(FILES))),
+  event.waitUntil(
+    caches.open(CACHE).then((cache) =>
+      cache.addAll(
+        FILES.map((file) => {
+          const url = new URL(file, self.registration.scope);
+          url.searchParams.set("v", "0.2.0");
+          return new Request(url, { cache: "reload" });
+        }),
+      ),
+    ),
+  ),
 );
 // Let existing flights finish before the new version activates.
 self.addEventListener("activate", (event) =>
