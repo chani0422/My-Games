@@ -171,6 +171,7 @@
         450,
       );
       this.player.color = loadout.color || "#71f3e0";
+      this.player.ship = ["pioneer", "swift", "warden"].includes(loadout.ship) ? loadout.ship : "pioneer";
       for (const type of ["speed", "multi", "sub"]) {
         const minimum = type === "sub" ? 0 : 1;
         this.levels[type] = clamp(

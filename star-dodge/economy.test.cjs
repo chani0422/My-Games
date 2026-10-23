@@ -102,7 +102,10 @@ test("existing balances, unlocks, skills and already-settled flights survive the
     },
   };
   const p = new Progress(storage);
-  assert.deepEqual(p.snapshot(), raw);
+  for (const key of Object.keys(raw))
+    assert.deepEqual(p.snapshot()[key], raw[key]);
+  assert.equal(p.data.selectedSkin, "factory");
+  assert.deepEqual(p.data.recentRuns, []);
   assert.equal(p.finish("old-flight", 30000, 12).credits, 0);
   assert.equal(p.data.credits, 240);
   assert.equal(p.selectShip("swift"), true);

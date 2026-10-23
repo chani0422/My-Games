@@ -1,5 +1,5 @@
 /* Bump this cache version whenever shipped application files change. */
-const CACHE = "star-dodge-shell-v0-2-1";
+const CACHE = "star-dodge-shell-v0-3-0";
 const FILES = [
   "./",
   "index.html",
@@ -20,7 +20,7 @@ self.addEventListener("install", (event) =>
       cache.addAll(
         FILES.map((file) => {
           const url = new URL(file, self.registration.scope);
-          url.searchParams.set("v", "0.2.1");
+          url.searchParams.set("v", "0.3.0");
           return new Request(url, { cache: "reload" });
         }),
       ),

@@ -67,6 +67,52 @@
       costs: [150],
     },
   ];
+  const SKINS = Object.freeze([
+    {
+      id: "factory",
+      name: "ファクトリー",
+      description: "機体本来のカラー。",
+      cost: 0,
+      color: null,
+    },
+    {
+      id: "aurora",
+      name: "オーロラ",
+      description: "積み重ねたフライトの証。",
+      cost: 0,
+      unlockRank: 3,
+      color: "#a5ffba",
+    },
+    {
+      id: "solar",
+      name: "サンバースト",
+      description: "太陽の光をまとったゴールド。",
+      cost: 80,
+      color: "#ffd77a",
+    },
+    {
+      id: "nebula",
+      name: "ネビュラ",
+      description: "遠い星雲を思わせるバイオレット。",
+      cost: 120,
+      color: "#b29aff",
+    },
+    {
+      id: "frost",
+      name: "フロスト",
+      description: "静かな氷の宙域のアイスブルー。",
+      cost: 160,
+      color: "#9ae7ff",
+    },
+    {
+      id: "rose",
+      name: "ローズフレア",
+      description: "星のまたたきを映すローズ。",
+      cost: 200,
+      color: "#ffa0bd",
+    },
+  ]);
+  const MAX_RECENT_RUNS = 20;
   const MISSIONS = [
     {
       id: "survive30",
@@ -153,10 +199,67 @@
       totalCoins: progressCoins + destructionCoins,
     };
   }
+  function licenseFor(totalMs) {
+    const time = integer(totalMs);
+    const rank = Math.min(20, 1 + Math.floor(Math.sqrt(time / 60000)));
+    const fromMs = (rank - 1) ** 2 * 60000;
+    const nextMs = rank < 20 ? rank ** 2 * 60000 : null;
+    const name =
+      rank >= 20
+        ? "スターレジェンド"
+        : rank >= 15
+          ? "エリート"
+          : rank >= 10
+            ? "エース"
+            : rank >= 5
+              ? "エクスプローラー"
+              : "カデット";
+    return {
+      rank,
+      name,
+      fromMs,
+      nextMs,
+      progress:
+        nextMs === null ? 1 : Math.min(1, (time - fromMs) / (nextMs - fromMs)),
+    };
+  }
+  function skinAvailable(data, id) {
+    const skin = SKINS.find((s) => s.id === id);
+    return (
+      !!skin &&
+      (skin.id === "factory" ||
+        (skin.unlockRank
+          ? licenseFor(data.totalMs).rank >= skin.unlockRank
+          : data.unlockedSkins.includes(id)))
+    );
+  }
+  function levels(raw) {
+    return {
+      speed: Math.max(1, integer(raw?.speed, 5)),
+      multi: Math.max(1, integer(raw?.multi, 3)),
+      sub: integer(raw?.sub, 3),
+    };
+  }
+  function sanitizeRun(raw) {
+    return {
+      endedAt: integer(raw.endedAt, 8640000000000000),
+      ms: integer(raw.ms),
+      destroyed: integer(raw.destroyed),
+      coins: integer(raw.coins, REWARD_RULES.maxFlightCoins),
+      ship: SHIPS.some((s) => s.id === raw.ship) ? raw.ship : "pioneer",
+      skin: SKINS.some((s) => s.id === raw.skin) ? raw.skin : "factory",
+      initialLevels: levels(raw.initialLevels),
+      endLevels: levels(raw.endLevels),
+    };
+  }
   function fresh() {
     return {
       version: 1,
       credits: 0,
+      selectedSkin: "factory",
+      unlockedSkins: ["factory"],
+      recentRuns: [],
+      reduceEffects: false,
       selectedShip: "pioneer",
       unlocked: ["pioneer"],
       upgrades: { hull: 0, speed: 0, multi: 0, sub: 0 },
@@ -191,6 +294,25 @@
     data.claimed = MISSIONS.filter(
       (m) => Array.isArray(raw.claimed) && raw.claimed.includes(m.id),
     ).map((m) => m.id);
+    data.unlockedSkins = SKINS.filter(
+      (s) =>
+        s.id === "factory" ||
+        (s.cost > 0 &&
+          Array.isArray(raw.unlockedSkins) &&
+          raw.unlockedSkins.includes(s.id)),
+    ).map((s) => s.id);
+    if (skinAvailable(data, raw.selectedSkin))
+      data.selectedSkin = raw.selectedSkin;
+    data.recentRuns = Array.isArray(raw.recentRuns)
+      ? raw.recentRuns
+          .filter(
+            (r) =>
+              r && typeof r === "object" && Number.isFinite(r.ms) && r.ms >= 0,
+          )
+          .slice(0, MAX_RECENT_RUNS)
+          .map(sanitizeRun)
+      : [];
+    data.reduceEffects = raw.reduceEffects === true;
     data.settled = Array.isArray(raw.settled)
       ? [
           ...new Set(
@@ -226,7 +348,7 @@
         this.tabOnly = true;
       }
     }
-    finish(runId, ms, destroyed) {
+    finish(runId, ms, destroyed, context = {}) {
       if (
         typeof runId !== "string" ||
         !runId ||
@@ -247,6 +369,19 @@
         this.data.totalDestroyed + destroyed,
       );
       this.data.bestMs = Math.max(this.data.bestMs, ms);
+      this.data.recentRuns.unshift(
+        sanitizeRun({
+          endedAt: context.endedAt ?? Date.now(),
+          ms,
+          destroyed,
+          coins: earned,
+          ship: context.ship || this.data.selectedShip,
+          skin: context.skin || this.data.selectedSkin,
+          initialLevels: context.initialLevels || this.loadout().levels,
+          endLevels: context.endLevels || this.loadout().levels,
+        }),
+      );
+      this.data.recentRuns = this.data.recentRuns.slice(0, MAX_RECENT_RUNS);
       this.data.settled.push(runId);
       this.data.settled = this.data.settled.slice(-64);
       this.save();
@@ -283,13 +418,48 @@
       this.save();
       return true;
     }
+    isSkinUnlocked(id) {
+      return skinAvailable(this.data, id);
+    }
+    selectSkin(id) {
+      const skin = SKINS.find((s) => s.id === id);
+      if (!skin) return false;
+      if (!this.isSkinUnlocked(id)) {
+        if (skin.unlockRank || this.data.credits < skin.cost) return false;
+        this.data.credits -= skin.cost;
+        this.data.unlockedSkins.push(id);
+      }
+      this.data.selectedSkin = id;
+      this.save();
+      return true;
+    }
+    setReducedEffects(value) {
+      this.data.reduceEffects = value === true;
+      this.save();
+    }
+    report() {
+      return {
+        schemaVersion: 1,
+        game: "STAR DODGE",
+        summary: {
+          flights: this.data.flights,
+          totalMs: this.data.totalMs,
+          totalDestroyed: this.data.totalDestroyed,
+          bestMs: this.data.bestMs,
+        },
+        recentRuns: this.data.recentRuns.map((r) => sanitizeRun(r)),
+      };
+    }
     loadout() {
       const ship =
           SHIPS.find((s) => s.id === this.data.selectedShip) || SHIPS[0],
         up = this.data.upgrades;
+      const skin =
+        SKINS.find((s) => s.id === this.data.selectedSkin) || SKINS[0];
       return {
         ship: ship.id,
-        color: ship.color,
+        skin: skin.id,
+        color: skin.color || ship.color,
         hp: ship.hp + up.hull,
         speed: ship.speed,
         levels: { speed: 1 + up.speed, multi: 1 + up.multi, sub: up.sub },
@@ -308,6 +478,9 @@
     SHIPS,
     UPGRADES,
     MISSIONS,
+    SKINS,
+    MAX_RECENT_RUNS,
+    licenseFor,
     REWARD_RULES,
     calculateFlightReward,
     Progress,

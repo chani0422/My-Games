@@ -65,7 +65,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
     await page.getByRole("button", { name: "ショップ" }).click();
     assert.ok(
       await page
-        .getByRole("button", { name: "ショップ · 準備中" })
+        .getByRole("button", { name: "プレミアム商品 · 準備中" })
         .isDisabled(),
     );
     await page.getByRole("button", { name: "閉じる", exact: true }).click();
@@ -149,7 +149,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
     assert.deepEqual(errors, []);
     await context.close();
     console.log(
-      "PASS: home → unlock ship → upgrade skills → claim mission → play → earn once → reload; disabled login/shop behave honestly",
+      "PASS: home → unlock ship → upgrade skills → claim mission → play → earn once → reload; unconfigured login/premium stay unavailable",
     );
     const offline = await browser.newContext();
     const op = await offline.newPage();

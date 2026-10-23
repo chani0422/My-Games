@@ -171,7 +171,7 @@ h1 b {
   font-size: 9px;
   color: #60738d;
 }
-.guide p {
+.play-guide p {
   display: flex;
   gap: 16px;
   font-size: 12px;
@@ -1259,16 +1259,16 @@ dialog::backdrop {
     top: 14px;
     right: 13px;
   }
-  .home-nav button:last-child {
+  .home-nav button:nth-child(odd):last-child {
     grid-column: 1/-1;
     display: flex;
     gap: 15px;
     align-items: center;
   }
-  .home-nav button:last-child i {
+  .home-nav button:nth-child(odd):last-child i {
     margin-bottom: 0;
   }
-  .home-nav button:last-child b {
+  .home-nav button:nth-child(odd):last-child b {
     top: 25px;
   }
   .next-goal {
@@ -1329,4 +1329,250 @@ dialog::backdrop {
 .result-panel .result-grid {
   margin: 8px 0;
   padding: 6px 0;
+}
+
+/* Pilot career and cosmetic customization. */
+.license-summary {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px 16px;
+  text-align: left;
+  color: var(--muted);
+  background: #111e30;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 11px;
+}
+.license-summary b {
+  color: var(--cyan);
+  margin: 0 6px;
+}
+.license-summary progress {
+  flex-basis: 100%;
+}
+.skin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.skin-card {
+  border: 1px solid var(--line);
+  padding: 14px;
+  border-radius: 9px;
+  background: #132035;
+  text-align: center;
+}
+.skin-card.selected {
+  border-color: var(--cyan);
+}
+.skin-preview {
+  height: 118px;
+  background: radial-gradient(ellipse, #24425c 0, transparent 68%);
+}
+.skin-preview svg {
+  height: 108px;
+  filter: drop-shadow(0 4px 12px #71f3e022);
+}
+.skin-card h3 {
+  font-size: 14px;
+  margin: 12px 0 6px;
+}
+.skin-card p {
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--muted);
+  min-height: 40px;
+}
+.skin-card button {
+  font-size: 11px;
+  padding: 12px 5px;
+}
+.license-card {
+  padding: 24px;
+  text-align: center;
+  border: 1px solid #436a77;
+  border-radius: 10px;
+  background: linear-gradient(140deg, #17383f, #152039);
+}
+.license-card strong {
+  display: block;
+  font:
+    600 38px ui-monospace,
+    monospace;
+  color: var(--cyan);
+  margin: 20px 0 6px;
+}
+.license-card h3 {
+  margin: 8px 0 24px;
+}
+.license-card p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.career-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.career-stats div {
+  padding: 16px;
+  background: #142034;
+  border-radius: 7px;
+}
+.career-stats small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 9px;
+}
+.career-stats strong {
+  font-size: 18px;
+}
+.history-title {
+  font-size: 15px;
+  margin-top: 26px;
+}
+.history-title small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.history-card {
+  border-top: 1px solid var(--line);
+  padding: 15px 0;
+}
+.history-card > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.history-card h3 {
+  font:
+    600 22px ui-monospace,
+    monospace;
+  margin: 9px 0;
+}
+.history-card h3 small {
+  font-size: 11px;
+}
+.history-card h3 b {
+  float: right;
+  color: var(--amber);
+  font:
+    500 13px system-ui,
+    sans-serif;
+}
+.history-card p {
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin: 4px 0;
+}
+.play-guide h3 {
+  font-size: 18px;
+}
+.play-guide p {
+  font-size: 12px;
+  line-height: 1.95;
+  color: var(--muted);
+}
+.setting-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  cursor: pointer;
+}
+.setting-toggle input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--cyan);
+}
+.setting-toggle small {
+  display: block;
+  margin-top: 9px;
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.share-label {
+  display: block;
+  font-size: 12px;
+}
+.share-textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 12px;
+  margin: 10px 0;
+  line-height: 1.8;
+  color: var(--text);
+  background: #080f1e;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.result-actions .secondary {
+  font-size: 11px;
+}
+.result-panel .share-status {
+  font-size: 10px;
+  color: var(--cyan);
+  margin: 4px 0;
+}
+.share-status:empty {
+  display: none;
+}
+.reduce-effects *,
+.reduce-effects *::before,
+.reduce-effects *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+@media (max-width: 360px) {
+  .skin-card {
+    padding: 10px 8px;
+  }
+  .skin-card h3 {
+    font-size: 12px;
+  }
+  .skin-card button {
+    font-size: 10px;
+  }
+}
+
+#hub[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#hub .hub-header,
+#hub-message {
+  flex-shrink: 0;
+}
+#hub-content {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+@media (max-width: 850px) {
+  .loadout strong {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .loadout small {
+    font-size: 8px;
+  }
 }

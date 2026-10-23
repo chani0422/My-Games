@@ -11,7 +11,7 @@
 
 JDK 21・Android SDKを導入し、`assembleDebug bundleRelease` が成功しました（274タスク実行）。デバッグAPKの署名とゲームファイルの同梱、未署名AABの構造を検証済みです。エミュレーター・実機、公開用の署名、Play Console提出は未実施です。
 
-クラウドの成果物は `/workspace/artifacts/star-dodge-0.2.1-debug.apk` と `/workspace/artifacts/star-dodge-0.2.1-unsigned.aab` にあります。AABは未署名のため、そのままストア提出するものではありません。
+クラウドの成果物は `/workspace/artifacts/star-dodge-0.3-debug.apk` と `/workspace/artifacts/star-dodge-0.3-unsigned.aab` にあります。AABは未署名のため、そのままストア提出するものではありません。
 
 ## 手元で開く
 
