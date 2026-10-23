@@ -212,7 +212,7 @@ fs.mkdirSync(output, { recursive: true });
         path: `${output}/${mobile ? "mobile" : "desktop"}-result.png`,
         fullPage: true,
       });
-      await page.getByRole("button", { name: "もう一度フライト" }).click();
+      await page.getByRole("button", { name: "同じステージに挑戦" }).click();
       assert.equal(await page.evaluate(() => testGame.player.hp), 3);
       assert.deepEqual(await page.evaluate(() => testGame.levels), {
         speed: 1,

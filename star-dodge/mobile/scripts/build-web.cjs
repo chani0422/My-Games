@@ -8,6 +8,7 @@ for (const name of [
   "index.html",
   "app.js",
   "engine.js",
+  "stages.js",
   "progression.js",
   "services.js",
   "config.js",

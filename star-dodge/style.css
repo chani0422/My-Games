@@ -1576,3 +1576,110 @@ dialog::backdrop {
     font-size: 8px;
   }
 }
+
+.stage-summary {
+  display: block;
+  width: 100%;
+  border: 1px solid #477f85;
+  background: linear-gradient(125deg, #183d44, #121e32);
+  border-radius: 9px;
+  padding: 18px;
+  text-align: left;
+  margin-bottom: 14px;
+}
+.stage-summary strong {
+  display: block;
+  font-size: 20px;
+  margin: 11px 0;
+}
+.stage-summary > span:last-child {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+.stage-summary b {
+  float: right;
+  color: var(--cyan);
+  font-weight: 500;
+}
+.stage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.stage-card {
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--stage-color);
+  border-radius: 7px;
+  padding: 14px;
+  background: #142034;
+}
+.stage-card.selected {
+  border-color: var(--stage-color);
+}
+.stage-card > span {
+  font:
+    10px ui-monospace,
+    monospace;
+  color: var(--stage-color);
+}
+.stage-card h3 {
+  font-size: 14px;
+  margin: 14px 0 8px;
+}
+.stage-card p {
+  font-size: 10px;
+  color: var(--muted);
+}
+.stage-card button {
+  font-size: 10px;
+  padding: 12px 5px;
+}
+.version-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+}
+.version-tools span {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+}
+#flight-label {
+  letter-spacing: 0.6px;
+}
+@media (max-width: 400px) {
+  .stage-card {
+    padding: 12px 9px;
+  }
+  .stage-card h3 {
+    font-size: 12px;
+  }
+  .stage-card button {
+    font-size: 9px;
+  }
+  .stage-summary strong {
+    font-size: 18px;
+  }
+}
+
+.quiet:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.reward-breakdown .first-clear-reward {
+  grid-column: 1/-1;
+  flex-direction: row;
+  justify-content: space-between;
+  color: var(--amber);
+  border-top: 1px solid var(--line);
+  padding-top: 5px;
+}
+.first-clear-reward dd {
+  color: var(--amber);
+}
+.stage-card p {
+  line-height: 1.8;
+}

@@ -92,11 +92,11 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
         ),
         220,
       );
-      await fs.mkdir("/workspace/artifacts/star-dodge-0.3-screens", {
+      await fs.mkdir("/workspace/artifacts/star-dodge-0.4-screens", {
         recursive: true,
       });
       await page.screenshot({
-        path: `/workspace/artifacts/star-dodge-0.3-screens/shop-${viewport.width}.png`,
+        path: `/workspace/artifacts/star-dodge-0.4-screens/shop-${viewport.width}.png`,
         fullPage: true,
       });
       await page.getByRole("button", { name: "閉じる", exact: true }).click();
@@ -124,7 +124,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
         "reduce-effects",
       );
       await page.screenshot({
-        path: `/workspace/artifacts/star-dodge-0.3-screens/home-${viewport.width}.png`,
+        path: `/workspace/artifacts/star-dodge-0.4-screens/home-${viewport.width}.png`,
         fullPage: true,
       });
       await page
@@ -172,7 +172,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       const bounds = await page.locator("#panel").boundingBox();
       assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= viewport.width);
       await page.screenshot({
-        path: `/workspace/artifacts/star-dodge-0.3-screens/result-${viewport.width}.png`,
+        path: `/workspace/artifacts/star-dodge-0.4-screens/result-${viewport.width}.png`,
         fullPage: true,
       });
       await page

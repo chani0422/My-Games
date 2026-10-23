@@ -1,10 +1,15 @@
 /* Local, earned-only progression. Never a ledger for real-money purchases. */
 (function (root, factory) {
-  const api = factory();
+  const api = factory(
+    typeof module === "object" && module.exports
+      ? require("./stages.js")
+      : root.StarStages,
+  );
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.StarProgress = api;
-})(globalThis, () => {
+})(globalThis, (stageAPI) => {
   "use strict";
+  const { STAGES, getStage } = stageAPI;
   const SHIPS = [
     {
       id: "pioneer",
@@ -248,6 +253,11 @@
       coins: integer(raw.coins, REWARD_RULES.maxFlightCoins),
       ship: SHIPS.some((s) => s.id === raw.ship) ? raw.ship : "pioneer",
       skin: SKINS.some((s) => s.id === raw.skin) ? raw.skin : "factory",
+      stage: getStage(raw.stage)?.id ?? null,
+      cleared:
+        raw.cleared === true &&
+        !!getStage(raw.stage) &&
+        raw.ms >= getStage(raw.stage).duration * 1000,
       initialLevels: levels(raw.initialLevels),
       endLevels: levels(raw.endLevels),
     };
@@ -256,6 +266,9 @@
     return {
       version: 1,
       credits: 0,
+      flightMode: "stages",
+      selectedStage: 1,
+      clearedStages: [],
       selectedSkin: "factory",
       unlockedSkins: ["factory"],
       recentRuns: [],
@@ -282,6 +295,21 @@
       "bestMs",
     ])
       data[field] = integer(raw[field]);
+    if (raw.flightMode === "endless") data.flightMode = "endless";
+    for (const stage of STAGES) {
+      if (
+        !Array.isArray(raw.clearedStages) ||
+        !raw.clearedStages.includes(stage.id)
+      )
+        break;
+      data.clearedStages.push(stage.id);
+    }
+    const unlockedStage = Math.min(
+      STAGES.length,
+      data.clearedStages.length + 1,
+    );
+    if (getStage(raw.selectedStage) && raw.selectedStage <= unlockedStage)
+      data.selectedStage = raw.selectedStage;
     data.unlocked = SHIPS.filter(
       (s) =>
         s.cost === 0 ||
@@ -358,7 +386,23 @@
         return { credits: 0, duplicate: true };
       ms = integer(ms);
       destroyed = integer(destroyed);
+      const stage = getStage(context.stage);
+      const cleared =
+        context.cleared === true && stage && ms >= stage.duration * 1000;
+      const firstClear =
+        cleared && stage.id === this.data.clearedStages.length + 1;
+      if (firstClear) {
+        this.data.clearedStages.push(stage.id);
+        this.data.selectedStage = Math.min(STAGES.length, stage.id + 1);
+      }
       const reward = calculateFlightReward(ms, destroyed);
+      if (firstClear) {
+        reward.firstClearCoins = Math.min(
+          stage.firstClearCoins,
+          REWARD_RULES.maxFlightCoins - reward.totalCoins,
+        );
+        reward.totalCoins += reward.firstClearCoins;
+      }
       const earned = reward.totalCoins;
       // Keep the legacy save field to preserve existing balances and cloud backups.
       this.data.credits = Math.min(LIMIT, this.data.credits + earned);
@@ -372,6 +416,8 @@
       this.data.recentRuns.unshift(
         sanitizeRun({
           endedAt: context.endedAt ?? Date.now(),
+          stage: stage?.id ?? null,
+          cleared: !!cleared,
           ms,
           destroyed,
           coins: earned,
@@ -418,6 +464,23 @@
       this.save();
       return true;
     }
+    selectStage(id) {
+      if (
+        !getStage(id) ||
+        id > Math.min(STAGES.length, this.data.clearedStages.length + 1)
+      )
+        return false;
+      this.data.selectedStage = id;
+      this.data.flightMode = "stages";
+      this.save();
+      return true;
+    }
+    selectMode(mode) {
+      if (!["stages", "endless"].includes(mode)) return false;
+      this.data.flightMode = mode;
+      this.save();
+      return true;
+    }
     isSkinUnlocked(id) {
       return skinAvailable(this.data, id);
     }
@@ -457,6 +520,8 @@
       const skin =
         SKINS.find((s) => s.id === this.data.selectedSkin) || SKINS[0];
       return {
+        stage:
+          this.data.flightMode === "stages" ? this.data.selectedStage : null,
         ship: ship.id,
         skin: skin.id,
         color: skin.color || ship.color,

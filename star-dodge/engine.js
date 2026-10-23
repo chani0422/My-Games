@@ -1,16 +1,28 @@
 /* STAR DODGE: deterministic simulation, independent of Canvas and browser APIs. */
 (function (root, factory) {
-  const api = factory();
+  const api = factory(
+    typeof module === "object" && module.exports
+      ? require("./stages.js")
+      : root.StarStages,
+  );
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.StarDodge = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, () => {
+})(typeof globalThis !== "undefined" ? globalThis : this, (stageAPI) => {
   "use strict";
+  const { STAGES, getStage } = stageAPI;
   const CONFIG = {
     width: 480,
     height: 720,
     step: 1 / 60,
     maxFrame: 0.1,
-    player: { hp: 3, speed: 300, radius: 10, invincible: 1.2 },
+    player: {
+      hp: 3,
+      speed: 300,
+      radius: 6,
+      movementRadius: 10,
+      pickupRadius: 10,
+      invincible: 1.2,
+    },
     main: {
       interval: 0.25,
       speeds: [600, 720, 840, 960, 1080],
@@ -132,6 +144,8 @@
     }
     reset() {
       const c = this.config;
+      this.stage = null;
+      this.outcome = null;
       this.ticks = 0;
       this.time = 0;
       this.accumulator = 0;
@@ -158,6 +172,11 @@
     }
     start(loadout = {}) {
       this.reset();
+      this.stage = getStage(loadout.stage);
+      if (this.stage) {
+        this.rockAt = this.stage.interval;
+        this.itemCursor = (this.stage.id - 1) % this.config.items.types.length;
+      }
       // Permanent upgrades apply only at the beginning of a new run.
       this.player.hp = clamp(
         Math.floor(loadout.hp || this.config.player.hp),
@@ -171,7 +190,9 @@
         450,
       );
       this.player.color = loadout.color || "#71f3e0";
-      this.player.ship = ["pioneer", "swift", "warden"].includes(loadout.ship) ? loadout.ship : "pioneer";
+      this.player.ship = ["pioneer", "swift", "warden"].includes(loadout.ship)
+        ? loadout.ship
+        : "pioneer";
       for (const type of ["speed", "multi", "sub"]) {
         const minimum = type === "sub" ? 0 : 1;
         this.levels[type] = clamp(
@@ -216,8 +237,9 @@
       if (this.state !== "playing") return;
       const p = this.player,
         c = this.config;
-      p.x = clamp(p.x + dx, p.radius, c.width - p.radius);
-      p.y = clamp(p.y + dy, p.radius, c.height - p.radius);
+      const margin = c.player.movementRadius ?? p.radius;
+      p.x = clamp(p.x + dx, margin, c.width - margin);
+      p.y = clamp(p.y + dy, margin, c.height - margin);
     }
     emit(type, data = {}) {
       this.events.push({ type, ...data });
@@ -242,9 +264,12 @@
           });
         }
     }
+    currentDifficulty() {
+      return this.stage || difficulty(this.time, this.config);
+    }
     spawnRocks() {
       const c = this.config,
-        d = difficulty(this.time, c),
+        d = this.currentDifficulty(),
         batch = [];
       for (let i = 0; i < d.batch && this.rocks.length < c.rocks.cap; i++) {
         const roll = this.random();
@@ -362,7 +387,7 @@
       }
       if (this.time + 1e-8 >= this.rockAt) {
         this.spawnRocks();
-        this.rockAt = this.time + difficulty(this.time, c).interval;
+        this.rockAt = this.time + this.currentDifficulty().interval;
       }
       while (this.time + 1e-8 >= this.itemAt) {
         this.spawnItem();
@@ -417,6 +442,7 @@
           p.invincible = c.player.invincible;
           this.emit("damage", { x: p.x, y: p.y });
           if (p.hp <= 0) {
+            this.outcome = "destroyed";
             this.state = "result";
             this.input = { x: 0, y: 0 };
             this.emit("gameover", { ms: this.time * 1000 });
@@ -427,11 +453,27 @@
       if (this.state === "playing")
         for (const item of this.items) {
           item.y += c.items.speed * dt;
-          if (overlaps(p, item)) {
+          if (
+            overlaps({ ...p, radius: c.player.pickupRadius ?? p.radius }, item)
+          ) {
             this.collect(item);
             item.dead = true;
           }
         }
+      if (
+        this.state === "playing" &&
+        this.stage &&
+        this.time + 1e-8 >= this.stage.duration
+      ) {
+        this.state = "result";
+        this.outcome = "cleared";
+        this.input = { x: 0, y: 0 };
+        this.emit("gameover", {
+          ms: this.time * 1000,
+          cleared: true,
+          stage: this.stage.id,
+        });
+      }
       this.bullets = this.bullets.filter(
         (b) =>
           !b.dead &&
@@ -448,5 +490,5 @@
       );
     }
   }
-  return { CONFIG, Game, Records, difficulty, formatTime, segmentHit };
+  return { CONFIG, STAGES, Game, Records, difficulty, formatTime, segmentHit };
 });
