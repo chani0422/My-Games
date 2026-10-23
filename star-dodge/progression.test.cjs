@@ -11,16 +11,22 @@ const store = () => ({
     this.data.set(k, v);
   },
 });
-test("earned credits settle once, including after reloading", () => {
+test("earned coins settle once, including after reloading", () => {
   const storage = store(),
     p = new Progress(storage);
   assert.deepEqual(p.finish("one", 30000, 12), {
-    credits: 10,
+    credits: 12,
     duplicate: false,
+    reward: {
+      survivalCoins: 6,
+      milestoneCoins: 4,
+      destructionCoins: 2,
+      totalCoins: 12,
+    },
   });
   assert.equal(p.data.flights, 1);
   assert.equal(new Progress(storage).finish("one", 30000, 12).duplicate, true);
-  assert.equal(new Progress(storage).data.credits, 10);
+  assert.equal(new Progress(storage).data.credits, 12);
   assert.equal(p.finish("two", NaN, Infinity).credits, 0);
   assert.equal(p.finish("huge", 1e9, 1e9).credits, 500);
 });
@@ -99,7 +105,7 @@ test("malformed saves are sanitized and storage failures do not prevent play", (
   });
   p.finish("run", 50000, 3);
   assert.equal(p.tabOnly, true);
-  assert.equal(p.data.credits, 11);
+  assert.equal(p.data.credits, 14);
   const d = sanitize({
     credits: -5,
     selectedShip: "unknown",
@@ -118,8 +124,8 @@ test("cloud snapshots are deep copies and restores retain a recovery snapshot", 
   p.finish("run", 50000, 3);
   const snapshot = p.snapshot();
   snapshot.credits = 999;
-  assert.equal(p.data.credits, 11);
+  assert.equal(p.data.credits, 14);
   p.restore({ ...snapshot, credits: 40 });
   assert.equal(p.data.credits, 40);
-  assert.equal(p.previous.credits, 11);
+  assert.equal(p.previous.credits, 14);
 });

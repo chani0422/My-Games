@@ -105,20 +105,35 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
     assert.equal(await page.evaluate(() => testGame.state), "result");
     assert.ok(
       (await page.locator("#panel .flight-reward").innerText()).includes(
-        "+6 CR",
+        "+10 コイン",
       ),
+    );
+    assert.equal(
+      await page.locator(".reward-breakdown dd").nth(0).innerText(),
+      "6 コイン",
+    );
+    assert.equal(
+      await page.locator(".reward-breakdown dd").nth(1).innerText(),
+      "4 コイン",
+    );
+    assert.equal(
+      await page.locator(".reward-breakdown dd").nth(2).innerText(),
+      "0 コイン",
+    );
+    assert.ok(
+      !/クレジット|\bCR\b/.test(await page.locator("body").innerText()),
     );
     const credits = await page.evaluate(
       () => JSON.parse(localStorage.getItem("star-dodge-progress-v1")).credits,
     );
-    assert.equal(credits, 96);
+    assert.equal(credits, 100);
     await page.clock.runFor(1000);
     assert.equal(
       await page.evaluate(
         () =>
           JSON.parse(localStorage.getItem("star-dodge-progress-v1")).credits,
       ),
-      96,
+      100,
     );
     await page.getByRole("button", { name: "ホームへ", exact: true }).click();
     await page.reload();

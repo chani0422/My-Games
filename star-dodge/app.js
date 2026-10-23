@@ -17,7 +17,7 @@
   });
   const monetization = new StarServices.Monetization();
   let runId = "",
-    runReward = 0;
+    runReward = StarProgress.calculateFlightReward(0, 0);
   const records = new Records(storage),
     game = new Game(),
     canvas = $("game"),
@@ -118,7 +118,7 @@
     game.start(progress.loadout());
     runId =
       globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
-    runReward = 0;
+    runReward = StarProgress.calculateFlightReward(0, 0);
     particles = [];
     toastUntil = 0;
     newBest = false;
@@ -152,6 +152,7 @@
     $("flight-layout").hidden = state === "title";
     if (state === uiState) return;
     uiState = state;
+    $("panel").classList.toggle("result-panel", state === "result");
     const overlay = $("overlay");
     overlay.hidden = state === "playing" || state === "countdown";
     $("count").hidden = state !== "countdown";
@@ -169,7 +170,7 @@
         '<span class="overline">FLIGHT ON HOLD</span><h2>一時停止</h2><p>ひと息ついたら、もう一度宇宙へ。</p><button class="primary" data-action="resume">フライトを再開</button><button class="secondary" data-action="start">最初から</button><button class="secondary" data-action="title">タイトルへ</button>';
     if (state === "result")
       $("panel").innerHTML =
-        `<span class="overline">FLIGHT COMPLETE</span><h2>次は、もう1秒先へ。</h2><div class="result-time">${formatTime(game.time * 1000)}<small> SEC</small></div><span class="best-badge">${newBest ? "✦ NEW PERSONAL BEST" : "SURVIVAL RECORD"}</span><p>自己ベスト ${formatTime(records.data.best)} 秒</p><p class="flight-reward">+${runReward} CR <small>フライト報酬</small></p><div class="result-grid">破壊した隕石 <strong>${game.destroyed}</strong> 個<br>SPEED <strong>Lv.${game.levels.speed}</strong>　MULTI <strong>${c.main.angles[game.levels.multi - 1].length}発</strong>　SUB <strong>Lv.${game.levels.sub}</strong></div><button class="primary" data-action="start">もう一度フライト ↗</button><button class="secondary" data-action="title">ホームへ</button><button class="secondary ad-placeholder" disabled>短い動画で追加報酬 · 準備中</button>`;
+        `<span class="overline">FLIGHT COMPLETE</span><h2>次は、もう1秒先へ。</h2><div class="result-time">${formatTime(game.time * 1000)}<small> SEC</small></div><span class="best-badge">${newBest ? "✦ NEW PERSONAL BEST" : "SURVIVAL RECORD"}</span><p>自己ベスト ${formatTime(records.data.best)} 秒</p><p class="flight-reward">+${runReward.totalCoins} コイン <small>フライト報酬</small></p><dl class="reward-breakdown" aria-label="コインの内訳"><div><dt>生存報酬</dt><dd>${runReward.survivalCoins} コイン</dd></div><div><dt>到達ボーナス</dt><dd>${runReward.milestoneCoins} コイン</dd></div><div><dt>破壊ボーナス</dt><dd>${runReward.destructionCoins} コイン</dd></div></dl><div class="result-grid">破壊した隕石 <strong>${game.destroyed}</strong> 個<br>SPEED <strong>Lv.${game.levels.speed}</strong>　MULTI <strong>${c.main.angles[game.levels.multi - 1].length}発</strong>　SUB <strong>Lv.${game.levels.sub}</strong></div><button class="primary" data-action="start">もう一度フライト ↗</button><button class="secondary" data-action="title">ホームへ</button><button class="secondary ad-placeholder" disabled>短い動画で追加報酬 · 準備中</button>`;
 
     if (state === "paused" || state === "result")
       document.querySelector("#panel .primary")?.focus({ preventScroll: true });
@@ -204,7 +205,9 @@
     for (const e of game.events) {
       if (e.type === "gameover") {
         newBest = records.finish(e.ms);
-        runReward = progress.finish(runId, e.ms, game.destroyed).credits;
+        runReward =
+          progress.finish(runId, e.ms, game.destroyed).reward ||
+          StarProgress.calculateFlightReward(0, 0);
         renderHome();
         refreshRecords();
         clearControls();
@@ -568,9 +571,9 @@
       (m) => !progress.data.claimed.includes(m.id),
     );
     $("home").innerHTML =
-      `<div class="home-bar"><span class="eyebrow"><span class="live-dot"></span> PILOT HEADQUARTERS</span><span class="pilot-status">${account.user ? "アカウント接続中" : "ゲストパイロット"} <b>${progress.data.credits.toLocaleString()} <small>CR</small></b></span></div>
+      `<div class="home-bar"><span class="eyebrow"><span class="live-dot"></span> PILOT HEADQUARTERS</span><span class="pilot-status">${account.user ? "アカウント接続中" : "ゲストパイロット"} <b>${progress.data.credits.toLocaleString()} <small>コイン</small></b></span></div>
     <div class="home-grid"><div class="home-hero"><span class="eyebrow">YOUR NEXT FLIGHT STARTS HERE</span><h1>STAR<br><span>DODGE</span><b>✦</b></h1><p class="intro">ひとつのフライトが、次の力になる。<br>育てた相棒で、まだ見ぬ記録へ。</p><div class="hangar-art" style="--ship-color:${ship.color}" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><svg viewBox="0 0 160 180"><path d="M80 8 145 143 105 130 80 157 55 130 15 143Z" fill="currentColor"/><path d="M80 35 97 113 63 113Z" fill="#e9fffa"/><path d="M73 87h14v45H73z" fill="#153747"/><path d="m67 151 13 27 13-27" fill="#66bfff"/></svg><span>${ship.tag} / ${escapeHTML(ship.name)}</span></div><div class="home-best"><span>PERSONAL BEST</span><strong>${formatTime(records.data.best)}<small> SEC</small></strong></div><button class="primary launch" data-action="start">フライト開始 ↗</button><p class="home-controls">WASD・矢印キー / スマホはドラッグ · 射撃は自動</p></div>
-    <div class="home-dashboard"><div class="pilot-card"><div><span class="eyebrow">CURRENT LOADOUT</span><h2>${escapeHTML(ship.name)}</h2><p>HP ${load.hp} · SPEED Lv.${load.levels.speed} · ${c.main.angles[load.levels.multi - 1].length}発 · SUB Lv.${load.levels.sub}</p></div><span class="pilot-emblem" style="color:${ship.color}">⟐</span></div><nav class="home-nav" aria-label="パイロットメニュー"><button data-hub="hangar"><i>⟐</i><span>機体ハンガー<small>3種類の機体を解放・選択</small></span><b>↗</b></button><button data-hub="upgrades"><i>↑</i><span>初期スキル強化<small>フライトのスタートを強くする</small></span><b>↗</b></button><button data-hub="missions"><i>◎</i><span>チャレンジ<small>目標を達成して報酬を受け取る</small></span><b>↗</b></button><button data-hub="account"><i>☁</i><span>アカウント・保存<small>${account.user ? "クラウドに育成をバックアップ" : "ゲストのままでもプレイできます"}</small></span><b>↗</b></button><button data-hub="shop"><i>✦</i><span>ショップ<small>スキンなどを準備中</small></span><b>↗</b></button></nav>${mission ? `<div class="next-goal"><span class="eyebrow">NEXT CHALLENGE</span><h3>${mission.name}</h3><p>${mission.description} <b>+${mission.reward} CR</b></p><progress value="${Math.min(progress.data[mission.field], mission.goal)}" max="${mission.goal}"></progress></div>` : '<div class="next-goal"><span class="eyebrow">ALL CHALLENGES COMPLETE</span><h3>次は、自己ベストのその先へ。</h3></div>'}<p class="earned-note">CR はフライトで獲得。育成は何度でも次の挑戦に引き継がれます。</p></div></div>`;
+    <div class="home-dashboard"><div class="pilot-card"><div><span class="eyebrow">CURRENT LOADOUT</span><h2>${escapeHTML(ship.name)}</h2><p>HP ${load.hp} · SPEED Lv.${load.levels.speed} · ${c.main.angles[load.levels.multi - 1].length}発 · SUB Lv.${load.levels.sub}</p></div><span class="pilot-emblem" style="color:${ship.color}">⟐</span></div><nav class="home-nav" aria-label="パイロットメニュー"><button data-hub="hangar"><i>⟐</i><span>機体ハンガー<small>3種類の機体を解放・選択</small></span><b>↗</b></button><button data-hub="upgrades"><i>↑</i><span>初期スキル強化<small>フライトのスタートを強くする</small></span><b>↗</b></button><button data-hub="missions"><i>◎</i><span>チャレンジ<small>目標を達成して報酬を受け取る</small></span><b>↗</b></button><button data-hub="account"><i>☁</i><span>アカウント・保存<small>${account.user ? "クラウドに育成をバックアップ" : "ゲストのままでもプレイできます"}</small></span><b>↗</b></button><button data-hub="shop"><i>✦</i><span>ショップ<small>スキンなどを準備中</small></span><b>↗</b></button></nav>${mission ? `<div class="next-goal"><span class="eyebrow">NEXT CHALLENGE</span><h3>${mission.name}</h3><p>${mission.description} <b>+${mission.reward} コイン</b></p><progress value="${Math.min(progress.data[mission.field], mission.goal)}" max="${mission.goal}"></progress></div>` : '<div class="next-goal"><span class="eyebrow">ALL CHALLENGES COMPLETE</span><h3>次は、自己ベストのその先へ。</h3></div>'}<p class="earned-note">5秒ごとに1コイン＋30秒ごとの到達ボーナス。隕石の破壊で追加報酬（生存・到達報酬の20%まで）。育成は次の挑戦に引き継がれます。</p></div></div>`;
     refreshRecords();
   }
   let hubPage = "",
@@ -592,14 +595,14 @@
     };
     $("hub-title").textContent = titles[hubPage];
     $("hub-message").textContent = "";
-    const balance = `<div class="hub-balance">所持クレジット <b>${progress.data.credits.toLocaleString()} CR</b></div>`;
+    const balance = `<div class="hub-balance">所持コイン <b>${progress.data.credits.toLocaleString()} コイン</b></div>`;
     if (hubPage === "hangar")
       $("hub-content").innerHTML =
         balance +
         StarProgress.SHIPS.map((ship) => {
           const owned = progress.data.unlocked.includes(ship.id),
             selected = progress.data.selectedShip === ship.id;
-          return `<article class="upgrade-card"><span class="ship-mini" style="color:${ship.color}">⟐</span><div><span class="eyebrow">${ship.tag}</span><h3>${ship.name}</h3><p>${ship.description}</p><small>基本HP ${ship.hp} / 移動速度 ${ship.speed}</small></div><button class="secondary" data-ship="${ship.id}" ${selected || (!owned && progress.data.credits < ship.cost) ? "disabled" : ""}>${selected ? "選択中" : owned ? "この機体を選ぶ" : `${ship.cost} CR で解放`}</button></article>`;
+          return `<article class="upgrade-card"><span class="ship-mini" style="color:${ship.color}">⟐</span><div><span class="eyebrow">${ship.tag}</span><h3>${ship.name}</h3><p>${ship.description}</p><small>基本HP ${ship.hp} / 移動速度 ${ship.speed}</small></div><button class="secondary" data-ship="${ship.id}" ${selected || (!owned && progress.data.credits < ship.cost) ? "disabled" : ""}>${selected ? "選択中" : owned ? "この機体を選ぶ" : `${ship.cost} コインで解放`}</button></article>`;
         }).join("");
     if (hubPage === "upgrades")
       $("hub-content").innerHTML =
@@ -608,7 +611,7 @@
         StarProgress.UPGRADES.map((up) => {
           const level = progress.data.upgrades[up.id],
             cost = up.costs[level];
-          return `<article class="upgrade-card"><span class="ship-mini">${up.icon}</span><div><h3>${up.name} <small>Lv.${level} / ${up.costs.length}</small></h3><p>${up.description}</p></div><button class="secondary" data-upgrade="${up.id}" ${cost === undefined || progress.data.credits < cost ? "disabled" : ""}>${cost === undefined ? "最大まで強化済み" : `${cost} CR で強化`}</button></article>`;
+          return `<article class="upgrade-card"><span class="ship-mini">${up.icon}</span><div><h3>${up.name} <small>Lv.${level} / ${up.costs.length}</small></h3><p>${up.description}</p></div><button class="secondary" data-upgrade="${up.id}" ${cost === undefined || progress.data.credits < cost ? "disabled" : ""}>${cost === undefined ? "最大まで強化済み" : `${cost} コインで強化`}</button></article>`;
         }).join("");
     if (hubPage === "missions")
       $("hub-content").innerHTML =
@@ -617,7 +620,7 @@
           const claimed = progress.data.claimed.includes(m.id),
             done = progress.data[m.field] >= m.goal;
           const current = Math.min(progress.data[m.field], m.goal);
-          return `<article class="mission-card"><h3>${m.name}<span>+${m.reward} CR</span></h3><p>${m.description}</p><progress value="${current}" max="${m.goal}"></progress><small>${m.field === "bestMs" ? formatTime(current) + " / " + formatTime(m.goal) + "秒" : current + " / " + m.goal}</small><button class="secondary" data-claim="${m.id}" ${claimed || !done ? "disabled" : ""}>${claimed ? "受取済み" : done ? "報酬を受け取る" : "挑戦中"}</button></article>`;
+          return `<article class="mission-card"><h3>${m.name}<span>+${m.reward} コイン</span></h3><p>${m.description}</p><progress value="${current}" max="${m.goal}"></progress><small>${m.field === "bestMs" ? formatTime(current) + " / " + formatTime(m.goal) + "秒" : current + " / " + m.goal}</small><button class="secondary" data-claim="${m.id}" ${claimed || !done ? "disabled" : ""}>${claimed ? "受取済み" : done ? "報酬を受け取る" : "挑戦中"}</button></article>`;
         }).join("");
     if (hubPage === "shop")
       $("hub-content").innerHTML =
@@ -654,7 +657,7 @@
           throw Error("利用できるバックアップがありません。");
         pendingBackup = backup.progress;
         $("hub-content").innerHTML =
-          `<p class="hub-intro">バックアップを読み込むと、この端末の育成を置き換えます。</p><p>${StarProgress.sanitize(pendingBackup.pilot).credits} CR / ${StarProgress.sanitize(pendingBackup.pilot).flights} フライト</p><button class="primary" data-account="restore">このバックアップで復元</button><button class="secondary" data-hub="account">やめる</button>`;
+          `<p class="hub-intro">バックアップを読み込むと、この端末の育成を置き換えます。</p><p>${StarProgress.sanitize(pendingBackup.pilot).credits} コイン / ${StarProgress.sanitize(pendingBackup.pilot).flights} フライト</p><button class="primary" data-account="restore">このバックアップで復元</button><button class="secondary" data-hub="account">やめる</button>`;
         message = "内容を確認してから復元してください。";
       }
       if (action === "restore") {

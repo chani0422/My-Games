@@ -112,6 +112,47 @@
   const LIMIT = 1e9;
   const integer = (n, max = LIMIT) =>
     Number.isFinite(n) && n >= 0 ? Math.min(max, Math.floor(n)) : 0;
+  const REWARD_RULES = Object.freeze({
+    survivalStepMs: 5000,
+    milestoneStepMs: 30000,
+    milestoneAwards: Object.freeze([4, 6, 8]),
+    destroyedPerCoin: 5,
+    destructionRatio: 0.2,
+    maxFlightCoins: 500,
+  });
+  function calculateFlightReward(ms, destroyed) {
+    const time = integer(ms),
+      kills = integer(destroyed),
+      rules = REWARD_RULES;
+    const milestones = Math.floor(time / rules.milestoneStepMs);
+    const rawMilestones =
+      rules.milestoneAwards.reduce(
+        (sum, award, index) => sum + (index < milestones ? award : 0),
+        0,
+      ) +
+      Math.max(0, milestones - rules.milestoneAwards.length) *
+        rules.milestoneAwards.at(-1);
+    const survivalCoins = Math.min(
+      rules.maxFlightCoins,
+      Math.floor(time / rules.survivalStepMs),
+    );
+    const milestoneCoins = Math.min(
+      rawMilestones,
+      rules.maxFlightCoins - survivalCoins,
+    );
+    const progressCoins = survivalCoins + milestoneCoins;
+    const destructionCoins = Math.min(
+      Math.floor(kills / rules.destroyedPerCoin),
+      Math.floor(progressCoins * rules.destructionRatio),
+      rules.maxFlightCoins - progressCoins,
+    );
+    return {
+      survivalCoins,
+      milestoneCoins,
+      destructionCoins,
+      totalCoins: progressCoins + destructionCoins,
+    };
+  }
   function fresh() {
     return {
       version: 1,
@@ -195,10 +236,9 @@
         return { credits: 0, duplicate: true };
       ms = integer(ms);
       destroyed = integer(destroyed);
-      const earned = Math.min(
-        500,
-        Math.floor(ms / 5000) + Math.floor(destroyed / 3),
-      );
+      const reward = calculateFlightReward(ms, destroyed);
+      const earned = reward.totalCoins;
+      // Keep the legacy save field to preserve existing balances and cloud backups.
       this.data.credits = Math.min(LIMIT, this.data.credits + earned);
       this.data.flights = Math.min(LIMIT, this.data.flights + 1);
       this.data.totalMs = Math.min(LIMIT, this.data.totalMs + ms);
@@ -210,7 +250,7 @@
       this.data.settled.push(runId);
       this.data.settled = this.data.settled.slice(-64);
       this.save();
-      return { credits: earned, duplicate: false };
+      return { credits: earned, duplicate: false, reward };
     }
     purchaseUpgrade(id) {
       const up = UPGRADES.find((x) => x.id === id);
@@ -264,5 +304,14 @@
       this.save();
     }
   }
-  return { SHIPS, UPGRADES, MISSIONS, Progress, sanitize, fresh };
+  return {
+    SHIPS,
+    UPGRADES,
+    MISSIONS,
+    REWARD_RULES,
+    calculateFlightReward,
+    Progress,
+    sanitize,
+    fresh,
+  };
 });
