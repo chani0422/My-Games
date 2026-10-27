@@ -1,4 +1,4 @@
-package dev.stardodge.app;
+package com.chani0422.stardodge;
 
 import com.getcapacitor.BridgeActivity;
 
