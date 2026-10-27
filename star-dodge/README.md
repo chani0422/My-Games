@@ -56,7 +56,7 @@ Supabase 接続用のメール確認コード認証、手動クラウド保存�
 
 ## Android
 
-[mobile/README.md](mobile/README.md) に Capacitor 8 のAndroidプロジェクトと実行手順があります。npm ci、パッケージ化、cap sync android、デバッグAPKとリリースAABのビルドまで成功しました。デバッグAPKの署名と同梱ファイル、未署名AABの構造も確認しました。実機、公開用の署名、Google Play提出は未実施です。仮のアプリID `dev.stardodge.app` は公開前に確定してください。
+[mobile/README.md](mobile/README.md) に Capacitor 8 のAndroidプロジェクトと実行手順があります。npm ci、パッケージ化、cap sync android、デバッグAPKとリリースAABのビルドまで成功しました。デバッグAPKの署名と同梱ファイル、未署名AABの構造も確認しました。実機、公開用の署名、Google Play提出は未実施です。正式なアプリIDは `com.chani0422.stardodge` です。
 
 ## 構成と調整
 

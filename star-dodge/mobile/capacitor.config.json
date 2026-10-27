@@ -1,5 +1,5 @@
 {
-  "appId": "dev.stardodge.app",
+  "appId": "com.chani0422.stardodge",
   "appName": "STAR DODGE",
   "webDir": "www",
   "server": { "androidScheme": "https" },

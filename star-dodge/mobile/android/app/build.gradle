@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "dev.stardodge.app"
+    namespace = "com.chani0422.stardodge"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "dev.stardodge.app"
+        applicationId "com.chani0422.stardodge"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 4

@@ -32,7 +32,7 @@ Android StudioでSDKパスを設定し、デバイスまたはエミュレータ
 
 ## 公開前
 
-- 仮ID `dev.stardodge.app` を正式な一意のIDに確定。変更する場合は `capacitor.config.json`、Androidのnamespace/applicationId、JavaパッケージをAndroid StudioのRefactor等で一致させます。
+- 正式なアプリIDは `com.chani0422.stardodge`。`capacitor.config.json`、Androidのnamespace/applicationId、Javaパッケージを一致させています。
 - `versionCode` をリリースごとに増やします。
 - Android Studioで署名付きAABを生成し、Play Consoleの内部テストへ。署名鍵はGit管理しません。
 - バックグラウンド、戻る、画面ロック、音、オフライン、データ更新、低スペック端末を実機確認。
