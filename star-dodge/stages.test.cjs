@@ -91,7 +91,7 @@ test("ten finite stages increase speed/density/hardness and preserve the endless
   assert.equal(endless.state, "playing");
   assert.ok(endless.time > 30);
 });
-test("each stage clears at exactly 30 simulation seconds, emits once and freezes until restart", () => {
+test("each stage enters elimination at 30s, clears once after destruction and freezes until restart", () => {
   for (const s of STAGES) {
     const g = playing(s.id);
     g.player.invincible = 1000;
@@ -105,14 +105,44 @@ test("each stage clears at exactly 30 simulation seconds, emits once and freezes
     g.advance(50);
     assert.ok(g.time < 30);
     g.resume();
+    // Keep a controlled live target for the elimination branch in every stage.
+    g.bullets = [];
+    g.mainAt = g.subAt = Infinity;
+    g.rocks.push(rock(g, -90));
+    g.advance(1 / 60);
+    assert.equal(g.time, 30);
+    assert.equal(g.state, "playing");
+    assert.equal(g.elimination, true);
+    assert.ok(g.remainingRocks > 0);
+    assert.equal(g.events.filter((e) => e.type === "gameover").length, 0);
+    // Controlled target fixture: the surviving rocks must be shot, not timed out.
+    g.mainAt = g.subAt = Infinity;
+    g.bullets = [];
+    for (const r of g.rocks) {
+      r.x = r.originX = 240;
+      r.y = 200;
+      r.speed = 0;
+      r.type = "meteor";
+    }
+    for (let i = 0; i < 60; i++) g.advance(1 / 60);
+    assert.equal(g.state, "playing");
+    g.bullets = g.rocks.map(() => ({
+      x: 240,
+      y: 200,
+      vx: 0,
+      vy: 0,
+      radius: 3,
+      damage: 1e6,
+    }));
     g.advance(1 / 60);
     assert.equal(g.state, "result");
     assert.equal(g.outcome, "cleared");
-    assert.equal(g.time, 30);
+    assert.ok(g.time > 31);
     const results = g.events.filter((e) => e.type === "gameover");
     assert.equal(results.length, 1);
     assert.equal(results[0].stage, s.id);
     assert.equal(results[0].cleared, true);
+    assert.equal(results[0].ms, g.time * 1000);
     const snapshot = JSON.stringify({
       p: g.player,
       rocks: g.rocks,
@@ -125,6 +155,7 @@ test("each stage clears at exactly 30 simulation seconds, emits once and freezes
     );
     g.start({ stage: s.id });
     assert.equal(g.outcome, null);
+    assert.equal(g.elimination, false);
     assert.equal(g.time, 0);
     assert.equal(g.state, "countdown");
   }

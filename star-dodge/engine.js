@@ -226,6 +226,7 @@
       const c = this.config;
       this.stage = null;
       this.outcome = null;
+      this.elimination = false;
       this.ticks = 0;
       this.time = 0;
       this.accumulator = 0;
@@ -373,6 +374,38 @@
     fireInterval() {
       return this.config.main.interval * (1 - 0.12 * this.skills.rapid);
     }
+    get stageTimeUp() {
+      return !!this.stage && this.time + 1e-8 >= this.stage.duration;
+    }
+    get remainingRocks() {
+      return this.rocks.reduce(
+        (count, rock) => count + (rock.hp > 0 ? 1 : 0),
+        0,
+      );
+    }
+    recycleRock(rock) {
+      const c = this.config;
+      const type =
+        c.rocks.types.find((type) => type.radius === rock.radius) ||
+        c.rocks.types.at(-1);
+      rock.x = rock.radius + this.random() * (c.width - 2 * rock.radius);
+      rock.y = -rock.radius - 1;
+      rock.oldX = rock.x;
+      rock.oldY = rock.y;
+      rock.originX = rock.x;
+      rock.speed =
+        this.currentDifficulty().speed *
+        type.multiplier *
+        (0.85 + this.random() * 0.3);
+      rock.age = 0;
+      rock.phase = "approach";
+      rock.vx = 0;
+      rock.nextShot = 2.5;
+      rock.wavePhase = this.random() * Math.PI * 2;
+      rock.flashUntil = 0;
+      delete rock.targetX;
+      delete rock.warningUntil;
+    }
     currentDifficulty() {
       const base = this.stage || difficulty(this.time, this.config);
       return this.eventState?.kind === "rush" &&
@@ -400,6 +433,7 @@
       ];
     }
     spawnRocks(elite = false) {
+      if (this.stageTimeUp) return;
       const c = this.config,
         d = this.currentDifficulty(),
         batch = [];
@@ -479,7 +513,8 @@
       y = this.player.y - 70,
       scheduled = false,
     } = {}) {
-      if (this.items.length >= this.config.cores) return false;
+      if (this.stageTimeUp || this.items.length >= this.config.cores)
+        return false;
       this.items.push({
         type: "core",
         x: clamp(x, 24, this.config.width - 24),
@@ -557,6 +592,7 @@
       return true;
     }
     triggerEvent() {
+      if (this.stageTimeUp) return;
       const number = this.stage ? this.stage.id : ++this.eventCount;
       const kind = number % 2 ? "rush" : "elite";
       this.eventState = {
@@ -604,6 +640,7 @@
       r.rotation += r.spin * dt;
       if (
         r.type === "gunner" &&
+        !this.stageTimeUp &&
         r.age >= r.nextShot &&
         r.y > 0 &&
         r.y < this.config.height - 100
@@ -702,17 +739,19 @@
           this.time +
           (this.levels.sub === 3 ? c.sub.fastInterval : c.sub.interval);
       }
-      if (this.time + 1e-8 >= this.eventAt) {
-        this.triggerEvent();
-        this.eventAt = this.stage ? Infinity : this.eventAt + 60;
-      }
-      if (this.time + 1e-8 >= this.rockAt) {
-        this.spawnRocks();
-        this.rockAt = this.time + this.currentDifficulty().interval;
-      }
-      while (this.time + 1e-8 >= this.itemAt) {
-        this.spawnItem();
-        this.itemAt += c.items.interval;
+      if (!this.stageTimeUp) {
+        if (this.time + 1e-8 >= this.eventAt) {
+          this.triggerEvent();
+          this.eventAt = this.stage ? Infinity : this.eventAt + 60;
+        }
+        if (this.time + 1e-8 >= this.rockAt) {
+          this.spawnRocks();
+          this.rockAt = this.time + this.currentDifficulty().interval;
+        }
+        while (this.time + 1e-8 >= this.itemAt) {
+          this.spawnItem();
+          this.itemAt += c.items.interval;
+        }
       }
       for (const r of this.rocks) this.moveRock(r, dt);
       for (const b of this.bullets) {
@@ -761,7 +800,8 @@
       }
       for (const r of this.rocks) {
         if (r.hp > 0 && p.invincible <= 0 && overlaps(p, r)) {
-          r.hp = 0;
+          // During elimination, collision removes HP or shield, never the target.
+          if (!this.stageTimeUp) r.hp = 0;
           this.damagePlayer();
           if (this.state === "result") break;
         }
@@ -794,19 +834,20 @@
           b.y >= -20 &&
           b.y <= c.height + 20,
       );
-      if (
-        this.state === "playing" &&
-        this.stage &&
-        this.time + 1e-8 >= this.stage.duration
-      ) {
-        this.state = "result";
-        this.outcome = "cleared";
-        this.input = { x: 0, y: 0 };
-        this.emit("gameover", {
-          ms: this.time * 1000,
-          cleared: true,
-          stage: this.stage.id,
-        });
+      if (this.state === "playing" && this.stageTimeUp) {
+        if (this.remainingRocks === 0) {
+          this.state = "result";
+          this.outcome = "cleared";
+          this.input = { x: 0, y: 0 };
+          this.emit("gameover", {
+            ms: this.time * 1000,
+            cleared: true,
+            stage: this.stage.id,
+          });
+        } else if (!this.elimination) {
+          this.elimination = true;
+          this.emit("elimination", { remaining: this.remainingRocks });
+        }
       }
       if (this.state === "playing")
         for (const item of this.items) {
@@ -850,8 +891,14 @@
           b.x <= c.width + 20 &&
           b.y < c.height + 30,
       );
+      if (this.stageTimeUp) {
+        for (const rock of this.rocks) {
+          if (rock.hp > 0 && rock.y - rock.radius > c.height)
+            this.recycleRock(rock);
+        }
+      }
       this.rocks = this.rocks.filter(
-        (r) => r.hp > 0 && r.y - r.radius <= c.height,
+        (r) => r.hp > 0 && (this.stageTimeUp || r.y - r.radius <= c.height),
       );
       this.items = this.items.filter(
         (i) => !i.dead && i.y - i.radius <= c.height,
