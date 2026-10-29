@@ -823,7 +823,7 @@
     if (hubPage === "upgrades")
       $("hub-content").innerHTML =
         balance +
-        '<p class="hub-intro">強化は次のフライトからずっと有効です。飛行中に拾うアイテムでも、さらに成長できます。</p>' +
+        '<p class="hub-intro">強化は次のフライトからずっと有効です。飛行中に強化コアを拾うと、その回だけの強化を最大3択で選べます。</p>' +
         StarProgress.UPGRADES.map((up) => {
           const level = progress.data.upgrades[up.id],
             cost = up.costs[level];
