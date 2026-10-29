@@ -112,7 +112,7 @@ test("gunners aim slow bullets, enforce the cap, and projectiles use the small h
   ];
   g.advance(1 / 60);
   assert.equal(g.player.hp, 2);
-  assert.equal(g.enemyBullets.length, 0);
+  assert.equal(g.enemyBullets.length, 1);
   g.enemyBullets = [{ x: -30, y: 20, vx: 0, vy: 0, radius: 3 }];
   g.advance(1 / 60);
   assert.equal(g.enemyBullets.length, 0);
@@ -371,4 +371,81 @@ test("all transient object queues have hard caps even under artificial bursts", 
   assert.equal(g.items.length, CONFIG.cores);
   for (let i = 0; i < 1000; i++) g.spawnRocks();
   assert.ok(g.rocks.length <= CONFIG.rocks.cap);
+});
+
+test("enemy bullets pass through an invincible pilot without consuming the shield", () => {
+  const g = play();
+  g.mainAt = g.rockAt = g.itemAt = g.eventAt = Infinity;
+  g.bullets = [];
+  g.events = [];
+  g.player.invincible = 0.4;
+  g.shield = 1;
+  const bullet = {
+    x: g.player.x,
+    y: g.player.y - 1,
+    vx: 0,
+    vy: 125,
+    radius: 3,
+  };
+  g.enemyBullets = [bullet];
+  g.advance(1 / 60);
+  assert.equal(g.enemyBullets[0], bullet);
+  assert.ok(!bullet.dead);
+  assert.equal(g.player.hp, 3);
+  assert.equal(g.shield, 1);
+  for (let i = 0; i < 30; i++) g.advance(1 / 60);
+  assert.equal(g.player.invincible, 0);
+  assert.ok(bullet.y > g.player.y + g.player.radius + bullet.radius);
+  assert.equal(g.enemyBullets[0], bullet);
+  assert.equal(g.player.hp, 3);
+  assert.equal(g.shield, 1);
+  assert.equal(
+    g.events.filter((e) => e.type === "damage" || e.type === "shield").length,
+    0,
+  );
+});
+
+test("enemy bullets are consumed by successful hits, including fatal damage", () => {
+  for (const hp of [3, 1]) {
+    const g = play();
+    g.mainAt = g.rockAt = g.itemAt = g.eventAt = Infinity;
+    g.bullets = [];
+    g.events = [];
+    g.player.hp = hp;
+    const bullet = {
+      x: g.player.x,
+      y: g.player.y - 1,
+      vx: 0,
+      vy: 125,
+      radius: 3,
+    };
+    g.enemyBullets = [bullet];
+    g.advance(1 / 60);
+    assert.equal(bullet.dead, true);
+    assert.equal(g.enemyBullets.length, 0);
+    assert.equal(g.player.hp, hp - 1);
+    assert.equal(g.player.invincible, CONFIG.player.invincible);
+    assert.equal(g.events.filter((e) => e.type === "damage").length, 1);
+    assert.equal(g.state, hp === 1 ? "result" : "playing");
+  }
+});
+
+test("shield blocks consume the first bullet while same-frame bullets pass through immunity", () => {
+  const g = play();
+  g.mainAt = g.rockAt = g.itemAt = g.eventAt = Infinity;
+  g.bullets = [];
+  g.events = [];
+  g.shield = 1;
+  const first = { x: g.player.x, y: g.player.y - 1, vx: 0, vy: 125, radius: 3 };
+  const second = { ...first };
+  g.enemyBullets = [first, second];
+  g.advance(1 / 60);
+  assert.equal(first.dead, true);
+  assert.ok(!second.dead);
+  assert.deepEqual(g.enemyBullets, [second]);
+  assert.equal(g.player.hp, 3);
+  assert.equal(g.shield, 0);
+  assert.equal(g.player.invincible, CONFIG.player.invincible);
+  assert.equal(g.events.filter((e) => e.type === "shield").length, 1);
+  assert.equal(g.events.filter((e) => e.type === "damage").length, 0);
 });

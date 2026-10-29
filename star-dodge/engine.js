@@ -625,12 +625,12 @@
     }
     damagePlayer() {
       const p = this.player;
-      if (p.invincible > 0) return;
+      if (p.invincible > 0) return false;
       p.invincible = this.config.player.invincible;
       if (this.shield) {
         this.shield = 0;
         this.emit("shield", { x: p.x, y: p.y });
-        return;
+        return true;
       }
       p.hp--;
       this.emit("damage", { x: p.x, y: p.y });
@@ -640,6 +640,7 @@
         this.input = { x: 0, y: 0 };
         this.emit("gameover", { ms: this.time * 1000 });
       }
+      return true;
     }
     collect(item) {
       if (item.type === "core") {
@@ -782,8 +783,7 @@
             p.radius + b.radius,
           ) !== null
         ) {
-          b.dead = true;
-          this.damagePlayer();
+          if (this.damagePlayer()) b.dead = true;
         }
       }
       this.enemyBullets = this.enemyBullets.filter(
