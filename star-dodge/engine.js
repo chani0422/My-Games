@@ -39,7 +39,7 @@
       fastInterval: 0.7,
     },
     items: {
-      interval: 15,
+      interval: 12,
       speed: 80,
       radius: 19,
       types: ["speed", "multi", "sub"],
@@ -62,7 +62,86 @@
       ],
     },
     particles: 180,
+    enemyBullets: 48,
+    playerBullets: 192,
+    cores: 4,
   };
+  const FLIGHT_UPGRADES = Object.freeze(
+    [
+      {
+        id: "rapid",
+        name: "連射ドライブ",
+        description: "発射間隔を12%ずつ短縮",
+        max: 3,
+        icon: "»",
+        color: "#71f3e0",
+      },
+      {
+        id: "damage",
+        name: "高出力弾",
+        description: "メイン弾のダメージ +1",
+        max: 3,
+        icon: "✦",
+        color: "#ffd47d",
+      },
+      {
+        id: "multi",
+        name: "拡散弾",
+        description: "メイン弾の発射数を増やす",
+        max: 3,
+        icon: "⋮",
+        color: "#ffca75",
+      },
+      {
+        id: "speed",
+        name: "弾速ブースト",
+        description: "SPEEDを1段階アップ",
+        max: 5,
+        icon: "↑",
+        color: "#71f3e0",
+      },
+      {
+        id: "sub",
+        name: "ドローン",
+        description: "随伴機を強化。最大数の後は弾威力UP",
+        max: 5,
+        icon: "✧",
+        color: "#c4a0ff",
+      },
+      {
+        id: "shield",
+        name: "シールド",
+        description: "被弾を1回防ぐバリアを補充",
+        max: 1,
+        icon: "◇",
+        color: "#91d7ff",
+      },
+      {
+        id: "movement",
+        name: "機動ブースト",
+        description: "移動速度を8%ずつアップ",
+        max: 3,
+        icon: "↗",
+        color: "#a5ffba",
+      },
+      {
+        id: "magnet",
+        name: "マグネット",
+        description: "コアの吸引範囲を広げる",
+        max: 3,
+        icon: "◎",
+        color: "#ffa0bd",
+      },
+      {
+        id: "repair",
+        name: "応急修理",
+        description: "機体のHPを1回復",
+        max: 1,
+        icon: "＋",
+        color: "#a5ffba",
+      },
+    ].map(Object.freeze),
+  );
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const formatTime = (ms) =>
     (Math.floor(Math.max(0, ms) / 100) / 10).toFixed(1);
@@ -101,15 +180,16 @@
     constructor(storage) {
       this.storage = storage;
       this.tabOnly = false;
-      this.data = { best: 0, last: 0, sound: false };
+      this.data = { best: 0, last: 0, sound: true, soundDefaultRevision: 1 };
       try {
         const data = JSON.parse(storage.getItem("star-dodge-v1") || "{}");
         for (const key of ["best", "last"])
           this.data[key] =
             Number.isFinite(data?.[key]) && data[key] >= 0 ? data[key] : 0;
-        this.data.sound = data?.sound === true;
+        this.data.sound =
+          data?.soundDefaultRevision === 1 ? data.sound === true : true;
       } catch {
-        this.data = { best: 0, last: 0, sound: false };
+        this.data = { best: 0, last: 0, sound: true, soundDefaultRevision: 1 };
       }
       this.save();
     }
@@ -161,6 +241,22 @@
       this.bullets = [];
       this.rocks = [];
       this.items = [];
+      this.enemyBullets = [];
+      this.skills = {
+        rapid: 0,
+        damage: 0,
+        dronePower: 0,
+        movement: 0,
+        magnet: 0,
+      };
+      this.shield = 0;
+      this.coreCoins = 0;
+      this.choices = [];
+      this.combo = 0;
+      this.lastKill = -Infinity;
+      this.eventState = null;
+      this.eventAt = 60;
+      this.eventCount = 0;
       this.destroyed = 0;
       this.mainAt = 0;
       this.subAt = c.sub.interval;
@@ -174,6 +270,7 @@
       this.reset();
       this.stage = getStage(loadout.stage);
       if (this.stage) {
+        this.eventAt = 15;
         this.rockAt = this.stage.interval;
         this.itemCursor = (this.stage.id - 1) % this.config.items.types.length;
       }
@@ -189,6 +286,10 @@
         150,
         450,
       );
+      this.player.baseSpeed = this.player.speed;
+      this.player.armor = clamp(Math.floor(loadout.visuals?.armor || 0), 0, 2);
+      this.player.trails = loadout.visuals?.trail === true;
+      this.player.droneStyle = loadout.visuals?.drone === true;
       this.player.color = loadout.color || "#71f3e0";
       this.player.ship = ["pioneer", "swift", "warden"].includes(loadout.ship)
         ? loadout.ship
@@ -204,7 +305,7 @@
       this.state = "countdown";
     }
     pause() {
-      if (this.state === "playing" || this.state === "countdown") {
+      if (["playing", "countdown", "upgrade"].includes(this.state)) {
         this.previousState = this.state;
         this.state = "paused";
         this.input = { x: 0, y: 0 };
@@ -243,6 +344,7 @@
     }
     emit(type, data = {}) {
       this.events.push({ type, ...data });
+      if (this.events.length > 256) this.events.shift();
     }
     fire(sub = false) {
       const c = this.config,
@@ -253,25 +355,59 @@
         for (const angle of angles) {
           const a = (angle * Math.PI) / 180,
             speed = sub ? c.sub.speed : c.main.speeds[this.levels.speed - 1];
+          if (this.bullets.length >= this.config.playerBullets) break;
           this.bullets.push({
             x: p.x + offset,
             y: p.y - 19,
             vx: Math.sin(a) * speed,
             vy: -Math.cos(a) * speed,
             radius: sub ? c.sub.radius : c.main.radius,
-            damage: sub ? c.sub.damage : c.main.damage,
+            damage: sub
+              ? c.sub.damage + this.skills.dronePower
+              : c.main.damage + this.skills.damage,
             sub,
           });
         }
+      this.emit("shot", { sub });
+    }
+    fireInterval() {
+      return this.config.main.interval * (1 - 0.12 * this.skills.rapid);
     }
     currentDifficulty() {
-      return this.stage || difficulty(this.time, this.config);
+      const base = this.stage || difficulty(this.time, this.config);
+      return this.eventState?.kind === "rush" &&
+        this.time < this.eventState.until
+        ? {
+            ...base,
+            interval: Math.max(
+              this.config.rocks.minInterval,
+              base.interval * 0.8,
+            ),
+          }
+        : base;
     }
-    spawnRocks() {
+    patternPool() {
+      if (this.stage)
+        return [
+          "weaver",
+          ...(this.stage.id >= 3 ? ["charger"] : []),
+          ...(this.stage.id >= 5 ? ["gunner"] : []),
+        ];
+      return [
+        ...(this.time >= 30 ? ["weaver"] : []),
+        ...(this.time >= 60 ? ["charger"] : []),
+        ...(this.time >= 90 ? ["gunner"] : []),
+      ];
+    }
+    spawnRocks(elite = false) {
       const c = this.config,
         d = this.currentDifficulty(),
         batch = [];
-      for (let i = 0; i < d.batch && this.rocks.length < c.rocks.cap; i++) {
+      for (
+        let i = 0;
+        i < (elite ? 1 : d.batch) && this.rocks.length < c.rocks.cap;
+        i++
+      ) {
         const roll = this.random();
         let cumulative = 0;
         const type =
@@ -279,12 +415,15 @@
               cumulative += r.chance;
               return roll < cumulative;
             }) || c.rocks.types.at(-1),
-          radius = type.radius;
+          radius = elite ? 42 : type.radius;
         let x,
           placed = false;
         for (let attempt = 0; attempt < 24; attempt++) {
           x = radius + this.random() * (c.width - 2 * radius);
           if (
+            (!this.eventState ||
+              this.time >= this.eventState.until ||
+              Math.abs(x - this.eventState.safeX) >= radius + 48) &&
             batch.every(
               (r) => Math.abs(x - r.x) >= radius + r.radius + c.rocks.gap,
             )
@@ -294,12 +433,28 @@
           }
         }
         if (!placed) continue;
+        const pool = this.patternPool(),
+          rollPattern = this.random();
+        const pattern = elite
+          ? "elite"
+          : rollPattern < pool.length * 0.12
+            ? pool[Math.floor(rollPattern / 0.12)]
+            : "meteor";
+        const hp = elite ? d.hardness * 2 + 6 : type.hp(d.hardness);
         const rock = {
           x,
           y: -radius - 1,
           radius,
-          hp: type.hp(d.hardness),
-          maxHp: type.hp(d.hardness),
+          hp,
+          maxHp: hp,
+          type: pattern,
+          originX: x,
+          age: 0,
+          phase: "approach",
+          vx: 0,
+          nextShot: 2.5,
+          amplitude: 30 + this.random() * 18,
+          wavePhase: this.random() * Math.PI * 2,
           speed: d.speed * type.multiplier * (0.85 + this.random() * 0.3),
           rotation: this.random() * Math.PI * 2,
           spin: (this.random() - 0.5) * 0.7,
@@ -317,22 +472,180 @@
           : this.config.sub.max;
     }
     spawnItem() {
-      const c = this.config;
-      for (let i = 0; i < c.items.types.length; i++) {
-        const type = c.items.types[this.itemCursor];
-        this.itemCursor = (this.itemCursor + 1) % c.items.types.length;
-        if (this.levels[type] < this.maxLevel(type)) {
-          this.items.push({
-            type,
-            x: 28 + this.random() * (c.width - 56),
-            y: -24,
-            radius: c.items.radius,
+      this.spawnCore({ scheduled: true });
+    }
+    spawnCore({
+      x = this.player.x,
+      y = this.player.y - 70,
+      scheduled = false,
+    } = {}) {
+      if (this.items.length >= this.config.cores) return false;
+      this.items.push({
+        type: "core",
+        x: clamp(x, 24, this.config.width - 24),
+        y: clamp(y, 24, this.config.height - 24),
+        radius: 16,
+        scheduled,
+      });
+      return true;
+    }
+    upgradeLevel(id) {
+      if (id === "sub") return this.levels.sub + this.skills.dronePower;
+      if (id === "shield") return this.shield;
+      if (id === "repair") return this.player.hp >= this.player.maxHp ? 1 : 0;
+      return this.levels[id] ?? this.skills[id] ?? 0;
+    }
+    offerUpgrades() {
+      const pool = FLIGHT_UPGRADES.filter(
+        (up) => this.upgradeLevel(up.id) < up.max,
+      );
+      this.choices = [];
+      while (pool.length && this.choices.length < 3) {
+        const index = Math.min(
+          pool.length - 1,
+          Math.floor(this.random() * pool.length),
+        );
+        this.choices.push({ ...pool.splice(index, 1)[0] });
+      }
+      if (!this.choices.length)
+        this.choices = [
+          {
+            id: "coins",
+            name: "余剰コア",
+            description: "全強化MAX。終了時のコイン +2（合計500まで）",
+            icon: "✦",
+            color: "#ffd47d",
+          },
+        ];
+      this.state = "upgrade";
+      this.accumulator = 0;
+      this.input = { x: 0, y: 0 };
+      this.emit("core", { x: this.player.x, y: this.player.y });
+    }
+    chooseUpgrade(index) {
+      if (
+        this.state !== "upgrade" ||
+        !Number.isInteger(index) ||
+        !this.choices[index]
+      )
+        return false;
+      const up = this.choices[index];
+      if (["speed", "multi"].includes(up.id))
+        this.collect({ type: up.id, x: this.player.x, y: this.player.y });
+      else if (up.id === "sub") {
+        if (this.levels.sub < 3)
+          this.collect({ type: "sub", x: this.player.x, y: this.player.y });
+        else this.skills.dronePower++;
+      } else if (up.id === "shield") this.shield = 1;
+      else if (up.id === "repair")
+        this.player.hp = Math.min(this.player.maxHp, this.player.hp + 1);
+      else if (up.id === "coins")
+        this.coreCoins = Math.min(500, this.coreCoins + 2);
+      else if (up.id in this.skills) this.skills[up.id]++;
+      if (up.id === "movement")
+        this.player.speed = Math.min(
+          450,
+          this.player.baseSpeed * (1 + this.skills.movement * 0.08),
+        );
+      if (up.id === "rapid")
+        this.mainAt = Math.min(this.mainAt, this.time + this.fireInterval());
+      this.choices = [];
+      this.state = "playing";
+      this.accumulator = 0;
+      this.input = { x: 0, y: 0 };
+      this.emit("choice", { kind: up.id, x: this.player.x, y: this.player.y });
+      return true;
+    }
+    triggerEvent() {
+      const number = this.stage ? this.stage.id : ++this.eventCount;
+      const kind = number % 2 ? "rush" : "elite";
+      this.eventState = {
+        kind,
+        until: this.time + 5,
+        safeX: clamp(this.player.x, 60, this.config.width - 60),
+      };
+      this.emit("event", { kind });
+      if (kind === "elite") this.spawnRocks(true);
+    }
+    moveRock(r, dt) {
+      r.oldX = r.x;
+      r.oldY = r.y;
+      r.age = (r.age || 0) + dt;
+      if (r.flashUntil && this.time > r.flashUntil) r.flashUntil = 0;
+      if (r.type === "weaver")
+        r.x = clamp(
+          r.originX + Math.sin(r.age * 1.8 + r.wavePhase) * r.amplitude,
+          r.radius,
+          this.config.width - r.radius,
+        );
+      if (r.type === "charger") {
+        if (r.phase === "approach" && r.age + 1e-8 >= 1.5) {
+          r.phase = "warning";
+          r.warningUntil = r.age + 0.5;
+        }
+        if (r.phase === "warning") {
+          r.targetX = this.player.x;
+          if (r.age + 1e-8 >= r.warningUntil) {
+            r.phase = "charge";
+            r.vx = clamp((r.targetX - r.x) / 0.8, -120, 120);
+          }
+        }
+        if (r.phase === "charge") r.x += r.vx * dt;
+      }
+      const multiplier =
+        r.type === "charger"
+          ? r.phase === "charge"
+            ? 2.3
+            : 0.55
+          : r.type === "gunner"
+            ? 0.65
+            : 1;
+      r.y += Math.min(240, r.speed * multiplier) * dt;
+      r.rotation += r.spin * dt;
+      if (
+        r.type === "gunner" &&
+        r.age >= r.nextShot &&
+        r.y > 0 &&
+        r.y < this.config.height - 100
+      ) {
+        r.nextShot = r.age + 2.5;
+        if (this.enemyBullets.length < this.config.enemyBullets) {
+          const dx = this.player.x - r.x,
+            dy = this.player.y - r.y,
+            length = Math.hypot(dx, dy) || 1;
+          this.enemyBullets.push({
+            x: r.x,
+            y: r.y,
+            vx: (dx / length) * 125,
+            vy: (dy / length) * 125,
+            radius: 3,
           });
-          return;
         }
       }
     }
+    damagePlayer() {
+      const p = this.player;
+      if (p.invincible > 0) return;
+      p.invincible = this.config.player.invincible;
+      if (this.shield) {
+        this.shield = 0;
+        this.emit("shield", { x: p.x, y: p.y });
+        return;
+      }
+      p.hp--;
+      this.emit("damage", { x: p.x, y: p.y });
+      if (p.hp <= 0) {
+        this.outcome = "destroyed";
+        this.state = "result";
+        this.input = { x: 0, y: 0 };
+        this.emit("gameover", { ms: this.time * 1000 });
+      }
+    }
     collect(item) {
+      if (item.type === "core") {
+        if (this.state === "playing") this.offerUpgrades();
+        return;
+      }
       if (this.levels[item.type] >= this.maxLevel(item.type)) return;
       this.levels[item.type]++;
       if (item.type === "sub")
@@ -355,14 +668,17 @@
         if (this.countdown < 1e-8) {
           this.state = "playing";
           this.fire();
-          this.mainAt = c.main.interval;
+          this.mainAt = this.fireInterval();
         }
         return;
       }
       if (this.state !== "playing") return;
       this.ticks++;
       this.time = this.ticks * c.step;
-      const p = this.player;
+      const p = this.player,
+        oldPX = p.x,
+        oldPY = p.y;
+      if (this.time - this.lastKill > 3) this.combo = 0;
       p.invincible = Math.max(0, p.invincible - dt);
       if (p.invincible < 1e-8) p.invincible = 0;
       const length = Math.hypot(this.input.x, this.input.y);
@@ -377,13 +693,17 @@
         );
       while (this.time + 1e-8 >= this.mainAt) {
         this.fire();
-        this.mainAt += c.main.interval;
+        this.mainAt += this.fireInterval();
       }
       if (this.levels.sub && this.time + 1e-8 >= this.subAt) {
         this.fire(true);
         this.subAt =
           this.time +
           (this.levels.sub === 3 ? c.sub.fastInterval : c.sub.interval);
+      }
+      if (this.time + 1e-8 >= this.eventAt) {
+        this.triggerEvent();
+        this.eventAt = this.stage ? Infinity : this.eventAt + 60;
       }
       if (this.time + 1e-8 >= this.rockAt) {
         this.spawnRocks();
@@ -393,11 +713,7 @@
         this.spawnItem();
         this.itemAt += c.items.interval;
       }
-      for (const r of this.rocks) {
-        r.oldY = r.y;
-        r.y += r.speed * dt;
-        r.rotation += r.spin * dt;
-      }
+      for (const r of this.rocks) this.moveRock(r, dt);
       for (const b of this.bullets) {
         const ox = b.x,
           oy = b.y;
@@ -410,9 +726,9 @@
           const hit = segmentHit(
             ox,
             oy,
-            b.x,
+            b.x - (r.x - r.oldX),
             b.y - (r.y - r.oldY),
-            r.x,
+            r.oldX,
             r.oldY,
             b.radius + r.radius,
           );
@@ -424,13 +740,20 @@
         if (target) {
           b.dead = true;
           target.hp -= b.damage;
-          this.emit("hit", { x: target.x, y: target.y });
+          target.flashUntil = this.time + 0.06;
+          this.emit("hit", { x: target.x, y: target.y, damage: b.damage });
           if (target.hp <= 0) {
             this.destroyed++;
+            this.combo = this.time - this.lastKill <= 3 ? this.combo + 1 : 1;
+            this.lastKill = this.time;
+            if (target.type === "elite")
+              this.spawnCore({ x: target.x, y: target.y });
             this.emit("destroy", {
               x: target.x,
               y: target.y,
               radius: target.radius,
+              combo: this.combo,
+              elite: target.type === "elite",
             });
           }
         }
@@ -438,28 +761,39 @@
       for (const r of this.rocks) {
         if (r.hp > 0 && p.invincible <= 0 && overlaps(p, r)) {
           r.hp = 0;
-          p.hp--;
-          p.invincible = c.player.invincible;
-          this.emit("damage", { x: p.x, y: p.y });
-          if (p.hp <= 0) {
-            this.outcome = "destroyed";
-            this.state = "result";
-            this.input = { x: 0, y: 0 };
-            this.emit("gameover", { ms: this.time * 1000 });
-            break;
-          }
+          this.damagePlayer();
+          if (this.state === "result") break;
         }
       }
-      if (this.state === "playing")
-        for (const item of this.items) {
-          item.y += c.items.speed * dt;
-          if (
-            overlaps({ ...p, radius: c.player.pickupRadius ?? p.radius }, item)
-          ) {
-            this.collect(item);
-            item.dead = true;
-          }
+      for (const b of this.enemyBullets) {
+        const ox = b.x,
+          oy = b.y;
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        if (
+          this.state === "playing" &&
+          segmentHit(
+            ox,
+            oy,
+            b.x - (p.x - oldPX),
+            b.y - (p.y - oldPY),
+            oldPX,
+            oldPY,
+            p.radius + b.radius,
+          ) !== null
+        ) {
+          b.dead = true;
+          this.damagePlayer();
         }
+      }
+      this.enemyBullets = this.enemyBullets.filter(
+        (b) =>
+          !b.dead &&
+          b.x >= -20 &&
+          b.x <= c.width + 20 &&
+          b.y >= -20 &&
+          b.y <= c.height + 20,
+      );
       if (
         this.state === "playing" &&
         this.stage &&
@@ -474,6 +808,40 @@
           stage: this.stage.id,
         });
       }
+      if (this.state === "playing")
+        for (const item of this.items) {
+          if (item.type === "core") {
+            const dx = p.x - item.x,
+              dy = p.y - item.y,
+              distance = Math.hypot(dx, dy);
+            const attracted =
+              item.scheduled || distance < 90 + this.skills.magnet * 70;
+            if (attracted && distance > 0) {
+              const travel = Math.min(
+                distance,
+                (item.scheduled ? 650 : 360) * dt,
+              );
+              item.x += (dx / distance) * travel;
+              item.y += (dy / distance) * travel;
+            } else item.y += c.items.speed * dt;
+          } else item.y += c.items.speed * dt;
+          if (
+            overlaps(
+              {
+                ...p,
+                radius:
+                  (c.player.pickupRadius ?? p.radius) + this.skills.magnet * 20,
+              },
+              item,
+            )
+          ) {
+            item.dead = true;
+            if (item.type === "core") {
+              this.offerUpgrades();
+              break;
+            } else this.collect(item);
+          }
+        }
       this.bullets = this.bullets.filter(
         (b) =>
           !b.dead &&
@@ -490,5 +858,14 @@
       );
     }
   }
-  return { CONFIG, STAGES, Game, Records, difficulty, formatTime, segmentHit };
+  return {
+    CONFIG,
+    STAGES,
+    FLIGHT_UPGRADES,
+    Game,
+    Records,
+    difficulty,
+    formatTime,
+    segmentHit,
+  };
 });

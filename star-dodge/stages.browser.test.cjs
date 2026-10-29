@@ -84,7 +84,13 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       });
       // Finish an ordinary simulated stage; keep damage immunity only in this fixture.
       await page.evaluate(() => (testGame.player.invincible = 1000));
-      await page.clock.runFor(31000);
+      await page.evaluate(() => {
+        for (let i = 0; i < 1800; i++) {
+          if (testGame.state === "upgrade") testGame.chooseUpgrade(0);
+          testGame.advance(1 / 60);
+        }
+      });
+      await page.clock.runFor(50);
       assert.equal(await page.evaluate(() => testGame.outcome), "cleared");
       assert.equal(await page.evaluate(() => testGame.time), 30);
       await page
@@ -182,7 +188,10 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.equal(await cp.evaluate(() => testGame.stage.id), id);
       await cp.evaluate(() => {
         testGame.player.invincible = 1000;
-        for (let i = 0; i < 1800; i++) testGame.advance(1 / 60);
+        for (let i = 0; i < 1800; i++) {
+          if (testGame.state === "upgrade") testGame.chooseUpgrade(0);
+          testGame.advance(1 / 60);
+        }
       });
       await cp.clock.runFor(50);
       assert.equal(await cp.evaluate(() => testGame.outcome), "cleared");

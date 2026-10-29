@@ -9,6 +9,8 @@ const FILES = [
   "stages.js",
   "engine.js",
   "app.js",
+  "effects.js",
+  "audio.js",
   "progression.js",
   "services.js",
   "manifest.webmanifest",

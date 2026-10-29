@@ -171,7 +171,7 @@
     destructionRatio: 0.2,
     maxFlightCoins: 500,
   });
-  function calculateFlightReward(ms, destroyed) {
+  function calculateFlightReward(ms, destroyed, coreCoins = 0) {
     const time = integer(ms),
       kills = integer(destroyed),
       rules = REWARD_RULES;
@@ -197,12 +197,21 @@
       Math.floor(progressCoins * rules.destructionRatio),
       rules.maxFlightCoins - progressCoins,
     );
-    return {
+    const reward = {
       survivalCoins,
       milestoneCoins,
       destructionCoins,
       totalCoins: progressCoins + destructionCoins,
     };
+    const bonus = Math.min(
+      integer(coreCoins),
+      REWARD_RULES.maxFlightCoins - reward.totalCoins,
+    );
+    if (bonus > 0) {
+      reward.coreCoins = bonus;
+      reward.totalCoins += bonus;
+    }
+    return reward;
   }
   function licenseFor(totalMs) {
     const time = integer(totalMs);
@@ -395,7 +404,7 @@
         this.data.clearedStages.push(stage.id);
         this.data.selectedStage = Math.min(STAGES.length, stage.id + 1);
       }
-      const reward = calculateFlightReward(ms, destroyed);
+      const reward = calculateFlightReward(ms, destroyed, context.coreCoins);
       if (firstClear) {
         reward.firstClearCoins = Math.min(
           stage.firstClearCoins,
@@ -524,6 +533,7 @@
           this.data.flightMode === "stages" ? this.data.selectedStage : null,
         ship: ship.id,
         skin: skin.id,
+        visuals: { armor: up.hull, trail: up.speed > 0, drone: up.sub > 0 },
         color: skin.color || ship.color,
         hp: ship.hp + up.hull,
         speed: ship.speed,

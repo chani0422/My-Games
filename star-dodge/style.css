@@ -1683,3 +1683,95 @@ dialog::backdrop {
 .stage-card p {
   line-height: 1.8;
 }
+
+/* Flight-only core choices. All controls stay inside the existing pause overlay. */
+.choice-panel h2 {
+  font-size: 22px;
+  margin: 8px 0;
+}
+.choice-panel > p {
+  font-size: 10px;
+  margin: 8px 0;
+  color: var(--muted);
+}
+.upgrade-choices {
+  display: grid;
+  gap: 9px;
+  margin: 14px 0;
+}
+.flight-choice {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #51667a;
+  border-left: 3px solid var(--choice-color);
+  border-radius: 8px;
+  background: linear-gradient(120deg, #162a3b, #0e1b30);
+  text-align: left;
+  min-height: 72px;
+}
+.flight-choice:hover,
+.flight-choice:focus-visible {
+  border-color: var(--choice-color);
+  outline: 2px solid var(--choice-color);
+  outline-offset: 2px;
+  background: #20344b;
+}
+.choice-icon {
+  font-size: 25px;
+  flex: 0 0 25px;
+  color: var(--choice-color);
+  text-align: center;
+}
+.flight-choice b {
+  display: block;
+  font-size: 14px;
+}
+.flight-choice small {
+  display: block;
+  font-size: 10px;
+  color: #b6c6d6;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.flight-choice em {
+  display: block;
+  font-size: 9px;
+  color: var(--choice-color);
+  font-style: normal;
+  margin-top: 5px;
+}
+.flight-choice kbd {
+  margin-left: auto;
+  font-size: 10px;
+  color: #a8b8c9;
+}
+.hangar-preview svg {
+  width: 48px;
+  height: 58px;
+}
+@media (max-height: 700px) {
+  .choice-panel h2 {
+    font-size: 17px;
+  }
+  .upgrade-choices {
+    gap: 7px;
+    margin: 9px 0;
+  }
+  .flight-choice {
+    min-height: 64px;
+    padding: 9px;
+    gap: 8px;
+  }
+  .flight-choice small {
+    font-size: 9px;
+  }
+  .flight-choice b {
+    font-size: 12px;
+  }
+  .choice-panel .choice-help {
+    font-size: 8px;
+  }
+}
