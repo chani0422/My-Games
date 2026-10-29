@@ -185,3 +185,58 @@ test("the core pickup cue finishes while the selection screen keeps BGM stopped"
   assert.equal(synth.stats.voices, 0);
   synth.dispose();
 });
+
+test("master gain defaults to 0.9 and volume changes apply before and after audio unlock independently of SOUND", async () => {
+  const { synth, timers } = fakeAudio();
+  assert.equal(synth.volume, 1);
+  synth.unlock();
+  await Promise.resolve();
+  assert.equal(synth.master.gain.value, 0.9);
+  synth.setVolume(0.4);
+  assert.equal(synth.master.gain.value, 0.9 * 0.4);
+  assert.equal(synth.enabled, true);
+  synth.setEnabled(false);
+  synth.setVolume(0.25);
+  assert.equal(synth.volume, 0.25);
+  assert.equal(synth.master.gain.value, 0.9 * 0.25);
+  assert.equal(synth.stats.voices, 0);
+  assert.equal(timers.pending.size, 0);
+  synth.setEnabled(true);
+  synth.unlock();
+  await Promise.resolve();
+  assert.equal(synth.master.gain.value, 0.9 * 0.25);
+  synth.setVolume(0);
+  assert.equal(synth.enabled, true);
+  assert.equal(synth.master.gain.value, 0);
+  synth.dispose();
+  const pending = fakeAudio().synth;
+  pending.setVolume(0.7);
+  assert.equal(
+    pending.context,
+    null,
+    "volume alone must not create or unlock audio",
+  );
+  pending.unlock();
+  await Promise.resolve();
+  assert.equal(pending.master.gain.value, 0.9 * 0.7);
+  pending.dispose();
+});
+test("audio volume clamps out-of-range inputs and rejects nonnumeric values without changing enabled state", () => {
+  const { synth } = fakeAudio();
+  synth.setEnabled(false);
+  for (const [value, expected] of [
+    [-1, 0],
+    [2, 1],
+    [0.375, 0.375],
+    [NaN, 1],
+    [Infinity, 1],
+    ["0.5", 1],
+    [null, 1],
+  ]) {
+    synth.setVolume(value);
+    assert.equal(synth.volume, expected);
+    assert.equal(synth.enabled, false);
+    assert.equal(synth.context, null);
+  }
+  synth.dispose();
+});

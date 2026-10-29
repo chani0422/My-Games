@@ -141,3 +141,119 @@ test("cancelled ads and invalid receipts never grant entitlements; transactions 
   });
   assert.equal((await invalid.purchase("skin")).status, "unverified");
 });
+
+const { Records } = require("./engine.js");
+function recordStorage(data) {
+  return {
+    value: JSON.stringify(data),
+    keys: [],
+    getItem() {
+      return this.value;
+    },
+    setItem(key, value) {
+      this.keys.push(key);
+      this.value = value;
+    },
+  };
+}
+test("volume defaults to 1 for new and legacy records without changing scores or a saved OFF", () => {
+  for (const legacy of [
+    undefined,
+    {},
+    { best: 49123, last: 35000, sound: false, soundDefaultRevision: 1 },
+  ]) {
+    const storage = recordStorage(legacy),
+      records = new Records(storage);
+    assert.equal(records.data.volume, 1);
+    assert.equal(records.data.best, legacy?.best || 0);
+    assert.equal(records.data.last, legacy?.last || 0);
+    assert.equal(
+      records.data.sound,
+      legacy?.soundDefaultRevision === 1 ? false : true,
+    );
+    assert.deepEqual(Object.keys(JSON.parse(storage.value)).sort(), [
+      "best",
+      "last",
+      "sound",
+      "soundDefaultRevision",
+      "volume",
+    ]);
+    assert.deepEqual([...new Set(storage.keys)], ["star-dodge-v1"]);
+  }
+});
+test("loading volume clamps finite numbers to 0–1 and defaults invalid types to 1", () => {
+  for (const [value, expected] of [
+    [-5, 0],
+    [0, 0],
+    [0.375, 0.375],
+    [1, 1],
+    [5, 1],
+  ]) {
+    const storage = recordStorage({ volume: value });
+    assert.equal(new Records(storage).data.volume, expected);
+    assert.equal(JSON.parse(storage.value).volume, expected);
+  }
+  for (const value of [
+    undefined,
+    null,
+    "0.25",
+    true,
+    false,
+    {},
+    [],
+    NaN,
+    Infinity,
+    -Infinity,
+  ]) {
+    assert.equal(new Records(recordStorage({ volume: value })).data.volume, 1);
+  }
+});
+test("volume is saved immediately, survives reload and score updates, and remains independent of SOUND", () => {
+  const storage = recordStorage({
+      best: 10000,
+      last: 8000,
+      sound: true,
+      soundDefaultRevision: 1,
+    }),
+    records = new Records(storage);
+  records.setVolume(0.37);
+  assert.equal(JSON.parse(storage.value).volume, 0.37);
+  records.sound(false);
+  records.finish(12000);
+  const reloaded = new Records(storage);
+  assert.equal(reloaded.data.sound, false);
+  assert.equal(reloaded.data.volume, 0.37);
+  assert.equal(reloaded.data.best, 12000);
+  reloaded.setVolume(0);
+  assert.equal(new Records(storage).data.volume, 0);
+  reloaded.sound(true);
+  assert.equal(new Records(storage).data.volume, 0);
+});
+test("volume setters validate inputs and keep working when persistence is unavailable", () => {
+  const records = new Records(recordStorage());
+  for (const [value, expected] of [
+    [-1, 0],
+    [2, 1],
+    [0.25, 0.25],
+    [NaN, 1],
+    [Infinity, 1],
+    ["0.25", 1],
+    [null, 1],
+  ]) {
+    records.setVolume(value);
+    assert.equal(records.data.volume, expected);
+  }
+  const denied = new Records({
+    getItem() {
+      throw Error("denied");
+    },
+    setItem() {
+      throw Error("denied");
+    },
+  });
+  denied.sound(false);
+  denied.setVolume(0.4);
+  assert.equal(denied.data.volume, 0.4);
+  assert.equal(denied.data.sound, false);
+  assert.equal(denied.tabOnly, true);
+});

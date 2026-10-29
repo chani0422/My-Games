@@ -452,3 +452,41 @@ test("shield blocks consume the first bullet while same-frame bullets pass throu
   assert.equal(g.events.filter((e) => e.type === "shield").length, 1);
   assert.equal(g.events.filter((e) => e.type === "damage").length, 0);
 });
+
+test("nine flight skills expose one shared category and palette for choices and the codex", () => {
+  const { FLIGHT_CATEGORIES } = require("./engine.js");
+  assert.deepEqual(
+    FLIGHT_CATEGORIES.map((category) => category.name),
+    ["火力", "移動", "防御・回復"],
+  );
+  const expected = {
+    rapid: ["firepower", "#ff6f61"],
+    damage: ["firepower", "#ff8562"],
+    multi: ["firepower", "#ff5f7a"],
+    speed: ["firepower", "#ffa25e"],
+    sub: ["firepower", "#ff6f91"],
+    movement: ["movement", "#6bb8ff"],
+    magnet: ["movement", "#6be0ff"],
+    shield: ["defense", "#91d7ff"],
+    repair: ["defense", "#a5ffba"],
+  };
+  assert.equal(FLIGHT_UPGRADES.length, 9);
+  for (const skill of FLIGHT_UPGRADES) {
+    assert.deepEqual([skill.category, skill.color], expected[skill.id]);
+    assert.ok(Object.isFrozen(skill));
+  }
+  const g = play(1);
+  g.offerUpgrades();
+  assert.equal(g.choices.length, 3);
+  for (const choice of g.choices)
+    assert.deepEqual(
+      choice,
+      FLIGHT_UPGRADES.find((skill) => skill.id === choice.id),
+    );
+  g.levels = { speed: 5, multi: 3, sub: 3 };
+  g.skills = { rapid: 3, damage: 3, dronePower: 2, movement: 3, magnet: 3 };
+  g.shield = 1;
+  g.offerUpgrades();
+  assert.equal(g.choices[0].id, "coins");
+  assert.equal(g.choices[0].color, "#ffd47d");
+});
