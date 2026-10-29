@@ -87,12 +87,49 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       await page.evaluate(() => {
         for (let i = 0; i < 1800; i++) {
           if (testGame.state === "upgrade") testGame.chooseUpgrade(0);
+          if (testGame.ticks === 1799)
+            testGame.rocks.push({
+              type: "meteor",
+              x: 70,
+              y: 100,
+              radius: 16,
+              hp: 1e6,
+              maxHp: 1e6,
+              speed: 0,
+              rotation: 0,
+              spin: 0,
+              shape: Array(10).fill(1),
+            });
           testGame.advance(1 / 60);
         }
       });
       await page.clock.runFor(50);
+      assert.equal(await page.evaluate(() => testGame.elimination), true);
+      assert.equal(await page.evaluate(() => testGame.state), "playing");
+      // Clear the live targets through projectile collisions after the deadline.
+      await page.evaluate(() => {
+        testGame.mainAt = testGame.subAt = Infinity;
+        testGame.bullets = [];
+        for (const r of testGame.rocks) {
+          r.type = "meteor";
+          r.x = r.originX = 150;
+          r.y = 200;
+          r.speed = 0;
+        }
+        for (let i = 0; i < 30; i++) testGame.advance(1 / 60);
+        testGame.bullets = testGame.rocks.map(() => ({
+          x: 150,
+          y: 200,
+          vx: 0,
+          vy: 0,
+          radius: 3,
+          damage: 1e9,
+        }));
+        testGame.advance(1 / 60);
+      });
+      await page.clock.runFor(50);
       assert.equal(await page.evaluate(() => testGame.outcome), "cleared");
-      assert.equal(await page.evaluate(() => testGame.time), 30);
+      assert.ok(await page.evaluate(() => testGame.time > 30));
       await page
         .getByRole("heading", { name: "ステージ1 クリア！", exact: true })
         .waitFor();
@@ -153,7 +190,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.deepEqual(errors, []);
       await context.close();
       console.log(
-        `PASS ${viewport.width}px: ten-stage selector, locked levels, radius-6 visible hitbox, 30s clear, one reward, next level, reload, endless and coin labels`,
+        `PASS ${viewport.width}px: ten-stage selector, locked levels, radius-6 visible hitbox, 30s deadline and elimination clear, one reward, next level, reload, endless and coin labels`,
       );
     }
     const campaign = await browser.newContext({
@@ -190,8 +227,42 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
         testGame.player.invincible = 1000;
         for (let i = 0; i < 1800; i++) {
           if (testGame.state === "upgrade") testGame.chooseUpgrade(0);
+          if (testGame.ticks === 1799)
+            testGame.rocks.push({
+              type: "meteor",
+              x: 70,
+              y: 100,
+              radius: 16,
+              hp: 1e6,
+              maxHp: 1e6,
+              speed: 0,
+              rotation: 0,
+              spin: 0,
+              shape: Array(10).fill(1),
+            });
           testGame.advance(1 / 60);
         }
+      });
+      await cp.clock.runFor(50);
+      assert.equal(await cp.evaluate(() => testGame.elimination), true);
+      await cp.evaluate(() => {
+        testGame.mainAt = testGame.subAt = Infinity;
+        testGame.bullets = [];
+        for (const r of testGame.rocks) {
+          r.type = "meteor";
+          r.x = r.originX = 150;
+          r.y = 200;
+          r.speed = 0;
+        }
+        testGame.bullets = testGame.rocks.map(() => ({
+          x: 150,
+          y: 200,
+          vx: 0,
+          vy: 0,
+          radius: 3,
+          damage: 1e9,
+        }));
+        testGame.advance(1 / 60);
       });
       await cp.clock.runFor(50);
       assert.equal(await cp.evaluate(() => testGame.outcome), "cleared");

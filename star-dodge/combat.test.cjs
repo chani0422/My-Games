@@ -197,7 +197,7 @@ test("regular cores give two choices within a stage, freeze all simulation and r
   const g = play(1),
     times = [];
   let steps = 0;
-  while (g.state !== "result" && steps++ < 2000) {
+  while (g.time < 30 && steps++ < 2000) {
     g.player.invincible = 1000;
     g.advance(1 / 60);
     if (g.state === "upgrade") {
@@ -234,7 +234,10 @@ test("regular cores give two choices within a stage, freeze all simulation and r
       assert.equal(g.chooseUpgrade(0), true);
     }
   }
-  assert.equal(g.outcome, "cleared");
+  assert.equal(g.outcome, null);
+  assert.equal(g.state, "playing");
+  assert.equal(g.elimination, true);
+  assert.ok(g.remainingRocks > 0);
   assert.equal(times.length, 2);
   assert.ok(times[0] >= 12 && times[0] < 13);
   assert.ok(times[1] >= 24 && times[1] < 25);
