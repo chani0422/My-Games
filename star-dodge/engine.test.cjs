@@ -19,6 +19,7 @@ function playing(random = () => 0.5) {
 function safe(g, seconds) {
   for (let i = 0; i < Math.round(seconds * 60); i++) {
     g.player.invincible = 10;
+    if(g.state==="upgrade")g.chooseUpgrade(0);
     g.advance(1 / 60);
   }
 }
@@ -186,45 +187,26 @@ test("meteor cap, simultaneous spacing and failed placements", () => {
   stacked.spawnRocks();
   assert.equal(stacked.rocks.length, 1);
 });
-test("items start at 15s, cycle on missed drops and do not grant power on spawn", () => {
-  const g = playing();
-  safe(g, 15 - 1 / 60);
-  assert.equal(g.items.length, 0);
-  safe(g, 1 / 60);
-  assert.equal(g.items[0].type, "speed");
-  assert.deepEqual(g.levels, { speed: 1, multi: 1, sub: 0 });
-  safe(g, 15);
-  assert.equal(g.items[0].type, "multi");
-  assert.equal(g.levels.multi, 1);
-  safe(g, 15);
-  assert.equal(g.items[0].type, "sub");
+test("cores spawn every 12s and do not grant a level before selection",()=>{
+  const g=playing();safe(g,12-1/60);assert.equal(g.items.length,0);safe(g,1/60);
+  assert.equal(g.items[0].type,"core");assert.deepEqual(g.levels,{speed:1,multi:1,sub:0});
+  for(let i=0;i<60&&g.state==="playing";i++)g.advance(1/60);
+  assert.equal(g.state,"upgrade");assert.equal(g.choices.length,3);
+  assert.deepEqual(g.levels,{speed:1,multi:1,sub:0});
 });
-test("item cadence reaches all caps at 135s when each drop is collected", () => {
-  const g = playing();
-  for (let i = 0; i < 9; i++) {
-    safe(g, 15);
-    const item = g.items.at(-1);
-    assert.ok(item);
-    g.collect(item);
-    g.items = [];
+test("core choices can reach level caps and never offer capped levels",()=>{
+  const g=playing();g.itemAt=Infinity;g.rockAt=Infinity;
+  for(const type of ["speed","multi","sub"]) {
+    while(g.levels[type]<g.maxLevel(type)) {g.choices=[{id:type}];g.state="upgrade";assert.ok(g.chooseUpgrade(0));}
+    g.collect({type});assert.equal(g.levels[type],g.maxLevel(type));
   }
-  assert.equal(g.time, 135);
-  assert.deepEqual(g.levels, { speed: 5, multi: 3, sub: 3 });
-  g.spawnItem();
-  assert.equal(g.items.length, 0);
-  for (const type of ["speed", "multi", "sub"]) g.collect({ type });
-  assert.deepEqual(g.levels, { speed: 5, multi: 3, sub: 3 });
+  g.offerUpgrades();assert.ok(g.choices.every(up=>!["speed","multi"].includes(up.id)));
+  assert.deepEqual(g.levels,{speed:5,multi:3,sub:3});
 });
-test("collected items upgrade, maxed kinds are skipped", () => {
-  const g = playing();
-  g.items = [{ x: g.player.x, y: g.player.y, radius: 19, type: "speed" }];
-  g.advance(1 / 60);
-  assert.equal(g.levels.speed, 2);
-  assert.equal(g.items.length, 0);
-  g.levels.speed = 5;
-  g.itemCursor = 0;
-  g.spawnItem();
-  assert.equal(g.items[0].type, "multi");
+test("collected legacy levels respect caps and new cores use the choice pool",()=>{
+  const g=playing();g.items=[{x:g.player.x,y:g.player.y,radius:19,type:"speed"}];g.advance(1/60);
+  assert.equal(g.levels.speed,2);assert.equal(g.items.length,0);g.levels.speed=5;
+  g.offerUpgrades();assert.ok(g.choices.every(up=>up.id!=="speed"));
 });
 test("speed changes velocity only; multi uses configured angles and sub remains independent", () => {
   const g = playing();
@@ -329,7 +311,7 @@ test("retry resets all run state and timers", () => {
   assert.equal(g.bullets.length + g.rocks.length + g.items.length, 0);
   assert.equal(g.destroyed, 0);
   assert.equal(g.rockAt, 0.95);
-  assert.equal(g.itemAt, 15);
+  assert.equal(g.itemAt, 12);
   assert.equal(g.mainAt, 0);
   assert.equal(g.subAt, 1);
   assert.equal(g.itemCursor, 0);
@@ -368,7 +350,7 @@ test("corrupt, missing, invalid and denied storage never prevent play", () => {
     const storage = fakeStorage();
     storage.value = value;
     const r = new Records(storage);
-    assert.deepEqual(r.data, { best: 0, last: 0, sound: false });
+    assert.deepEqual(r.data, { best: 0, last: 0, sound: true,soundDefaultRevision:1 });
     r.finish(100);
     assert.equal(r.data.best, 100);
   }

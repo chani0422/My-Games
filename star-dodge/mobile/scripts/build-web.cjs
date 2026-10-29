@@ -7,6 +7,8 @@ fs.mkdirSync(dest, { recursive: true });
 for (const name of [
   "index.html",
   "app.js",
+  "effects.js",
+  "audio.js",
   "engine.js",
   "stages.js",
   "progression.js",

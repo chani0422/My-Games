@@ -1,7 +1,7 @@
 /* Canvas presentation and browser controls. No external dependencies. */
 (() => {
   "use strict";
-  const APP_VERSION = "0.4.0";
+  const APP_VERSION = "0.5.0";
   const { STAGES, getStage } = StarStages;
   const { Game, Records, CONFIG: c, formatTime } = StarDodge,
     $ = (id) => document.getElementById(id);
@@ -26,21 +26,24 @@
     canvas = $("game"),
     ctx = canvas.getContext("2d"),
     systemMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const synth = new StarAudio.Synth(),
+    fx = new StarEffects.Effects({ particleLimit: c.particles });
+  synth.setEnabled(records.data.sound);
+  let choiceCursor = 0,
+    hasFocus = document.hasFocus(),
+    nativeActive = true;
   let reduced = systemMotion.matches || progress.data.reduceEffects;
   function applyMotion() {
     reduced = systemMotion.matches || progress.data.reduceEffects;
     document.documentElement.classList.toggle("reduce-effects", reduced);
-    if (reduced) particles = [];
+    if (reduced) fx.clear();
   }
   let last = performance.now(),
     uiState = "",
     keys = new Set(),
     pointer = null,
-    particles = [],
     toastUntil = 0,
     newBest = false,
-    audio = null,
-    activeSounds = new Set(),
     displayState = "";
   const stars = Array.from({ length: 90 }, (_, i) => ({
     x: ((((Math.sin(i * 127.1) * 43758.5453) % 1) + 1) % 1) * c.width,
@@ -52,56 +55,14 @@
     names = { speed: "SPEED", multi: "MULTI", sub: "SUB" },
     icons = { speed: "↑", multi: "⋮", sub: "✧" };
   function unlockAudio() {
-    if (!records.data.sound) return;
-    try {
-      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
-      if (audio.state === "suspended") audio.resume().catch(() => {});
-    } catch {}
+    synth.setEnabled(records.data.sound);
+    synth.unlock();
   }
   function silence() {
-    for (const oscillator of activeSounds) {
-      try {
-        oscillator.stop();
-      } catch {}
-    }
-    activeSounds.clear();
+    synth.stop();
   }
-  function sound(type) {
-    if (
-      !records.data.sound ||
-      !audio ||
-      audio.state !== "running" ||
-      game.state === "paused"
-    )
-      return;
-    try {
-      const o = audio.createOscillator(),
-        gain = audio.createGain(),
-        now = audio.currentTime;
-      const tones = {
-        hit: [170, 110, 0.035],
-        destroy: [100, 35, 0.13],
-        damage: [140, 45, 0.2],
-        upgrade: [520, 1040, 0.22],
-        gameover: [170, 45, 0.4],
-      };
-      const [from, to, len] = tones[type] || tones.hit;
-      o.type = type === "upgrade" ? "sine" : "triangle";
-      o.frequency.setValueAtTime(from, now);
-      o.frequency.exponentialRampToValueAtTime(to, now + len);
-      gain.gain.setValueAtTime(0.045, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + len);
-      o.connect(gain);
-      gain.connect(audio.destination);
-      activeSounds.add(o);
-      o.onended = () => {
-        activeSounds.delete(o);
-        o.disconnect();
-        gain.disconnect();
-      };
-      o.start();
-      o.stop(now + len);
-    } catch {}
+  function sound(type, data = {}) {
+    synth.effect(type, data);
   }
   function refreshRecords() {
     $("side-best").textContent = formatTime(records.data.best);
@@ -130,7 +91,7 @@
     runId =
       globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     runReward = StarProgress.calculateFlightReward(0, 0);
-    particles = [];
+    fx.clear();
     toastUntil = 0;
     newBest = false;
     last = performance.now();
@@ -154,7 +115,7 @@
     clearControls();
     game.title();
     renderHome();
-    particles = [];
+    fx.clear();
     toastUntil = 0;
   }
   function panel() {
@@ -170,13 +131,19 @@
     document.querySelector(".brief .intro").textContent = game.stage
       ? `STAGE ${game.stage.id} · ${game.stage.name} · 30秒でクリア。中央の白い円が当たり判定。`
       : "制限時間なしで記録に挑戦。中央の白い円が当たり判定。";
+    $("panel").classList.toggle("choice-panel", state === "upgrade");
     $("panel").classList.toggle("result-panel", state === "result");
     const overlay = $("overlay");
     overlay.hidden = state === "playing" || state === "countdown";
     $("count").hidden = state !== "countdown";
     $("check-update").disabled =
       !["title", "result"].includes(state) || !!window.Capacitor;
-    $("pause").disabled = !["playing", "countdown", "paused"].includes(state);
+    $("pause").disabled = ![
+      "playing",
+      "countdown",
+      "paused",
+      "upgrade",
+    ].includes(state);
     $("pause").textContent = state === "paused" ? "▶" : "Ⅱ";
     $("pause").setAttribute(
       "aria-label",
@@ -188,9 +155,16 @@
     if (state === "paused")
       $("panel").innerHTML =
         '<span class="overline">FLIGHT ON HOLD</span><h2>一時停止</h2><p>ひと息ついたら、もう一度宇宙へ。</p><button class="primary" data-action="resume">フライトを再開</button><button class="secondary" data-action="start">最初から</button><button class="secondary" data-action="title">タイトルへ</button>';
+    if (state === "upgrade") {
+      clearControls();
+      choiceCursor = 0;
+      $("panel").innerHTML =
+        `<span class="overline">UPGRADE CORE ACQUIRED</span><h2>次の一手を、選ぼう。</h2><p>フライトは停止中 · この回だけの強化</p><div class="upgrade-choices" role="group" aria-label="フライト強化を選択">${game.choices.map((up, i) => `<button class="flight-choice" data-choice="${i}" style="--choice-color:${up.color}"><span class="choice-icon">${up.icon}</span><span><b>${up.name}</b><small>${up.description}</small><em>${up.id === "coins" ? "余剰コア" : `次の段階 ${game.upgradeLevel(up.id) + 1} / ${up.max}`}</em></span><kbd>${i + 1}</kbd></button>`).join("")}</div><p class="choice-help">タップ / 1–3 / 矢印＋Enter で決定</p>`;
+      $("panel").querySelector("button")?.focus({ preventScroll: true });
+    }
     if (state === "result")
       $("panel").innerHTML =
-        `<span class="overline">${game.outcome === "cleared" ? "STAGE CLEAR" : "FLIGHT COMPLETE"}</span><h2>${game.outcome === "cleared" ? (game.stage.id === 10 ? "全10ステージ、制覇！" : `ステージ${game.stage.id} クリア！`) : "次は、もう1秒先へ。"}</h2><div class="result-time">${formatTime(game.time * 1000)}<small> SEC</small></div><span class="best-badge">${newBest ? "✦ NEW PERSONAL BEST" : "SURVIVAL RECORD"}</span><p>自己ベスト ${formatTime(records.data.best)} 秒</p><p class="flight-reward">+${runReward.totalCoins} コイン <small>フライト報酬</small></p><dl class="reward-breakdown" aria-label="コインの内訳"><div><dt>生存報酬</dt><dd>${runReward.survivalCoins} コイン</dd></div><div><dt>到達ボーナス</dt><dd>${runReward.milestoneCoins} コイン</dd></div><div><dt>破壊ボーナス</dt><dd>${runReward.destructionCoins} コイン</dd></div>${runReward.firstClearCoins ? `<div class="first-clear-reward"><dt>初回クリア報酬</dt><dd>+${runReward.firstClearCoins} コイン</dd></div>` : ""}</dl><div class="result-grid">破壊した隕石 <strong>${game.destroyed}</strong> 個<br>SPEED <strong>Lv.${game.levels.speed}</strong>　MULTI <strong>${c.main.angles[game.levels.multi - 1].length}発</strong>　SUB <strong>Lv.${game.levels.sub}</strong></div><button class="primary" data-action="${game.outcome === "cleared" && game.stage.id < 10 ? "next-stage" : "retry"}">${game.outcome === "cleared" && game.stage.id < 10 ? `ステージ${game.stage.id + 1}へ進む ↗` : game.stage ? "同じステージに挑戦 ↗" : "もう一度フライト ↗"}</button><div class="result-actions"><button class="secondary" data-action="title">ホームへ</button><button class="secondary" data-action="share">記録を共有 ↗</button></div><p id="share-status" class="share-status" role="status"></p><button class="secondary ad-placeholder" disabled>短い動画で追加報酬 · 準備中</button>`;
+        `<span class="overline">${game.outcome === "cleared" ? "STAGE CLEAR" : "FLIGHT COMPLETE"}</span><h2>${game.outcome === "cleared" ? (game.stage.id === 10 ? "全10ステージ、制覇！" : `ステージ${game.stage.id} クリア！`) : "次は、もう1秒先へ。"}</h2><div class="result-time">${formatTime(game.time * 1000)}<small> SEC</small></div><span class="best-badge">${newBest ? "✦ NEW PERSONAL BEST" : "SURVIVAL RECORD"}</span><p>自己ベスト ${formatTime(records.data.best)} 秒</p><p class="flight-reward">+${runReward.totalCoins} コイン <small>フライト報酬</small></p><dl class="reward-breakdown" aria-label="コインの内訳"><div><dt>生存報酬</dt><dd>${runReward.survivalCoins} コイン</dd></div><div><dt>到達ボーナス</dt><dd>${runReward.milestoneCoins} コイン</dd></div><div><dt>破壊ボーナス</dt><dd>${runReward.destructionCoins} コイン</dd></div>${runReward.coreCoins ? `<div class="first-clear-reward"><dt>余剰コア</dt><dd>+${runReward.coreCoins} コイン</dd></div>` : ""}${runReward.firstClearCoins ? `<div class="first-clear-reward"><dt>初回クリア報酬</dt><dd>+${runReward.firstClearCoins} コイン</dd></div>` : ""}</dl><div class="result-grid">破壊した隕石 <strong>${game.destroyed}</strong> 個<br>SPEED <strong>Lv.${game.levels.speed}</strong>　MULTI <strong>${c.main.angles[game.levels.multi - 1].length}発</strong>　SUB <strong>Lv.${game.levels.sub}</strong><br><small>連射Lv.${game.skills.rapid} · 弾威力${1 + game.skills.damage} · 機動Lv.${game.skills.movement} · 吸引Lv.${game.skills.magnet}</small></div><button class="primary" data-action="${game.outcome === "cleared" && game.stage.id < 10 ? "next-stage" : "retry"}">${game.outcome === "cleared" && game.stage.id < 10 ? `ステージ${game.stage.id + 1}へ進む ↗` : game.stage ? "同じステージに挑戦 ↗" : "もう一度フライト ↗"}</button><div class="result-actions"><button class="secondary" data-action="title">ホームへ</button><button class="secondary" data-action="share">記録を共有 ↗</button></div><p id="share-status" class="share-status" role="status"></p><button class="secondary ad-placeholder" disabled>短い動画で追加報酬 · 準備中</button>`;
 
     if (state === "paused" || state === "result")
       document.querySelector("#panel .primary")?.focus({ preventScroll: true });
@@ -230,6 +204,7 @@
         newBest = records.finish(e.ms);
         runReward =
           progress.finish(runId, e.ms, game.destroyed, {
+            coreCoins: game.coreCoins,
             stage: game.stage?.id ?? null,
             cleared: e.cleared === true,
             ship: runLoadout.ship,
@@ -247,33 +222,17 @@
         $("toast").style.borderColor = colors[e.kind];
         toastUntil = game.time + 2;
       }
-      sound(e.type === "gameover" && e.cleared ? "upgrade" : e.type);
-      if (
-        !reduced &&
-        ["hit", "destroy", "damage", "upgrade"].includes(e.type)
-      ) {
-        const n = e.type === "hit" ? 3 : 14;
-        for (let i = 0; i < n && particles.length < c.particles; i++) {
-          const a = Math.random() * Math.PI * 2,
-            s = 20 + Math.random() * 95;
-          particles.push({
-            x: e.x,
-            y: e.y,
-            vx: Math.cos(a) * s,
-            vy: Math.sin(a) * s,
-            life: e.type === "hit" ? 0.16 : 0.5,
-            max: e.type === "hit" ? 0.16 : 0.5,
-            color:
-              e.type === "damage"
-                ? "#ff7b89"
-                : e.type === "upgrade"
-                  ? colors[e.kind]
-                  : e.type === "destroy"
-                    ? "#dfb98c"
-                    : "#71f3e0",
-          });
-        }
+      if (e.type === "event") {
+        $("toast").textContent =
+          e.kind === "rush"
+            ? "METEOR RUSH · 隕石ラッシュ"
+            : "ELITE SIGNAL · エリート出現";
+        $("toast").style.borderColor =
+          e.kind === "rush" ? "#ff9fac" : "#ffd47d";
+        toastUntil = game.time + 2.8;
       }
+      sound(e.type === "gameover" && e.cleared ? "clear" : e.type, e);
+      fx.add(e, reduced);
     }
     game.events.length = 0;
   }
@@ -328,6 +287,20 @@
     ctx.closePath();
     ctx.fill();
     ctx.shadowBlur = 0;
+    if (!drone && game.player.armor) {
+      ctx.fillStyle = game.player.armor > 1 ? "#c2d5eb" : "#758fa8";
+      ctx.fillRect(-15, 4, 6, 9);
+      ctx.fillRect(9, 4, 6, 9);
+      if (game.player.armor > 1) {
+        ctx.fillRect(-12, -2, 5, 5);
+        ctx.fillRect(7, -2, 5, 5);
+      }
+    }
+    if (drone && game.player.droneStyle) {
+      ctx.strokeStyle = "#f3c2ff";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(-13, -8, 26, 22);
+    }
     ctx.fillStyle = "#d8fff8";
     ctx.beginPath();
     ctx.moveTo(0, -14);
@@ -360,6 +333,11 @@
     glow.addColorStop(1, "#101a2800");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, c.width, c.height);
+    ctx.save();
+    const shake = fx.offset(
+      reduced || ["paused", "upgrade", "result"].includes(game.state),
+    );
+    ctx.translate(shake.x, shake.y);
     ctx.strokeStyle = "#75a3c406";
     ctx.lineWidth = 1;
     for (let x = 0; x < c.width; x += 60) {
@@ -416,11 +394,27 @@
         r.radius,
         r.radius,
       );
-      rockGrad.addColorStop(0, "#62606b");
-      rockGrad.addColorStop(1, "#292e41");
-      ctx.fillStyle = rockGrad;
+      const palette =
+        r.type === "elite"
+          ? ["#c98d55", "#443056"]
+          : r.type === "charger"
+            ? ["#bd6685", "#472c49"]
+            : r.type === "gunner"
+              ? ["#8b6dbc", "#263f5d"]
+              : r.type === "weaver"
+                ? ["#4b9199", "#263b53"]
+                : ["#62606b", "#292e41"];
+      rockGrad.addColorStop(0, palette[0]);
+      rockGrad.addColorStop(1, palette[1]);
+      ctx.fillStyle =
+        !reduced && r.flashUntil > game.time ? "#fff8df" : rockGrad;
       ctx.fill();
-      ctx.strokeStyle = "#a8a0a575";
+      ctx.strokeStyle =
+        r.type === "elite"
+          ? "#ffd47d"
+          : r.phase === "warning"
+            ? "#ffcf91"
+            : "#a8a0a575";
       ctx.lineWidth = 1.3;
       ctx.stroke();
       ctx.fillStyle = "#19243566";
@@ -437,6 +431,35 @@
       ctx.arc(r.radius * 0.35, r.radius * 0.3, r.radius * 0.13, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
+      if (r.type === "elite") {
+        ctx.strokeStyle = "#ffd47d";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
+          r.x - r.radius - 4,
+          r.y - r.radius - 4,
+          (r.radius + 4) * 2,
+          (r.radius + 4) * 2,
+        );
+      }
+      if (r.phase === "warning") {
+        ctx.save();
+        ctx.strokeStyle = "#ff9fac";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(r.x, r.y);
+        ctx.lineTo(r.targetX, c.height);
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = "#ffd47d";
+        ctx.font = "bold 16px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText("!", r.x, r.y - r.radius - 8);
+      }
+      if (r.type === "gunner") {
+        ctx.fillStyle = "#ffa0bd";
+        ctx.fillRect(r.x - 4, r.y + r.radius * 0.5, 8, 12);
+      }
       if (r.hp < r.maxHp) {
         ctx.fillStyle = "#293a4e";
         ctx.fillRect(
@@ -454,7 +477,24 @@
         );
       }
     }
+    for (const b of game.enemyBullets) {
+      ctx.fillStyle = "#ff9fac";
+      ctx.strokeStyle = "#ffe7ef";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
     for (const b of game.bullets) {
+      if (game.player.trails && !reduced) {
+        ctx.strokeStyle = b.sub ? "#c4a0ff55" : "#71f3e055";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y);
+        ctx.lineTo(b.x - b.vx * 0.04, b.y - b.vy * 0.04);
+        ctx.stroke();
+      }
       ctx.fillStyle = b.sub ? "#c4a0ff" : "#9cfff0";
       ctx.shadowColor = ctx.fillStyle;
       ctx.shadowBlur = reduced ? 0 : 8;
@@ -467,20 +507,21 @@
       ctx.save();
       ctx.translate(item.x, item.y);
       ctx.fillStyle = "#111f32";
-      ctx.strokeStyle = colors[item.type];
+      ctx.strokeStyle = item.type === "core" ? "#e4b7ff" : colors[item.type];
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.roundRect(-21, -21, 42, 42, 8);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = colors[item.type];
+      ctx.fillStyle = item.type === "core" ? "#e4b7ff" : colors[item.type];
       ctx.textAlign = "center";
       ctx.font = "bold 23px system-ui";
-      ctx.fillText(icons[item.type], 0, 4);
+      ctx.fillText(item.type === "core" ? "✦" : icons[item.type], 0, 4);
       ctx.font = "bold 7px system-ui";
-      ctx.fillText(names[item.type], 0, 15);
+      ctx.fillText(item.type === "core" ? "CORE" : names[item.type], 0, 15);
       ctx.restore();
     }
+    fx.draw(ctx, reduced);
     if (game.state !== "result") {
       const p = game.player;
       ctx.save();
@@ -491,6 +532,13 @@
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 27, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (game.shield) {
+        ctx.strokeStyle = "#91d7ff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 24, 0, Math.PI * 2);
         ctx.stroke();
       }
       ship(p.x, p.y);
@@ -516,11 +564,6 @@
         if (game.levels.sub >= 2) ship(p.x - 28, p.y, 0.43, true);
       }
     }
-    for (const p of particles) {
-      ctx.globalAlpha = p.life / p.max;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
-    }
     ctx.globalAlpha = 1;
     ctx.fillStyle = "#8eaac13b";
     ctx.font = "8px ui-monospace,monospace";
@@ -534,6 +577,13 @@
     );
     ctx.textAlign = "right";
     ctx.fillText("480 : 720", c.width - 17, c.height - 16);
+    if (game.combo >= 2) {
+      ctx.textAlign = "left";
+      ctx.font = "bold 15px ui-monospace,monospace";
+      ctx.fillStyle = "#ffd47d";
+      ctx.fillText(`${game.combo} COMBO`, 17, 29);
+    }
+    ctx.restore();
   }
   function frame(now) {
     const elapsed = Math.max(0, (now - last) / 1000);
@@ -541,14 +591,14 @@
     const before = game.time;
     game.advance(elapsed);
     const dt = game.time - before;
-    if (dt > 0) {
-      for (const p of particles) {
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.life -= dt;
-      }
-      particles = particles.filter((p) => p.life > 0);
-    }
+    fx.advance(dt, reduced);
+    const intense =
+      game.stage?.id >= 7 ||
+      (game.eventState && game.time < game.eventState.until);
+    synth.sync(
+      document.hidden || !hasFocus || !nativeActive ? "background" : game.state,
+      !!intense,
+    );
     effects();
     updateUI();
     draw();
@@ -576,6 +626,38 @@
     if ($("hub").open || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))
       return;
     const key = event.key.toLowerCase();
+    if (game.state === "upgrade") {
+      if (event.repeat) return;
+      if (["1", "2", "3"].includes(key)) {
+        event.preventDefault();
+        chooseFlight(Number(key) - 1);
+        return;
+      }
+      if (["arrowleft", "arrowup", "arrowright", "arrowdown"].includes(key)) {
+        event.preventDefault();
+        choiceCursor =
+          (choiceCursor +
+            (["arrowleft", "arrowup"].includes(key) ? -1 : 1) +
+            game.choices.length) %
+          game.choices.length;
+        $("panel")
+          .querySelectorAll("[data-choice]")
+          [choiceCursor]?.focus({ preventScroll: true });
+        return;
+      }
+      if (key === "enter" || key === " ") {
+        event.preventDefault();
+        chooseFlight(choiceCursor);
+        return;
+      }
+      if (key === "p" || key === "escape") {
+        event.preventDefault();
+        pause();
+        updateUI();
+      }
+      return;
+    }
+
     if (
       movement.has(key) &&
       ["playing", "countdown", "paused"].includes(game.state)
@@ -587,7 +669,7 @@
       }
     }
     if ((key === "p" || key === "escape") && !event.repeat) {
-      if (["playing", "countdown"].includes(game.state)) pause();
+      if (["playing", "countdown", "upgrade"].includes(game.state)) pause();
       else if (game.state === "paused") resume();
       updateUI();
     }
@@ -626,12 +708,18 @@
   });
   $("sound").addEventListener("click", () => {
     records.sound(!records.data.sound);
+    synth.setEnabled(records.data.sound);
     if (records.data.sound) unlockAudio();
     else silence();
     refreshRecords();
   });
+  window.addEventListener("focus", () => {
+    hasFocus = true;
+  });
   window.addEventListener("blur", () => {
+    hasFocus = false;
     pause();
+    synth.sync("background");
     updateUI();
   });
   document.addEventListener("visibilitychange", () => {
@@ -652,14 +740,14 @@
           "'": "&#39;",
         })[c],
     );
-  function shipSVG(shipId, color) {
+  function shipSVG(shipId, color, visuals = progress.data.upgrades) {
     const path =
       shipId === "swift"
         ? "M80 8 123 92 139 157 80 133 21 157 37 92Z"
         : shipId === "warden"
           ? "M80 8 111 65 145 78 145 143 105 132 80 157 55 132 15 143 15 78 49 65Z"
           : "M80 8 145 143 105 130 80 157 55 130 15 143Z";
-    return `<svg viewBox="0 0 160 180" aria-hidden="true" style="color:${color}"><path d="${path}" fill="currentColor"/><path d="M80 35 97 113 63 113Z" fill="#e9fffa"/><path d="M73 87h14v45H73z" fill="#153747"/><path d="m67 151 13 27 13-27" fill="#66bfff"/></svg>`;
+    return `<svg viewBox="0 0 160 180" aria-hidden="true" style="color:${color}"><path d="${path}" fill="currentColor"/><path d="M80 35 97 113 63 113Z" fill="#e9fffa"/><path d="M73 87h14v45H73z" fill="#153747"/><path d="m67 151 13 27 13-27" fill="#66bfff"/>${visuals.hull ? `<path d="M40 104h17v31H40zm63 0h17v31h-17z" fill="${visuals.hull > 1 ? "#d4deed" : "#829cb5"}"/>` : ""}${visuals.speed ? '<path d="M59 161v15m42-15v15" stroke="#71f3e0" stroke-width="4"/>' : ""}${visuals.sub ? '<path d="m17 83 10 12-10 12L7 95zm126 0 10 12-10 12-10-12z" fill="#c4a0ff"/>' : ""}</svg>`;
   }
   const duration = (ms) =>
     `${Math.floor(ms / 60000)}分${Math.floor((ms % 60000) / 1000)}秒`;
@@ -730,12 +818,12 @@
         StarProgress.SHIPS.map((ship) => {
           const owned = progress.data.unlocked.includes(ship.id),
             selected = progress.data.selectedShip === ship.id;
-          return `<article class="upgrade-card"><span class="ship-mini" style="color:${ship.color}">⟐</span><div><span class="eyebrow">${ship.tag}</span><h3>${ship.name}</h3><p>${ship.description}</p><small>基本HP ${ship.hp} / 移動速度 ${ship.speed}</small></div><button class="secondary" data-ship="${ship.id}" ${selected || (!owned && progress.data.credits < ship.cost) ? "disabled" : ""}>${selected ? "選択中" : owned ? "この機体を選ぶ" : `${ship.cost} コインで解放`}</button></article>`;
+          return `<article class="upgrade-card"><span class="ship-mini hangar-preview">${shipSVG(ship.id, ship.color)}</span><div><span class="eyebrow">${ship.tag}</span><h3>${ship.name}</h3><p>${ship.description}</p><small>基本HP ${ship.hp} / 移動速度 ${ship.speed}</small></div><button class="secondary" data-ship="${ship.id}" ${selected || (!owned && progress.data.credits < ship.cost) ? "disabled" : ""}>${selected ? "選択中" : owned ? "この機体を選ぶ" : `${ship.cost} コインで解放`}</button></article>`;
         }).join("");
     if (hubPage === "upgrades")
       $("hub-content").innerHTML =
         balance +
-        '<p class="hub-intro">強化は次のフライトからずっと有効です。飛行中に拾うアイテムでも、さらに成長できます。</p>' +
+        '<p class="hub-intro">強化は次のフライトからずっと有効です。飛行中に強化コアを拾うと、その回だけの強化を最大3択で選べます。</p>' +
         StarProgress.UPGRADES.map((up) => {
           const level = progress.data.upgrades[up.id],
             cost = up.costs[level];
@@ -793,7 +881,7 @@
     }
     if (hubPage === "settings") {
       $("hub-content").innerHTML =
-        `<div class="play-guide"><h3>よける。育てる。もう一度。</h3><p>PCはWASD / 矢印キー、スマホは画面上のドラッグで移動。射撃は自動です。右上のボタン、または P / Esc で一時停止できます。</p><p>機体の中央に表示される白い円が当たり判定です。翼には当たりません。被弾後の無敵中は円が黄色になります。アイテムを拾う範囲は以前と同じです。</p><p>ステージモードは各30秒でクリアし、全10ステージを順に解放。エンドレスは制限時間なしです。隕石に当たるとHPが減り、HPが0になると終了。ステージが進むほど隕石は増え、速く、硬くなります。エンドレスでは時間とともに難しくなります。15秒ごとのアイテムで弾速・弾数・ドローンを強化できます。</p><p>5秒ごとに1コイン、30秒ごとに到達ボーナス。隕石の破壊は追加ボーナスになります。報酬はフライト終了時に一度だけ受け取ります。途中でホームや最初からを選ぶと、その回の報酬はありません。</p><p>コインは機体や初期スキルの強化、スキンに使えます。選んだ内容は次のフライトから有効です。</p></div><label class="setting-toggle"><input id="reduce-effects" type="checkbox" ${progress.data.reduceEffects ? "checked" : ""}><span>演出を控えめにする<small>粒子・点滅・背景の動きを抑えます。端末の「視差効果を減らす」設定も優先します。</small></span></label><p class="hub-intro">サウンドは画面上部の SOUND ボタンで切り替えられます。はじめはオフです。ひと休みを取りながら、自分のペースでお楽しみください。</p>`;
+        `<div class="play-guide"><h3>よける。育てる。もう一度。</h3><p>PCはWASD / 矢印キー、スマホは画面上のドラッグで移動。射撃は自動です。右上のボタン、または P / Esc で一時停止できます。</p><p>機体の中央に表示される白い円が当たり判定です。翼には当たりません。被弾後の無敵中は円が黄色になります。アイテムを拾う範囲は以前と同じです。</p><p>ステージモードは各30秒でクリアし、全10ステージを順に解放。エンドレスは制限時間なしです。隕石に当たるとHPが減り、HPが0になると終了。ステージが進むほど隕石は増え、速く、硬くなります。エンドレスでは時間とともに難しくなります。12秒ごとの強化コアは機体に追従します。取得すると時間が止まり、最大3つの候補から強化を選べます。連射・威力・シールド・修理などを組み合わせましょう。選択はタップ、1–3、矢印＋Enterに対応します。</p><p>5秒ごとに1コイン、30秒ごとに到達ボーナス。隕石の破壊は追加ボーナスになります。報酬はフライト終了時に一度だけ受け取ります。途中でホームや最初からを選ぶと、その回の報酬はありません。</p><p>コインは機体や初期スキルの強化、スキンに使えます。選んだ内容は次のフライトから有効です。</p></div><label class="setting-toggle"><input id="reduce-effects" type="checkbox" ${progress.data.reduceEffects ? "checked" : ""}><span>演出を控えめにする<small>粒子・点滅・背景の動きを抑えます。端末の「視差効果を減らす」設定も優先します。</small></span></label><p class="hub-intro">サウンドは画面上部の SOUND ボタンで切り替えられます。はじめはオンです。ブラウザの仕様により、最初のタップやボタン操作から音が始まります。ひと休みを取りながら、自分のペースでお楽しみください。</p>`;
     }
     if (hubPage === "report") {
       $("hub-content").innerHTML =
@@ -931,9 +1019,30 @@ https://chani0422.github.io/My-Games/star-dodge/`;
     progress.setReducedEffects(event.target.checked);
     applyMotion();
   });
+  function chooseFlight(index) {
+    if (!game.chooseUpgrade(index)) return;
+    clearControls();
+    last = performance.now();
+    unlockAudio();
+    updateUI();
+    canvas.focus({ preventScroll: true });
+  }
+  document.addEventListener(
+    "pointerdown",
+    () => {
+      unlockAudio();
+    },
+    { passive: true },
+  );
   document.addEventListener("click", (event) => {
     const button = event.target.closest("button");
     if (!button || button.disabled) return;
+    unlockAudio();
+    sound("ui");
+    if (button.dataset.choice !== undefined) {
+      chooseFlight(Number(button.dataset.choice));
+      return;
+    }
     if (button.dataset.hub) {
       if (!hubBusy) showHub(button.dataset.hub);
       return;
@@ -1127,6 +1236,7 @@ https://chani0422.github.io/My-Games/star-dodge/`;
     const nativeApp = window.Capacitor.registerPlugin("App");
     nativeApp
       .addListener("appStateChange", ({ isActive }) => {
+        nativeActive = isActive;
         if (!isActive) {
           pause();
           updateUI();
@@ -1139,7 +1249,7 @@ https://chani0422.github.io/My-Games/star-dodge/`;
           if (!hubBusy) $("hub").close();
           return;
         }
-        if (["playing", "countdown"].includes(game.state)) pause();
+        if (["playing", "countdown", "upgrade"].includes(game.state)) pause();
         else if (["paused", "result"].includes(game.state)) title();
         else nativeApp.minimizeApp().catch(() => {});
         updateUI();

@@ -46,20 +46,20 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       await page.goto(base);
       await page.clock.runFor(50);
       assert.ok(
-        (await page.locator(".page-footer").innerText()).includes("0.4.0"),
+        (await page.locator(".page-footer").innerText()).includes("0.5.0"),
       );
       await page
         .getByRole("button", { name: "最新版を確認", exact: true })
         .click();
-      await page.getByText("最新版です（0.4.0）", { exact: true }).waitFor();
+      await page.getByText("最新版です（0.5.0）", { exact: true }).waitFor();
       await page.locator('[data-hub="stages"]').click();
       assert.equal(await page.locator(".stage-card").count(), 10);
       assert.equal(await page.locator('[data-stage="2"]').isDisabled(), true);
-      await fs.mkdir("/workspace/artifacts/star-dodge-0.4-screens", {
+      await fs.mkdir("/workspace/artifacts/star-dodge-0.5-screens", {
         recursive: true,
       });
       await page.screenshot({
-        path: `/workspace/artifacts/star-dodge-0.4-screens/stages-${viewport.width}.png`,
+        path: `/workspace/artifacts/star-dodge-0.5-screens/stages-${viewport.width}.png`,
         fullPage: true,
       });
       await page.getByRole("button", { name: "閉じる", exact: true }).click();
@@ -79,12 +79,18 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       const hud = await page.locator(".instrument").boundingBox();
       assert.ok(hud.y >= 0);
       await page.screenshot({
-        path: `/workspace/artifacts/star-dodge-0.4-screens/hitbox-${viewport.width}.png`,
+        path: `/workspace/artifacts/star-dodge-0.5-screens/hitbox-${viewport.width}.png`,
         fullPage: true,
       });
       // Finish an ordinary simulated stage; keep damage immunity only in this fixture.
       await page.evaluate(() => (testGame.player.invincible = 1000));
-      await page.clock.runFor(31000);
+      await page.evaluate(() => {
+        for (let i = 0; i < 1800; i++) {
+          if (testGame.state === "upgrade") testGame.chooseUpgrade(0);
+          testGame.advance(1 / 60);
+        }
+      });
+      await page.clock.runFor(50);
       assert.equal(await page.evaluate(() => testGame.outcome), "cleared");
       assert.equal(await page.evaluate(() => testGame.time), 30);
       await page
@@ -182,7 +188,10 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.equal(await cp.evaluate(() => testGame.stage.id), id);
       await cp.evaluate(() => {
         testGame.player.invincible = 1000;
-        for (let i = 0; i < 1800; i++) testGame.advance(1 / 60);
+        for (let i = 0; i < 1800; i++) {
+          if (testGame.state === "upgrade") testGame.chooseUpgrade(0);
+          testGame.advance(1 / 60);
+        }
       });
       await cp.clock.runFor(50);
       assert.equal(await cp.evaluate(() => testGame.outcome), "cleared");
@@ -206,7 +215,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       10,
     );
     await cp.screenshot({
-      path: "/workspace/artifacts/star-dodge-0.4-screens/all-clear.png",
+      path: "/workspace/artifacts/star-dodge-0.5-screens/all-clear.png",
       fullPage: true,
     });
     await cp

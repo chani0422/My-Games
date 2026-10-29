@@ -1,0 +1,457 @@
+{
+  "version": 1,
+  "credits": 587,
+  "flightMode": "stages",
+  "selectedStage": 2,
+  "clearedStages": [
+    1
+  ],
+  "selectedSkin": "rose",
+  "unlockedSkins": [
+    "factory",
+    "rose"
+  ],
+  "recentRuns": [
+    {
+      "endedAt": 1793233140000,
+      "ms": 49000,
+      "destroyed": 38,
+      "coins": 15,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793233080000,
+      "ms": 48000,
+      "destroyed": 36,
+      "coins": 15,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793233020000,
+      "ms": 47000,
+      "destroyed": 34,
+      "coins": 15,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232960000,
+      "ms": 46000,
+      "destroyed": 32,
+      "coins": 15,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232900000,
+      "ms": 45000,
+      "destroyed": 30,
+      "coins": 15,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232840000,
+      "ms": 44000,
+      "destroyed": 28,
+      "coins": 14,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232780000,
+      "ms": 43000,
+      "destroyed": 26,
+      "coins": 14,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232720000,
+      "ms": 42000,
+      "destroyed": 24,
+      "coins": 14,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232660000,
+      "ms": 41000,
+      "destroyed": 22,
+      "coins": 14,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232600000,
+      "ms": 40000,
+      "destroyed": 20,
+      "coins": 14,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232540000,
+      "ms": 39000,
+      "destroyed": 18,
+      "coins": 13,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232480000,
+      "ms": 38000,
+      "destroyed": 16,
+      "coins": 13,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232420000,
+      "ms": 37000,
+      "destroyed": 14,
+      "coins": 13,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232360000,
+      "ms": 36000,
+      "destroyed": 12,
+      "coins": 13,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232300000,
+      "ms": 35000,
+      "destroyed": 10,
+      "coins": 13,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232240000,
+      "ms": 34000,
+      "destroyed": 8,
+      "coins": 11,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232180000,
+      "ms": 33000,
+      "destroyed": 6,
+      "coins": 11,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232120000,
+      "ms": 32000,
+      "destroyed": 4,
+      "coins": 10,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232060000,
+      "ms": 31000,
+      "destroyed": 2,
+      "coins": 10,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": false,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    },
+    {
+      "endedAt": 1793232000000,
+      "ms": 30000,
+      "destroyed": 0,
+      "coins": 15,
+      "ship": "warden",
+      "skin": "rose",
+      "stage": 1,
+      "cleared": true,
+      "initialLevels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "endLevels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 1
+      }
+    }
+  ],
+  "reduceEffects": false,
+  "selectedShip": "warden",
+  "unlocked": [
+    "pioneer",
+    "warden"
+  ],
+  "upgrades": {
+    "hull": 1,
+    "speed": 1,
+    "multi": 1,
+    "sub": 1
+  },
+  "flights": 20,
+  "totalMs": 790000,
+  "totalDestroyed": 380,
+  "bestMs": 49000,
+  "claimed": [
+    "survive30"
+  ],
+  "settled": [
+    "fixture-04-0",
+    "fixture-04-1",
+    "fixture-04-2",
+    "fixture-04-3",
+    "fixture-04-4",
+    "fixture-04-5",
+    "fixture-04-6",
+    "fixture-04-7",
+    "fixture-04-8",
+    "fixture-04-9",
+    "fixture-04-10",
+    "fixture-04-11",
+    "fixture-04-12",
+    "fixture-04-13",
+    "fixture-04-14",
+    "fixture-04-15",
+    "fixture-04-16",
+    "fixture-04-17",
+    "fixture-04-18",
+    "fixture-04-19"
+  ]
+}

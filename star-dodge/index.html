@@ -8,8 +8,8 @@
     />
     <meta name="theme-color" content="#080d1b" />
     <title>STAR DODGE — 宇宙サバイバル</title>
-    <link rel="stylesheet" href="style.css?v=0.4.0" />
-    <link rel="manifest" href="manifest.webmanifest?v=0.4.0" />
+    <link rel="stylesheet" href="style.css?v=0.5.0" />
+    <link rel="manifest" href="manifest.webmanifest?v=0.5.0" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
   </head>
@@ -20,8 +20,8 @@
           ><span class="brand-icon">✦</span> MY GAMES<span class="brand-divider"
             >/</span
           ><span class="brand-current">ARCADE 001</span></a
-        ><button id="sound" class="quiet" aria-pressed="false">
-          SOUND OFF
+        ><button id="sound" class="quiet" aria-pressed="true">
+          SOUND ON
         </button>
       </header>
       <section id="home" class="home-screen" aria-label="ホーム"></section>
@@ -145,10 +145,10 @@
         </section>
       </div>
       <footer class="page-footer">
-        <span>STAR DODGE <b>✦</b> VERSION 0.4.0</span
+        <span>STAR DODGE <b>✦</b> VERSION 0.5.0</span
         ><span>ひとつ先の星まで、生き残ろう。</span>
       </footer>
-      <div class="version-tools"><button id="check-update" class="quiet">最新版を確認</button><span id="update-status" role="status" aria-live="polite">プレイ中のバージョン 0.4.0</span></div>
+      <div class="version-tools"><button id="check-update" class="quiet">最新版を確認</button><span id="update-status" role="status" aria-live="polite">プレイ中のバージョン 0.5.0</span></div>
       <p id="storage-note" class="storage-note" role="status"></p>
     </main>
     <dialog id="hub" aria-labelledby="hub-title">
@@ -159,11 +159,13 @@
       <div id="hub-content"></div>
       <p id="hub-message" role="status" aria-live="polite"></p>
     </dialog>
-    <script src="config.js?v=0.4.0"></script>
-    <script src="stages.js?v=0.4.0"></script>
-    <script src="progression.js?v=0.4.0"></script>
-    <script src="services.js?v=0.4.0"></script>
-    <script src="engine.js?v=0.4.0"></script>
-    <script src="app.js?v=0.4.0"></script>
+    <script src="config.js?v=0.5.0"></script>
+    <script src="stages.js?v=0.5.0"></script>
+    <script src="progression.js?v=0.5.0"></script>
+    <script src="services.js?v=0.5.0"></script>
+    <script src="engine.js?v=0.5.0"></script>
+    <script src="audio.js?v=0.5.0"></script>
+    <script src="effects.js?v=0.5.0"></script>
+    <script src="app.js?v=0.5.0"></script>
   </body>
 </html>

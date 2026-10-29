@@ -83,7 +83,10 @@ test("ten finite stages increase speed/density/hardness and preserve the endless
   for (const id of [0, 11, "1", null, NaN]) assert.equal(getStage(id), null);
   const endless = playing();
   endless.player.invincible = 1000;
-  for (let i = 0; i < 2000; i++) endless.advance(1 / 60);
+  for (let i = 0; i < 2000; i++) {
+    if (endless.state === "upgrade") endless.chooseUpgrade(0);
+    endless.advance(1 / 60);
+  }
   assert.equal(endless.stage, null);
   assert.equal(endless.state, "playing");
   assert.ok(endless.time > 30);
@@ -92,7 +95,10 @@ test("each stage clears at exactly 30 simulation seconds, emits once and freezes
   for (const s of STAGES) {
     const g = playing(s.id);
     g.player.invincible = 1000;
-    for (let i = 0; i < 1799; i++) g.advance(1 / 60);
+    for (let i = 0; i < 1799; i++) {
+      if (g.state === "upgrade") g.chooseUpgrade(0);
+      g.advance(1 / 60);
+    }
     assert.equal(g.state, "playing");
     assert.ok(g.time < 30);
     g.pause();

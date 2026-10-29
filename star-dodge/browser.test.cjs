@@ -51,7 +51,7 @@ fs.mkdirSync(output, { recursive: true });
       await page.clock.runFor(50);
       assert.equal(
         await page.locator("#sound").getAttribute("aria-pressed"),
-        "false",
+        "true",
       );
       assert.ok(
         await page.getByRole("button", { name: "フライト開始" }).isVisible(),
@@ -171,8 +171,11 @@ fs.mkdirSync(output, { recursive: true });
         testGame.collect({ type: "multi", x: 240, y: 576 });
       });
       await page.clock.runFor(17000);
+      assert.equal(await page.evaluate(() => testGame.state), "upgrade");
+      await page.keyboard.press("1");
+      await page.clock.runFor(5000);
       assert.ok(await page.evaluate(() => testGame.time >= 15));
-      assert.ok(await page.evaluate(() => testGame.items.length > 0));
+      assert.equal(await page.evaluate(() => testGame.state), "playing");
       await page.screenshot({
         path: `${output}/${mobile ? "mobile" : "desktop"}-playing.png`,
         fullPage: true,
@@ -226,16 +229,16 @@ fs.mkdirSync(output, { recursive: true });
         await page.locator("#side-best").textContent(),
         (Math.floor(best / 100) / 10).toFixed(1),
       );
-      await page.getByRole("button", { name: "SOUND OFF" }).click();
+      await page.getByRole("button", { name: "SOUND ON" }).click();
       assert.equal(
         await page.locator("#sound").getAttribute("aria-pressed"),
-        "true",
+        "false",
       );
       await page.reload();
       await page.clock.runFor(50);
       assert.equal(
         await page.locator("#sound").getAttribute("aria-pressed"),
-        "true",
+        "false",
       );
       assert.deepEqual(errors, []);
       assert.equal(externalRequests, 0);
