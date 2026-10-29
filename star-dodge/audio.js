@@ -15,6 +15,7 @@
       this.timers = timers;
       this.context = null;
       this.enabled = true;
+      this.volume = 1;
       this.voices = new Set();
       this.maxVoices = 24;
       this.timer = null;
@@ -31,7 +32,7 @@
         if (!this.context) {
           this.context = this.contextFactory();
           this.master = this.context.createGain();
-          this.master.gain.value = 0.6;
+          this.master.gain.value = 0.9 * this.volume;
           this.master.connect(this.context.destination);
         }
         const resume =
@@ -42,6 +43,12 @@
           .then(() => this.sync(this.state, this.intense))
           .catch(() => {});
       } catch {}
+    }
+    setVolume(value) {
+      this.volume = Number.isFinite(value)
+        ? Math.max(0, Math.min(1, value))
+        : 1;
+      if (this.master) this.master.gain.value = 0.9 * this.volume;
     }
     setEnabled(value) {
       this.enabled = !!value;

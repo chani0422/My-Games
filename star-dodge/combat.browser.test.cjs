@@ -169,6 +169,11 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.equal(await page.evaluate(() => testGame.state), "upgrade");
       await page.locator('[data-choice="0"]').click();
       assert.equal(await page.evaluate(() => testGame.state), "playing");
+      // Keep the event target alive until its spawn has been observed.
+      await page.evaluate(() => {
+        testGame.mainAt = testGame.subAt = Infinity;
+        testGame.bullets = [];
+      });
       await page.clock.runFor(4300);
       assert.equal(
         await page.evaluate(() => testGame.eventState.kind),

@@ -3,7 +3,14 @@
   "use strict";
   const APP_VERSION = "0.5.0";
   const { STAGES, getStage } = StarStages;
-  const { Game, Records, CONFIG: c, formatTime } = StarDodge,
+  const {
+      Game,
+      Records,
+      CONFIG: c,
+      formatTime,
+      FLIGHT_CATEGORIES,
+      FLIGHT_UPGRADES,
+    } = StarDodge,
     $ = (id) => document.getElementById(id);
   let storage;
   try {
@@ -28,6 +35,7 @@
     systemMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const synth = new StarAudio.Synth(),
     fx = new StarEffects.Effects({ particleLimit: c.particles });
+  synth.setVolume(records.data.volume);
   synth.setEnabled(records.data.sound);
   let choiceCursor = 0,
     hasFocus = document.hasFocus(),
@@ -51,10 +59,13 @@
     r: i % 9 === 0 ? 1.4 : 0.65,
     speed: 5 + (i % 13),
   }));
-  const colors = { speed: "#71f3e0", multi: "#ffca75", sub: "#c4a0ff" },
+  const colors = Object.fromEntries(
+      FLIGHT_UPGRADES.map((up) => [up.id, up.color]),
+    ),
     names = { speed: "SPEED", multi: "MULTI", sub: "SUB" },
     icons = { speed: "↑", multi: "⋮", sub: "✧" };
   function unlockAudio() {
+    synth.setVolume(records.data.volume);
     synth.setEnabled(records.data.sound);
     synth.unlock();
   }
@@ -722,6 +733,7 @@
   });
   $("sound").addEventListener("click", () => {
     records.sound(!records.data.sound);
+    synth.setVolume(records.data.volume);
     synth.setEnabled(records.data.sound);
     if (records.data.sound) unlockAudio();
     else silence();
@@ -777,7 +789,7 @@
     $("home").innerHTML =
       `<div class="home-bar"><span class="eyebrow"><span class="live-dot"></span> PILOT HEADQUARTERS</span><span class="pilot-status">${account.user ? "アカウント接続中" : "ゲストパイロット"} <b>${progress.data.credits.toLocaleString()} <small>コイン</small></b></span></div>
     <div class="home-grid"><div class="home-hero"><span class="eyebrow">YOUR NEXT FLIGHT STARTS HERE</span><h1>STAR<br><span>DODGE</span><b>✦</b></h1><p class="intro">ひとつのフライトが、次の力になる。<br>育てた相棒で、${progress.data.flightMode === "endless" ? "まだ見ぬ記録へ。" : "10の宙域を突破しよう。"}</p><div class="hangar-art" style="--ship-color:${load.color}" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>${shipSVG(ship.id, load.color)}<span>${ship.tag} / ${escapeHTML(ship.name)}</span></div><div class="home-best"><span>PERSONAL BEST</span><strong>${formatTime(records.data.best)}<small> SEC</small></strong></div><button class="primary launch" data-action="start">フライト開始 ↗</button><p class="home-controls">WASD・矢印キー / スマホはドラッグ · 射撃は自動</p></div>
-    <div class="home-dashboard"><button class="stage-summary" data-hub="stages"><span class="eyebrow">${progress.data.flightMode === "endless" ? "ENDLESS FLIGHT" : `STAGE ${String(progress.data.selectedStage).padStart(2, "0")} / 10`}</span><strong>${progress.data.flightMode === "endless" ? "限界の、その先へ" : getStage(progress.data.selectedStage).name}</strong><span>${progress.data.flightMode === "endless" ? "制限時間なし" : `出現30秒＋殲滅 · ${progress.data.clearedStages.length} / 10 クリア`} <b>ステージを選ぶ ↗</b></span></button><div class="pilot-card"><div><span class="eyebrow">CURRENT LOADOUT</span><h2>${escapeHTML(ship.name)}</h2><p>HP ${load.hp} · SPEED Lv.${load.levels.speed} · ${c.main.angles[load.levels.multi - 1].length}発 · SUB Lv.${load.levels.sub}</p></div><span class="pilot-emblem" style="color:${load.color}">⟐</span></div><button class="license-summary" data-hub="license"><span>LICENSE <b>RANK ${license.rank}</b> · ${license.name}</span><span>詳細 ↗</span><progress aria-label="次のランクへの進捗" value="${license.progress}" max="1"></progress></button><nav class="home-nav" aria-label="パイロットメニュー"><button data-hub="hangar"><i>⟐</i><span>機体ハンガー<small>3種類の機体を解放・選択</small></span><b>↗</b></button><button data-hub="upgrades"><i>↑</i><span>初期スキル強化<small>フライトのスタートを強くする</small></span><b>↗</b></button><button data-hub="missions"><i>◎</i><span>チャレンジ<small>目標を達成して報酬を受け取る</small></span><b>↗</b></button><button data-hub="account"><i>☁</i><span>アカウント・保存<small>${account.user ? "クラウドに育成をバックアップ" : "ゲストのままでもプレイできます"}</small></span><b>↗</b></button><button data-hub="shop"><i>✦</i><span>ショップ<small>コインで機体をカラーリング</small></span><b>↗</b></button><button data-hub="license"><i>◇</i><span>ライセンス<small>累計フライトでランクアップ</small></span><b>↗</b></button><button data-hub="stats"><i>▥</i><span>フライト記録<small>最近20回の結果と成長を確認</small></span><b>↗</b></button><button data-hub="settings"><i>⚙</i><span>遊び方・設定<small>操作と演出をカスタマイズ</small></span><b>↗</b></button></nav>${mission ? `<div class="next-goal"><span class="eyebrow">NEXT CHALLENGE</span><h3>${mission.name}</h3><p>${mission.description} <b>+${mission.reward} コイン</b></p><progress value="${Math.min(progress.data[mission.field], mission.goal)}" max="${mission.goal}"></progress></div>` : '<div class="next-goal"><span class="eyebrow">ALL CHALLENGES COMPLETE</span><h3>次は、自己ベストのその先へ。</h3></div>'}<p class="earned-note">5秒ごとに1コイン＋30秒ごとの到達ボーナス。隕石の破壊で追加報酬（生存・到達報酬の20%まで）。育成は次の挑戦に引き継がれます。</p></div></div>`;
+    <div class="home-dashboard"><button class="stage-summary" data-hub="stages"><span class="eyebrow">${progress.data.flightMode === "endless" ? "ENDLESS FLIGHT" : `STAGE ${String(progress.data.selectedStage).padStart(2, "0")} / 10`}</span><strong>${progress.data.flightMode === "endless" ? "限界の、その先へ" : getStage(progress.data.selectedStage).name}</strong><span>${progress.data.flightMode === "endless" ? "制限時間なし" : `出現30秒＋殲滅 · ${progress.data.clearedStages.length} / 10 クリア`} <b>ステージを選ぶ ↗</b></span></button><div class="pilot-card"><div><span class="eyebrow">CURRENT LOADOUT</span><h2>${escapeHTML(ship.name)}</h2><p>HP ${load.hp} · SPEED Lv.${load.levels.speed} · ${c.main.angles[load.levels.multi - 1].length}発 · SUB Lv.${load.levels.sub}</p></div><span class="pilot-emblem" style="color:${load.color}">⟐</span></div><button class="license-summary" data-hub="license"><span>LICENSE <b>RANK ${license.rank}</b> · ${license.name}</span><span>詳細 ↗</span><progress aria-label="次のランクへの進捗" value="${license.progress}" max="1"></progress></button><nav class="home-nav" aria-label="パイロットメニュー"><button data-hub="hangar"><i>⟐</i><span>機体ハンガー<small>3種類の機体を解放・選択</small></span><b>↗</b></button><button data-hub="upgrades"><i>↑</i><span>初期スキル強化<small>フライトのスタートを強くする</small></span><b>↗</b></button><button data-hub="skills"><i>✦</i><span>スキル図鑑<small>フライトと初期強化を確認</small></span><b>↗</b></button><button data-hub="missions"><i>◎</i><span>チャレンジ<small>目標を達成して報酬を受け取る</small></span><b>↗</b></button><button data-hub="account"><i>☁</i><span>アカウント・保存<small>${account.user ? "クラウドに育成をバックアップ" : "ゲストのままでもプレイできます"}</small></span><b>↗</b></button><button data-hub="shop"><i>✦</i><span>ショップ<small>コインで機体をカラーリング</small></span><b>↗</b></button><button data-hub="license"><i>◇</i><span>ライセンス<small>累計フライトでランクアップ</small></span><b>↗</b></button><button data-hub="stats"><i>▥</i><span>フライト記録<small>最近20回の結果と成長を確認</small></span><b>↗</b></button><button data-hub="settings"><i>⚙</i><span>遊び方・設定<small>操作と演出をカスタマイズ</small></span><b>↗</b></button></nav>${mission ? `<div class="next-goal"><span class="eyebrow">NEXT CHALLENGE</span><h3>${mission.name}</h3><p>${mission.description} <b>+${mission.reward} コイン</b></p><progress value="${Math.min(progress.data[mission.field], mission.goal)}" max="${mission.goal}"></progress></div>` : '<div class="next-goal"><span class="eyebrow">ALL CHALLENGES COMPLETE</span><h3>次は、自己ベストのその先へ。</h3></div>'}<p class="earned-note">5秒ごとに1コイン＋30秒ごとの到達ボーナス。隕石の破壊で追加報酬（生存・到達報酬の20%まで）。育成は次の挑戦に引き継がれます。</p></div></div>`;
     refreshRecords();
   }
   let hubPage = "",
@@ -794,6 +806,7 @@
       stages: "ステージ選択",
       hangar: "機体ハンガー",
       upgrades: "初期スキル強化",
+      skills: "スキル図鑑",
       missions: "チャレンジ",
       account: "アカウント・保存",
       shop: "スキンショップ",
@@ -843,6 +856,27 @@
             cost = up.costs[level];
           return `<article class="upgrade-card"><span class="ship-mini">${up.icon}</span><div><h3>${up.name} <small>Lv.${level} / ${up.costs.length}</small></h3><p>${up.description}</p></div><button class="secondary" data-upgrade="${up.id}" ${cost === undefined || progress.data.credits < cost ? "disabled" : ""}>${cost === undefined ? "最大まで強化済み" : `${cost} コインで強化`}</button></article>`;
         }).join("");
+    if (hubPage === "skills") {
+      $("hub-content").innerHTML =
+        '<p class="hub-intro">フライト中の強化はその回だけ有効です。強化コアの3択と同じスキルを、ジャンルごとに確認できます。</p>' +
+        FLIGHT_CATEGORIES.map(
+          (category) =>
+            `<section class="skill-category" data-category="${category.id}" aria-labelledby="skills-${category.id}"><h3 id="skills-${category.id}">${category.name}</h3><div class="skill-grid">${FLIGHT_UPGRADES.filter(
+              (up) => up.category === category.id,
+            )
+              .map(
+                (up) =>
+                  `<article class="skill-card" data-skill="${up.id}" style="--skill-color:${up.color}"><span class="skill-icon" aria-hidden="true">${up.icon}</span><div><h4>${up.name}</h4><span class="skill-level">最大 Lv.${up.max}</span><p>${up.description}</p></div></article>`,
+              )
+              .join("")}</div></section>`,
+        ).join("") +
+        '<section class="skill-category" aria-labelledby="initial-skills-title"><h3 id="initial-skills-title">初期スキル強化</h3><p class="hub-intro">所持レベルは次のフライトに引き継がれます。購入はホームの「初期スキル強化」から行えます。</p><div class="skill-grid">' +
+        StarProgress.UPGRADES.map(
+          (up) =>
+            `<article class="skill-card initial-skill" data-initial-skill="${up.id}"><span class="skill-icon" aria-hidden="true">${up.icon}</span><div><h4>${up.name}</h4><span class="skill-level">所持 Lv.${progress.data.upgrades[up.id]} / ${up.costs.length}</span><p>${up.description}</p></div></article>`,
+        ).join("") +
+        "</div></section>";
+    }
     if (hubPage === "missions")
       $("hub-content").innerHTML =
         balance +
@@ -895,7 +929,7 @@
     }
     if (hubPage === "settings") {
       $("hub-content").innerHTML =
-        `<div class="play-guide"><h3>よける。育てる。もう一度。</h3><p>PCはWASD / 矢印キー、スマホは画面上のドラッグで移動。射撃は自動です。右上のボタン、または P / Esc で一時停止できます。</p><p>機体の中央に表示される白い円が当たり判定です。翼には当たりません。被弾後の無敵中は円が黄色になります。アイテムを拾う範囲は以前と同じです。</p><p>ステージモードは30秒経過後に残った隕石をすべて破壊してクリアし、全10ステージを順に解放。殲滅中は新たな敵・敵弾・コアが出現せず、隕石は下へ抜けても上から再出現します。衝突やシールド防御でも隕石は残るため、射撃で破壊してください。すでに飛んでいる敵弾は残りますが、殲滅の対象外です。エンドレスは制限時間なしです。隕石に当たるとHPが減り、HPが0になると終了。ステージが進むほど隕石は増え、速く、硬くなります。エンドレスでは時間とともに難しくなります。強化コアは12秒ごとに出現し、機体に追従します（ステージは最初の30秒のみ）。取得すると時間が止まり、最大3つの候補から強化を選べます。連射・威力・シールド・修理などを組み合わせましょう。選択はタップ、1–3、矢印＋Enterに対応します。</p><p>5秒ごとに1コイン、30秒ごとに到達ボーナス。隕石の破壊は追加ボーナスになります。報酬はフライト終了時に一度だけ受け取ります。途中でホームや最初からを選ぶと、その回の報酬はありません。</p><p>コインは機体や初期スキルの強化、スキンに使えます。選んだ内容は次のフライトから有効です。</p></div><label class="setting-toggle"><input id="reduce-effects" type="checkbox" ${progress.data.reduceEffects ? "checked" : ""}><span>演出を控えめにする<small>粒子・点滅・背景の動きを抑えます。端末の「視差効果を減らす」設定も優先します。</small></span></label><p class="hub-intro">サウンドは画面上部の SOUND ボタンで切り替えられます。はじめはオンです。ブラウザの仕様により、最初のタップやボタン操作から音が始まります。ひと休みを取りながら、自分のペースでお楽しみください。</p>`;
+        `<section class="volume-setting" aria-labelledby="volume-title"><h3 id="volume-title">サウンド音量</h3><div class="volume-label"><label for="audio-volume">マスター音量</label><output id="volume-value" for="audio-volume">${Math.round(records.data.volume * 100)}%</output></div><input id="audio-volume" type="range" min="0" max="100" step="1" value="${Math.round(records.data.volume * 100)}" aria-valuetext="${Math.round(records.data.volume * 100)}%" aria-describedby="volume-help"><p id="volume-help">BGMと効果音をまとめて調整します。SOUND OFFでも音量は記憶されます。SOUND ON時は操作を終えると確認音が鳴ります。</p></section><div class="play-guide"><h3>よける。育てる。もう一度。</h3><p>PCはWASD / 矢印キー、スマホは画面上のドラッグで移動。射撃は自動です。右上のボタン、または P / Esc で一時停止できます。</p><p>機体の中央に表示される白い円が当たり判定です。翼には当たりません。被弾後の無敵中は円が黄色になります。アイテムを拾う範囲は以前と同じです。</p><p>ステージモードは30秒経過後に残った隕石をすべて破壊してクリアし、全10ステージを順に解放。殲滅中は新たな敵・敵弾・コアが出現せず、隕石は下へ抜けても上から再出現します。衝突やシールド防御でも隕石は残るため、射撃で破壊してください。すでに飛んでいる敵弾は残りますが、殲滅の対象外です。エンドレスは制限時間なしです。隕石に当たるとHPが減り、HPが0になると終了。ステージが進むほど隕石は増え、速く、硬くなります。エンドレスでは時間とともに難しくなります。強化コアは12秒ごとに出現し、機体に追従します（ステージは最初の30秒のみ）。取得すると時間が止まり、最大3つの候補から強化を選べます。連射・威力・シールド・修理などを組み合わせましょう。選択はタップ、1–3、矢印＋Enterに対応します。</p><p>5秒ごとに1コイン、30秒ごとに到達ボーナス。隕石の破壊は追加ボーナスになります。報酬はフライト終了時に一度だけ受け取ります。途中でホームや最初からを選ぶと、その回の報酬はありません。</p><p>コインは機体や初期スキルの強化、スキンに使えます。選んだ内容は次のフライトから有効です。</p></div><label class="setting-toggle"><input id="reduce-effects" type="checkbox" ${progress.data.reduceEffects ? "checked" : ""}><span>演出を控えめにする<small>粒子・点滅・背景の動きを抑えます。端末の「視差効果を減らす」設定も優先します。</small></span></label><p class="hub-intro">サウンドは画面上部の SOUND ボタンで切り替えられます。はじめはオンです。ブラウザの仕様により、最初のタップやボタン操作から音が始まります。ひと休みを取りながら、自分のペースでお楽しみください。</p>`;
     }
     if (hubPage === "report") {
       $("hub-content").innerHTML =
@@ -1028,7 +1062,24 @@ https://chani0422.github.io/My-Games/star-dodge/`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  function updateVolume(input) {
+    const value = Number(input.value) / 100;
+    if (value !== records.data.volume) records.setVolume(value);
+    synth.setVolume(records.data.volume);
+    const percent = `${Math.round(records.data.volume * 100)}%`;
+    $("volume-value").textContent = percent;
+    input.setAttribute("aria-valuetext", percent);
+  }
+  document.addEventListener("input", (event) => {
+    if (event.target.id === "audio-volume") updateVolume(event.target);
+  });
   document.addEventListener("change", (event) => {
+    if (event.target.id === "audio-volume") {
+      updateVolume(event.target);
+      unlockAudio();
+      sound("ui");
+      return;
+    }
     if (event.target.id !== "reduce-effects") return;
     progress.setReducedEffects(event.target.checked);
     applyMotion();

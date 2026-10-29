@@ -135,7 +135,7 @@ const server = http.createServer((req, res) => {
     });
     await page.waitForFunction(
       async () =>
-        (await caches.has("star-dodge-shell-v0-5-0-elimination")) &&
+        (await caches.has("star-dodge-shell-v0-5-0-volume-skills")) &&
         !(await caches.has("star-dodge-shell-v0-3-0")),
     );
     assert.equal(

@@ -350,7 +350,9 @@ test("corrupt, missing, invalid and denied storage never prevent play", () => {
     const storage = fakeStorage();
     storage.value = value;
     const r = new Records(storage);
-    assert.deepEqual(r.data, { best: 0, last: 0, sound: true,soundDefaultRevision:1 });
+    assert.deepEqual(r.data, {
+      best: 0, last: 0, sound: true, soundDefaultRevision: 1, volume: 1,
+    });
     r.finish(100);
     assert.equal(r.data.best, 100);
   }

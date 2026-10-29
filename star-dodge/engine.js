@@ -66,50 +66,63 @@
     playerBullets: 192,
     cores: 4,
   };
+  const FLIGHT_CATEGORIES = Object.freeze(
+    [
+      { id: "firepower", name: "火力" },
+      { id: "movement", name: "移動" },
+      { id: "defense", name: "防御・回復" },
+    ].map(Object.freeze),
+  );
   const FLIGHT_UPGRADES = Object.freeze(
     [
       {
         id: "rapid",
+        category: "firepower",
         name: "連射ドライブ",
         description: "発射間隔を12%ずつ短縮",
         max: 3,
         icon: "»",
-        color: "#71f3e0",
+        color: "#ff6f61",
       },
       {
         id: "damage",
+        category: "firepower",
         name: "高出力弾",
         description: "メイン弾のダメージ +1",
         max: 3,
         icon: "✦",
-        color: "#ffd47d",
+        color: "#ff8562",
       },
       {
         id: "multi",
+        category: "firepower",
         name: "拡散弾",
         description: "メイン弾の発射数を増やす",
         max: 3,
         icon: "⋮",
-        color: "#ffca75",
+        color: "#ff5f7a",
       },
       {
         id: "speed",
+        category: "firepower",
         name: "弾速ブースト",
         description: "SPEEDを1段階アップ",
         max: 5,
         icon: "↑",
-        color: "#71f3e0",
+        color: "#ffa25e",
       },
       {
         id: "sub",
+        category: "firepower",
         name: "ドローン",
         description: "随伴機を強化。最大数の後は弾威力UP",
         max: 5,
         icon: "✧",
-        color: "#c4a0ff",
+        color: "#ff6f91",
       },
       {
         id: "shield",
+        category: "defense",
         name: "シールド",
         description: "被弾を1回防ぐバリアを補充",
         max: 1,
@@ -118,22 +131,25 @@
       },
       {
         id: "movement",
+        category: "movement",
         name: "機動ブースト",
         description: "移動速度を8%ずつアップ",
         max: 3,
         icon: "↗",
-        color: "#a5ffba",
+        color: "#6bb8ff",
       },
       {
         id: "magnet",
+        category: "movement",
         name: "マグネット",
         description: "コアの吸引範囲を広げる",
         max: 3,
         icon: "◎",
-        color: "#ffa0bd",
+        color: "#6be0ff",
       },
       {
         id: "repair",
+        category: "defense",
         name: "応急修理",
         description: "機体のHPを1回復",
         max: 1,
@@ -180,7 +196,13 @@
     constructor(storage) {
       this.storage = storage;
       this.tabOnly = false;
-      this.data = { best: 0, last: 0, sound: true, soundDefaultRevision: 1 };
+      this.data = {
+        best: 0,
+        last: 0,
+        sound: true,
+        soundDefaultRevision: 1,
+        volume: 1,
+      };
       try {
         const data = JSON.parse(storage.getItem("star-dodge-v1") || "{}");
         for (const key of ["best", "last"])
@@ -188,8 +210,17 @@
             Number.isFinite(data?.[key]) && data[key] >= 0 ? data[key] : 0;
         this.data.sound =
           data?.soundDefaultRevision === 1 ? data.sound === true : true;
+        this.data.volume = Number.isFinite(data?.volume)
+          ? clamp(data.volume, 0, 1)
+          : 1;
       } catch {
-        this.data = { best: 0, last: 0, sound: true, soundDefaultRevision: 1 };
+        this.data = {
+          best: 0,
+          last: 0,
+          sound: true,
+          soundDefaultRevision: 1,
+          volume: 1,
+        };
       }
       this.save();
     }
@@ -211,6 +242,10 @@
     }
     sound(on) {
       this.data.sound = !!on;
+      this.save();
+    }
+    setVolume(value) {
+      this.data.volume = Number.isFinite(value) ? clamp(value, 0, 1) : 1;
       this.save();
     }
   }
@@ -908,6 +943,7 @@
   return {
     CONFIG,
     STAGES,
+    FLIGHT_CATEGORIES,
     FLIGHT_UPGRADES,
     Game,
     Records,
