@@ -2,7 +2,7 @@
 
 実装指示書（2026-10-29）に基づくレビュー用の変更です。基点は `origin/main` の `4a959f2`。実装ブランチは `feat/star-dodge-0-5`。mainへの直接push・公開は行いません。
 
-このPRでは公開番号の更新を含めません。画面/APP_VERSION/version.json/SW/Androidは0.4.0、versionCode 4のままです。正式アプリID `com.chani0422.stardodge` と署名設定も変更していません。以下の機能は、この実装ブランチのものです。
+初回実装時は指示書に従い、画面/APP_VERSION/version.json/SW/Androidを0.4.0、versionCode 4に据え置きました。その後の公開準備依頼により、現在は0.5.0 / versionCode 5へ統一しています。正式アプリID `com.chani0422.stardodge` と署名設定は変更していません。以下の機能は、この実装ブランチのものです。
 
 ## 1. 音
 
@@ -65,14 +65,14 @@
 
 最終実行結果はこの報告書末尾に記載します。新機能の主なテストは `combat.test.cjs`、`presentation.test.cjs`、`combat.browser.test.cjs`。元の54件の検証を残し、旧自動アイテムの期待値と音初期値だけ、新しい仕様に合わせて更新しています。テストの削除・スキップはしていません。
 
-## 公開前に必要な作業
+## 公開準備の状況と残る作業
 
-1. PRレビュー後、別の公開準備でAPP_VERSION・version.json・SWのVERSION/キャッシュ名・HTML参照/表示・package/Androidを0.5.0/versionCode 5以上へ揃えて更新。
-2. 既存ストア原稿の「サウンド初期OFF」「自動アイテム」は本実装と変わるため、公開準備で更新。機体/色/ステージ/履歴の数はそのままです。本PRでは既存ストア原稿を変更していません。
+1. 完了：APP_VERSION・version.json・SWのVERSION/キャッシュ名・HTML参照/表示・package/Androidを0.5.0 / versionCode 5へ統一。
+2. 完了：ストア原稿をサウンド初期ON・強化コアの選択方式へ修正し、敵パターン・山場・合成BGMを追記。機体/色/ステージ/履歴の数はそのままです。
 3. 正式アプリID/既存署名を維持してAndroidを同期・ビルドし、内部テストへ配布。音量/音色、長時間発熱、低性能端末、復帰、3択時の操作、後半の難易度を実機で確認。
 4. このブランチの変更についての実機・聴覚評価・Play提出は未実施。ブラウザの検証はAndroid WebView実機の性能保証ではありません。
 
-## 最終実行結果（2026-10-29）
+## 初回実装時の検証結果（公開番号更新前・2026-10-29）
 
 | 検証 | 結果 |
 | --- | --- |
@@ -96,3 +96,18 @@ node --test star-dodge/engine.test.cjs star-dodge/progression.test.cjs star-dodg
 ブラウザはPlaywrightと `/usr/bin/chromium` を使用。HTTP配信先を `STAR_DODGE_URL` に設定して6つの `*.browser.test.cjs` / `browser.test.cjs` を個別実行しています。`node --test star-dodge/*.test.cjs` の一括指定にはブラウザ用スクリプトも混ざるため、上の明示リストを使用してください。
 
 実装の削減はありません。実機での音の聴きやすさ・快適性、低性能端末での継続プレイ、公開用の署名ビルド/配布は公開準備の検証対象です。
+
+## 公開番号とストア原稿の更新（2026-10-29の追加作業）
+
+公開準備の追加依頼に従い、現在の公開番号を0.5.0 / versionCode 5へ統一しました。ブラウザのAPP_VERSION・HTML参照/フッター/状態表示、version.json、SWのVERSION/キャッシュ名、mobile package/lock、AndroidのversionName/versionCodeが対象です。削除案内ページのCSS参照と、プライバシーポリシーの対象バージョンも合わせました。
+
+ストア原稿は強化コアの停止/選択方式、サウンド初期ONと切替方法へ修正し、敵の蛇行/突進/射撃、山場イベント、合成BGMを追記。機体3種・カラー6種・ステージ10・最近20件の事実は維持しています。既存画像や旧ビルド成果物は過去のものと明記しました。
+
+- Node全74件を再実行し、全件成功（失敗0・スキップ0）。本追加作業でゲームのテスト条件や挙動は変更していません。
+- `npm run sync --prefix star-dodge/mobile` 成功。wwwとAndroid同梱先のHTML・APP_VERSION・SWが0.5.0で、各同梱ファイルは原本とバイト一致。
+- ステージのブラウザ試験は3サイズと全10ステージで成功。更新試験は実際の旧キャッシュから0.5.0への移行、オフライン、後続版への更新、フライト非中断を確認。
+- 実行コードの変更はAPP_VERSIONとSWの公開番号/キャッシュ名だけです。エンジン・経済・保存・音・演出・ステージ定義は追加作業前と同一。package/lockも版数以外は同一です。
+- 正式アプリIDと署名を含むAndroid設定は、versionCode/versionName以外が追加作業前と同一。署名キーは変更していません。
+- リポジトリ管理下の全ファイルを検索し、旧番号が残るのは初回実装時の履歴と依存パッケージのNode対応条件だけであることを確認。残存箇所・理由・更新ファイル一覧はPR本文にも記載。
+
+この追加作業でPRのマージ、GitHub Pagesの公開、署名付きAABの生成、Play Consoleへの配布は行っていません。

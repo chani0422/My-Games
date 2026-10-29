@@ -33,7 +33,7 @@ const server = http.createServer((req, res) => {
       body = Buffer.from(
         JSON.stringify({
           version:
-            phase === "old" ? "0.3.0" : phase === "next" ? "0.4.1" : "0.4.0",
+            phase === "old" ? "0.3.0" : phase === "next" ? "0.5.1" : "0.5.0",
         }),
       );
     else if (phase === "old" && oldFiles.has(relative))
@@ -47,8 +47,8 @@ const server = http.createServer((req, res) => {
       body = Buffer.from(
         body
           .toString()
-          .replaceAll("0.4.0", "0.4.1")
-          .replaceAll("v0-4-0", "v0-4-1"),
+          .replaceAll("0.5.0", "0.5.1")
+          .replaceAll("v0-5-0", "v0-5-1"),
       );
     if (relative === "app.js" && url.searchParams.get("v") === "9.9.9")
       body = Buffer.from("/* future asset cache-key probe */");
@@ -135,7 +135,7 @@ const server = http.createServer((req, res) => {
     });
     await page.waitForFunction(
       async () =>
-        (await caches.has("star-dodge-shell-v0-4-0")) &&
+        (await caches.has("star-dodge-shell-v0-5-0")) &&
         !(await caches.has("star-dodge-shell-v0-3-0")),
     );
     assert.equal(
@@ -146,7 +146,7 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.evaluate(() => testGame.state), "playing");
     await page.reload();
     assert.ok(
-      (await page.locator(".page-footer").innerText()).includes("0.4.0"),
+      (await page.locator(".page-footer").innerText()).includes("0.5.0"),
     );
     assert.equal(await page.evaluate(() => StarDodge.CONFIG.player.radius), 6);
     assert.equal(await page.evaluate(() => StarStages.STAGES.length), 10);
@@ -169,7 +169,7 @@ const server = http.createServer((req, res) => {
     await context.setOffline(true);
     await page.reload({ waitUntil: "domcontentloaded" });
     assert.ok(
-      (await page.locator(".page-footer").innerText()).includes("0.4.0"),
+      (await page.locator(".page-footer").innerText()).includes("0.5.0"),
     );
     await page
       .getByRole("button", { name: "最新版を確認", exact: true })
@@ -184,12 +184,12 @@ const server = http.createServer((req, res) => {
       .getByRole("button", { name: "最新版を確認", exact: true })
       .click();
     await page.waitForFunction(() =>
-      document.querySelector(".page-footer")?.textContent.includes("0.4.1"),
+      document.querySelector(".page-footer")?.textContent.includes("0.5.1"),
     );
     await page
       .getByRole("button", { name: "最新版を確認", exact: true })
       .click();
-    await page.getByText("最新版です（0.4.1）", { exact: true }).waitFor();
+    await page.getByText("最新版です（0.5.1）", { exact: true }).waitFor();
     assert.equal(
       await page.evaluate(
         () =>
@@ -206,7 +206,7 @@ const server = http.createServer((req, res) => {
       await versionGate;
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({ version: "0.4.2" }),
+        body: JSON.stringify({ version: "0.5.2" }),
       });
     });
     let navigations = 0;
@@ -230,7 +230,7 @@ const server = http.createServer((req, res) => {
     assert.deepEqual(errors, []);
     await context.close();
     console.log(
-      "PASS: real 0.3 cache → 0.4 worker during flight without interruption → current HTML/scripts; preserved coins; exact asset versions; offline boot; explicit subsequent update",
+      "PASS: real 0.3 cache → 0.5 worker during flight without interruption → current HTML/scripts; preserved coins; exact asset versions; offline boot; explicit subsequent update",
     );
   } finally {
     await browser.close();

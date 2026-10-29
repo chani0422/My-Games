@@ -1,6 +1,6 @@
 /* Each installation stores a complete, immutable offline shell. */
-const VERSION = "0.4.0";
-const CACHE = "star-dodge-shell-v0-4-0";
+const VERSION = "0.5.0";
+const CACHE = "star-dodge-shell-v0-5-0";
 const FILES = [
   "./",
   "index.html",

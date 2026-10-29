@@ -1,7 +1,7 @@
 /* Canvas presentation and browser controls. No external dependencies. */
 (() => {
   "use strict";
-  const APP_VERSION = "0.4.0";
+  const APP_VERSION = "0.5.0";
   const { STAGES, getStage } = StarStages;
   const { Game, Records, CONFIG: c, formatTime } = StarDodge,
     $ = (id) => document.getElementById(id);
