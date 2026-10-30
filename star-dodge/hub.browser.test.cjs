@@ -17,7 +17,13 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
     const page = await context.newPage(),
       errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    const profile = { ...fresh(), credits: 400, bestMs: 30000 };
+    const profile = {
+      ...fresh(),
+      credits: 280,
+      bestMs: 30000,
+      clearedStages: [1, 2, 3, 4, 5],
+      selectedStage: 5,
+    };
     await context.addInitScript((profile) => {
       if (!localStorage.getItem("star-dodge-progress-v1"))
         localStorage.setItem("star-dodge-progress-v1", JSON.stringify(profile));
@@ -40,7 +46,16 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
     await page.goto(base);
     await page.clock.runFor(50);
     await page.getByRole("button", { name: "機体ハンガー" }).click();
-    await page.locator('[data-ship="swift"]').click();
+    assert.equal(await page.locator('[data-ship="nova"]').isDisabled(), true);
+    assert.equal(await page.locator('[data-ship="seeker"]').isDisabled(), true);
+    await page.locator('[data-ship="lance"]').click();
+    assert.equal(
+      await page.evaluate(
+        () =>
+          JSON.parse(localStorage.getItem("star-dodge-progress-v1")).credits,
+      ),
+      280,
+    );
     assert.ok((await page.locator("#home").innerText()).includes("280"));
     await page.getByRole("button", { name: "閉じる", exact: true }).click();
     await page.getByRole("button", { name: "初期スキル強化" }).click();
@@ -71,8 +86,8 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
     await page.getByRole("button", { name: "閉じる", exact: true }).click();
     await page.getByRole("button", { name: "フライト開始" }).click();
     await page.clock.runFor(3300);
-    assert.equal(await page.evaluate(() => testGame.player.hp), 3);
-    assert.equal(await page.evaluate(() => testGame.player.speed), 345);
+    assert.equal(await page.evaluate(() => testGame.player.hp), 4);
+    assert.equal(await page.evaluate(() => testGame.player.speed), 300);
     assert.deepEqual(await page.evaluate(() => testGame.levels), {
       speed: 2,
       multi: 2,
@@ -138,9 +153,9 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
     await page.getByRole("button", { name: "ホームへ", exact: true }).click();
     await page.reload();
     await page.clock.runFor(50);
-    assert.ok((await page.locator("#home").innerText()).includes("スウィフト"));
+    assert.ok((await page.locator("#home").innerText()).includes("ランス"));
     await page.getByRole("button", { name: "フライト開始" }).click();
-    assert.equal(await page.evaluate(() => testGame.player.hp), 3);
+    assert.equal(await page.evaluate(() => testGame.player.hp), 4);
     assert.deepEqual(await page.evaluate(() => testGame.levels), {
       speed: 2,
       multi: 2,

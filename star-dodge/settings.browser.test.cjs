@@ -167,7 +167,7 @@ const rgb = (hex) =>
       );
       await page.locator('[data-hub="skills"]').click();
       assert.equal(await page.locator("#hub-title").innerText(), "スキル図鑑");
-      assert.equal(await page.locator("[data-skill]").count(), 9);
+      assert.equal(await page.locator("[data-skill]").count(), 8);
       assert.equal(await page.locator("[data-initial-skill]").count(), 4);
       assert.equal(
         await page
@@ -250,12 +250,12 @@ const rgb = (hex) =>
       await page.evaluate(() => {
         testGame.player.invincible = 1000;
         testGame.offerUpgrades();
-        testGame.choices = ["rapid", "movement", "shield"].map((id) => ({
+        testGame.choices = ["rapid", "magnet", "shield"].map((id) => ({
           ...StarDodge.FLIGHT_UPGRADES.find((up) => up.id === id),
         }));
       });
       await page.clock.runFor(50);
-      for (const [i, id] of ["rapid", "movement", "shield"].entries()) {
+      for (const [i, id] of ["rapid", "magnet", "shield"].entries()) {
         const up = FLIGHT_UPGRADES.find((up) => up.id === id),
           card = page.locator(`[data-choice="${i}"]`);
         assert.equal(await card.locator("b").innerText(), up.name);
@@ -282,7 +282,6 @@ const rgb = (hex) =>
           rapid: 3,
           damage: 3,
           dronePower: 2,
-          movement: 3,
           magnet: 3,
         };
         testGame.shield = 1;
@@ -322,7 +321,7 @@ const rgb = (hex) =>
       );
       await context.close();
       console.log(
-        `PASS ${viewport.width}px: volume migration/live gain/one preview/keyboard/zero/OFF/reload; nine shared-color skills and four read-only initial levels; category choice borders/icons; gold surplus; unchanged progress save`,
+        `PASS ${viewport.width}px: volume migration/live gain/one preview/keyboard/zero/OFF/reload; eight shared-color skills and four read-only initial levels; category choice borders/icons; gold surplus; unchanged progress save`,
       );
     }
   } finally {

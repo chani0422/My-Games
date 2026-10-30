@@ -65,11 +65,11 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       const saved = await page.evaluate(() =>
         JSON.parse(localStorage.getItem("star-dodge-progress-v1")),
       );
-      assert.deepEqual(saved, fixture);
+      assert.deepEqual(saved, { ...fixture, credits: fixture.credits + 140, selectedShip: "pioneer", unlocked: ["pioneer"] });
       await page
         .getByRole("button", { name: "機体ハンガー", exact: false })
         .click();
-      assert.equal(await page.locator(".hangar-preview svg").count(), 3);
+      assert.equal(await page.locator(".hangar-preview svg").count(), 4);
       assert.ok(
         (await page
           .locator(".hangar-preview svg")

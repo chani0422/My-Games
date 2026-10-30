@@ -66,10 +66,19 @@
     playerBullets: 192,
     cores: 4,
   };
+  const SHIP_WEAPONS = Object.freeze({
+    pioneer: Object.freeze({ weapon: "normal", speed: 1, interval: 1 }),
+    lance: Object.freeze({ weapon: "piercing", speed: 0.85, interval: 1 }),
+    nova: Object.freeze({ weapon: "explosive", speed: 1, interval: 1.15 }),
+    seeker: Object.freeze({ weapon: "homing", speed: 0.9, interval: 1 }),
+  });
+  // Provisional tuning values: fixed-step steering, center-to-center blast range.
+  const HOMING_TURN_RATE = 2.4;
+  const EXPLOSION_RADIUS = 70;
   const FLIGHT_CATEGORIES = Object.freeze(
     [
       { id: "firepower", name: "火力" },
-      { id: "movement", name: "移動" },
+      { id: "movement", name: "移動・収集" },
       { id: "defense", name: "防御・回復" },
     ].map(Object.freeze),
   );
@@ -128,15 +137,6 @@
         max: 1,
         icon: "◇",
         color: "#91d7ff",
-      },
-      {
-        id: "movement",
-        category: "movement",
-        name: "機動ブースト",
-        description: "移動速度を8%ずつアップ",
-        max: 3,
-        icon: "↗",
-        color: "#6bb8ff",
       },
       {
         id: "magnet",
@@ -282,7 +282,6 @@
         rapid: 0,
         damage: 0,
         dronePower: 0,
-        movement: 0,
         magnet: 0,
       };
       this.shield = 0;
@@ -317,17 +316,14 @@
         8,
       );
       this.player.maxHp = this.player.hp;
-      this.player.speed = clamp(
-        loadout.speed || this.config.player.speed,
-        150,
-        450,
-      );
-      this.player.baseSpeed = this.player.speed;
+      this.player.speed = 300;
       this.player.armor = clamp(Math.floor(loadout.visuals?.armor || 0), 0, 2);
       this.player.trails = loadout.visuals?.trail === true;
       this.player.droneStyle = loadout.visuals?.drone === true;
       this.player.color = loadout.color || "#71f3e0";
-      this.player.ship = ["pioneer", "swift", "warden"].includes(loadout.ship)
+      this.player.ship = ["pioneer", "lance", "nova", "seeker"].includes(
+        loadout.ship,
+      )
         ? loadout.ship
         : "pioneer";
       for (const type of ["speed", "multi", "sub"]) {
@@ -390,7 +386,10 @@
       for (const offset of origins)
         for (const angle of angles) {
           const a = (angle * Math.PI) / 180,
-            speed = sub ? c.sub.speed : c.main.speeds[this.levels.speed - 1];
+            trait = SHIP_WEAPONS[p.ship] || SHIP_WEAPONS.pioneer,
+            speed = sub
+              ? c.sub.speed
+              : c.main.speeds[this.levels.speed - 1] * trait.speed;
           if (this.bullets.length >= this.config.playerBullets) break;
           this.bullets.push({
             x: p.x + offset,
@@ -402,12 +401,76 @@
               ? c.sub.damage + this.skills.dronePower
               : c.main.damage + this.skills.damage,
             sub,
+            weapon: sub ? "normal" : trait.weapon,
           });
         }
       this.emit("shot", { sub });
     }
     fireInterval() {
-      return this.config.main.interval * (1 - 0.12 * this.skills.rapid);
+      const trait = SHIP_WEAPONS[this.player.ship] || SHIP_WEAPONS.pioneer;
+      return (
+        this.config.main.interval *
+        trait.interval *
+        (1 - 0.12 * this.skills.rapid)
+      );
+    }
+    steerBullet(b, dt) {
+      if (b.sub || b.weapon !== "homing") return;
+      let target = null,
+        nearest = Infinity;
+      for (const rock of this.rocks) {
+        if (rock.hp <= 0) continue;
+        const distance = (rock.x - b.x) ** 2 + (rock.y - b.y) ** 2;
+        if (distance < nearest) {
+          nearest = distance;
+          target = rock;
+        }
+      }
+      if (!target || nearest === 0) return;
+      const speed = Math.hypot(b.vx, b.vy),
+        angle = Math.atan2(b.vy, b.vx),
+        desired = Math.atan2(target.y - b.y, target.x - b.x),
+        delta = Math.atan2(
+          Math.sin(desired - angle),
+          Math.cos(desired - angle),
+        ),
+        turn =
+          angle + clamp(delta, -HOMING_TURN_RATE * dt, HOMING_TURN_RATE * dt);
+      b.vx = Math.cos(turn) * speed;
+      b.vy = Math.sin(turn) * speed;
+    }
+    damageRock(target, damage) {
+      if (target.hp <= 0) return false;
+      target.hp -= damage;
+      target.flashUntil = this.time + 0.06;
+      this.emit("hit", { x: target.x, y: target.y, damage });
+      if (target.hp > 0) return false;
+      this.destroyed++;
+      this.combo = this.time - this.lastKill <= 3 ? this.combo + 1 : 1;
+      this.lastKill = this.time;
+      if (target.type === "elite") this.spawnCore({ x: target.x, y: target.y });
+      this.emit("destroy", {
+        x: target.x,
+        y: target.y,
+        radius: target.radius,
+        combo: this.combo,
+        elite: target.type === "elite",
+      });
+      return true;
+    }
+    explodeRock(source) {
+      this.emit("explosion", {
+        x: source.x,
+        y: source.y,
+        radius: EXPLOSION_RADIUS,
+      });
+      for (const rock of this.rocks) {
+        if (
+          rock.hp > 0 &&
+          Math.hypot(rock.x - source.x, rock.y - source.y) <= EXPLOSION_RADIUS
+        )
+          this.damageRock(rock, 1);
+      }
     }
     get stageTimeUp() {
       return !!this.stage && this.time + 1e-8 >= this.stage.duration;
@@ -612,11 +675,6 @@
       else if (up.id === "coins")
         this.coreCoins = Math.min(500, this.coreCoins + 2);
       else if (up.id in this.skills) this.skills[up.id]++;
-      if (up.id === "movement")
-        this.player.speed = Math.min(
-          450,
-          this.player.baseSpeed * (1 + this.skills.movement * 0.08),
-        );
       if (up.id === "rapid")
         this.mainAt = Math.min(this.mainAt, this.time + this.fireInterval());
       this.choices = [];
@@ -757,12 +815,8 @@
       const length = Math.hypot(this.input.x, this.input.y);
       if (length)
         this.moveBy(
-          (this.input.x / Math.max(1, length)) *
-            (p.speed || c.player.speed) *
-            dt,
-          (this.input.y / Math.max(1, length)) *
-            (p.speed || c.player.speed) *
-            dt,
+          (this.input.x / Math.max(1, length)) * 300 * dt,
+          (this.input.y / Math.max(1, length)) * 300 * dt,
         );
       while (this.time + 1e-8 >= this.mainAt) {
         this.fire();
@@ -792,45 +846,40 @@
       for (const b of this.bullets) {
         const ox = b.x,
           oy = b.y;
+        this.steerBullet(b, dt);
         b.x += b.vx * dt;
         b.y += b.vy * dt;
-        let target = null,
-          nearest = Infinity;
-        for (const r of this.rocks) {
-          if (r.hp <= 0) continue;
+        const piercing = !b.sub && b.weapon === "piercing",
+          hits = [];
+        let nearest = Infinity;
+        for (const rock of this.rocks) {
+          if (rock.hp <= 0 || (piercing && b.hitRocks?.has(rock))) continue;
           const hit = segmentHit(
             ox,
             oy,
-            b.x - (r.x - r.oldX),
-            b.y - (r.y - r.oldY),
-            r.oldX,
-            r.oldY,
-            b.radius + r.radius,
+            b.x - (rock.x - rock.oldX),
+            b.y - (rock.y - rock.oldY),
+            rock.oldX,
+            rock.oldY,
+            b.radius + rock.radius,
           );
-          if (hit !== null && hit < nearest) {
+          if (hit === null) continue;
+          if (piercing) hits.push({ rock, hit });
+          else if (hit < nearest) {
             nearest = hit;
-            target = r;
+            hits[0] = { rock, hit };
           }
         }
-        if (target) {
-          b.dead = true;
-          target.hp -= b.damage;
-          target.flashUntil = this.time + 0.06;
-          this.emit("hit", { x: target.x, y: target.y, damage: b.damage });
-          if (target.hp <= 0) {
-            this.destroyed++;
-            this.combo = this.time - this.lastKill <= 3 ? this.combo + 1 : 1;
-            this.lastKill = this.time;
-            if (target.type === "elite")
-              this.spawnCore({ x: target.x, y: target.y });
-            this.emit("destroy", {
-              x: target.x,
-              y: target.y,
-              radius: target.radius,
-              combo: this.combo,
-              elite: target.type === "elite",
-            });
-          }
+        if (piercing) hits.sort((a, b) => a.hit - b.hit);
+        for (const { rock } of hits) {
+          if (rock.hp <= 0) continue;
+          if (piercing) {
+            b.hitRocks ||= new Set();
+            b.hitRocks.add(rock);
+          } else b.dead = true;
+          const killed = this.damageRock(rock, b.damage);
+          if (killed && !b.sub && b.weapon === "explosive")
+            this.explodeRock(rock);
         }
       }
       for (const r of this.rocks) {
@@ -942,6 +991,7 @@
   }
   return {
     CONFIG,
+    SHIP_WEAPONS,
     STAGES,
     FLIGHT_CATEGORIES,
     FLIGHT_UPGRADES,

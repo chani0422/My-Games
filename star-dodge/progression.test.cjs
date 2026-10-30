@@ -43,26 +43,32 @@ test("upgrades cannot overspend or exceed cap, and persist", () => {
   assert.equal(p.purchaseUpgrade("unknown"), false);
   assert.equal(new Progress(storage).data.upgrades.hull, 2);
 });
-test("ships must be unlocked, charge once and affect actual run HP and movement", () => {
+test("ships unlock through cleared stages without spending coins and share base HP and movement", () => {
   const p = new Progress(store());
-  assert.equal(p.selectShip("swift"), false);
+  assert.equal(p.selectShip("lance"), false);
   assert.equal(p.selectShip("unknown"), false);
   p.data.credits = 300;
-  assert.equal(p.selectShip("swift"), true);
-  assert.equal(p.data.credits, 180);
+  assert.equal(p.selectShip("lance"), false, "coins cannot buy ships");
+  p.data.clearedStages = [1, 2, 3, 4, 5];
+  assert.equal(p.selectShip("lance"), true);
+  assert.equal(p.data.credits, 300);
   p.selectShip("pioneer");
-  p.selectShip("swift");
-  assert.equal(p.data.credits, 180);
+  p.selectShip("lance");
+  assert.equal(p.data.credits, 300);
   p.purchaseUpgrade("hull");
   const g = new Game();
   g.start(p.loadout());
-  assert.equal(g.player.hp, 3);
-  assert.equal(g.player.speed, 345);
+  assert.equal(
+    g.player.hp,
+    4,
+    "shared base HP 3 plus the retained armor upgrade",
+  );
+  assert.equal(g.player.speed, 300);
   while (g.state === "countdown") g.advance(1 / 60);
   const x = g.player.x;
   g.input = { x: 1, y: 0 };
   for (let i = 0; i < 12; i++) g.advance(1 / 60);
-  assert.ok(Math.abs(g.player.x - x - 69) < 0.00001);
+  assert.ok(Math.abs(g.player.x - x - 60) < 0.00001);
 });
 test("initial skills apply at start and retry without changing current flight", () => {
   const p = new Progress(store());

@@ -14,34 +14,70 @@
     {
       id: "pioneer",
       name: "パイオニア",
-      tag: "BALANCED",
-      description: "回避も攻撃もバランスよく。最初の相棒。",
-      cost: 0,
+      tag: "NORMAL",
+      description: "ノーマル弾。標準の弾速と連射で狙い撃つ、最初の相棒。",
+      unlockStage: 0,
       hp: 3,
       speed: 300,
       color: "#71f3e0",
     },
     {
-      id: "swift",
-      name: "スウィフト",
-      tag: "AGILE",
-      description: "速さで切り抜ける、軽量の高速機。",
-      cost: 120,
-      hp: 2,
-      speed: 345,
+      id: "lance",
+      name: "ランス",
+      tag: "PIERCING",
+      description:
+        "貫通弾。複数の隕石を貫く。同じ個体には1発につき1回だけ命中。弾速85%。",
+      unlockStage: 5,
+      hp: 3,
+      speed: 300,
       color: "#ffca75",
     },
     {
-      id: "warden",
-      name: "ウォーデン",
-      tag: "DEFENDER",
-      description: "重い装甲で、危険な宙域にもう一歩。",
-      cost: 140,
-      hp: 4,
-      speed: 270,
-      color: "#c4a0ff",
+      id: "nova",
+      name: "ノヴァ",
+      tag: "EXPLOSIVE",
+      description:
+        "爆発弾。メイン弾で撃破すると半径70の他の隕石に1ダメージ。連鎖なし。発射間隔115%。",
+      unlockStage: 15,
+      hp: 3,
+      speed: 300,
+      color: "#ff6f91",
+    },
+    {
+      id: "seeker",
+      name: "シーカー",
+      tag: "HOMING",
+      description: "誘導弾。最寄りの隕石へ緩やかに曲がる。弾速90%。",
+      unlockStage: 25,
+      hp: 3,
+      speed: 300,
+      color: "#9ab8ff",
     },
   ];
+  // Retired IDs remain valid only in historical flight records and old backups.
+  const RETIRED_SHIPS = [
+    { id: "swift", name: "スウィフト", refund: 120, retired: true },
+    { id: "warden", name: "ウォーデン", refund: 140, retired: true },
+  ];
+  function shipDetails(id) {
+    return (
+      SHIPS.find((ship) => ship.id === id) ||
+      RETIRED_SHIPS.find((ship) => ship.id === id) ||
+      SHIPS[0]
+    );
+  }
+  function shipAvailable(data, id) {
+    const ship = SHIPS.find((ship) => ship.id === id);
+    return (
+      !!ship &&
+      (ship.unlockStage === 0 || data.clearedStages.includes(ship.unlockStage))
+    );
+  }
+  function unlockedShips(data) {
+    return SHIPS.filter((ship) => shipAvailable(data, ship.id)).map(
+      (ship) => ship.id,
+    );
+  }
   const UPGRADES = [
     {
       id: "hull",
@@ -90,8 +126,8 @@
     },
     {
       id: "solar",
-      name: "サンバースト",
-      description: "太陽の光をまとったゴールド。",
+      name: "ゴールド",
+      description: "金色の輝きをまとったカラー。",
       cost: 80,
       color: "#ffd77a",
     },
@@ -260,7 +296,9 @@
       ms: integer(raw.ms),
       destroyed: integer(raw.destroyed),
       coins: integer(raw.coins, REWARD_RULES.maxFlightCoins),
-      ship: SHIPS.some((s) => s.id === raw.ship) ? raw.ship : "pioneer",
+      ship: [...SHIPS, ...RETIRED_SHIPS].some((s) => s.id === raw.ship)
+        ? raw.ship
+        : "pioneer",
       skin: SKINS.some((s) => s.id === raw.skin) ? raw.skin : "factory",
       stage: getStage(raw.stage)?.id ?? null,
       cleared:
@@ -317,13 +355,22 @@
       STAGES.length,
       data.clearedStages.length + 1,
     );
-    if (getStage(raw.selectedStage) && raw.selectedStage <= unlockedStage)
-      data.selectedStage = raw.selectedStage;
-    data.unlocked = SHIPS.filter(
-      (s) =>
-        s.cost === 0 ||
-        (Array.isArray(raw.unlocked) && raw.unlocked.includes(s.id)),
-    ).map((s) => s.id);
+    data.selectedStage =
+      getStage(raw.selectedStage) && raw.selectedStage <= unlockedStage
+        ? raw.selectedStage
+        : unlockedStage;
+    // Presence of a retired owned ID is the migration marker. Removing it makes
+    // reloading or restoring the normalized save idempotent without new fields.
+    const refund = RETIRED_SHIPS.reduce(
+      (sum, ship) =>
+        sum +
+        (Array.isArray(raw.unlocked) && raw.unlocked.includes(ship.id)
+          ? ship.refund
+          : 0),
+      0,
+    );
+    data.credits = Math.min(LIMIT, data.credits + refund);
+    data.unlocked = unlockedShips(data);
     if (data.unlocked.includes(raw.selectedShip))
       data.selectedShip = raw.selectedShip;
     for (const up of UPGRADES)
@@ -403,6 +450,7 @@
       if (firstClear) {
         this.data.clearedStages.push(stage.id);
         this.data.selectedStage = Math.min(STAGES.length, stage.id + 1);
+        this.data.unlocked = unlockedShips(this.data);
       }
       const reward = calculateFlightReward(ms, destroyed, context.coreCoins);
       if (firstClear) {
@@ -452,14 +500,12 @@
       this.save();
       return true;
     }
+    isShipUnlocked(id) {
+      return shipAvailable(this.data, id);
+    }
     selectShip(id) {
-      const ship = SHIPS.find((x) => x.id === id);
-      if (!ship) return false;
-      if (!this.data.unlocked.includes(id)) {
-        if (this.data.credits < ship.cost) return false;
-        this.data.credits -= ship.cost;
-        this.data.unlocked.push(id);
-      }
+      if (!this.isShipUnlocked(id)) return false;
+      this.data.unlocked = unlockedShips(this.data);
       this.data.selectedShip = id;
       this.save();
       return true;
@@ -551,6 +597,8 @@
   }
   return {
     SHIPS,
+    RETIRED_SHIPS,
+    shipDetails,
     UPGRADES,
     MISSIONS,
     SKINS,

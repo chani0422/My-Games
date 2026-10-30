@@ -243,9 +243,9 @@ test("regular cores give two choices within a stage, freeze all simulation and r
   assert.ok(times[1] >= 24 && times[1] < 25);
   assert.equal(g.time, 30);
 });
-test("nine upgrade families enforce caps, apply stats and reset every flight", () => {
+test("eight upgrade families enforce caps, apply stats and reset every flight", () => {
   const g = play();
-  assert.equal(FLIGHT_UPGRADES.length, 9);
+  assert.equal(FLIGHT_UPGRADES.length, 8);
   const choose = (id) => {
     g.state = "upgrade";
     g.choices = [FLIGHT_UPGRADES.find((u) => u.id === id)];
@@ -258,8 +258,8 @@ test("nine upgrade families enforce caps, apply stats and reset every flight", (
   g.bullets = [];
   g.fire();
   assert.equal(g.bullets[0].damage, 2);
-  choose("movement");
-  assert.ok(g.player.speed > 300);
+  assert.ok(!FLIGHT_UPGRADES.some((up) => up.id === "movement"));
+  assert.equal(g.player.speed, 300);
   choose("magnet");
   assert.equal(g.skills.magnet, 1);
   choose("shield");
@@ -279,7 +279,6 @@ test("nine upgrade families enforce caps, apply stats and reset every flight", (
     rapid: 0,
     damage: 0,
     dronePower: 0,
-    movement: 0,
     magnet: 0,
   });
   assert.equal(g.shield, 0);
@@ -289,7 +288,7 @@ test("nine upgrade families enforce caps, apply stats and reset every flight", (
 test("fully capped cores pay a small result-only bonus; total payout stays capped and idempotent", () => {
   const g = play();
   g.levels = { speed: 5, multi: 3, sub: 3 };
-  g.skills = { rapid: 3, damage: 3, dronePower: 2, movement: 3, magnet: 3 };
+  g.skills = { rapid: 3, damage: 3, dronePower: 2, magnet: 3 };
   g.shield = 1;
   g.offerUpgrades();
   assert.deepEqual(
@@ -312,10 +311,16 @@ test("fully capped cores pay a small result-only bonus; total payout stays cappe
   assert.equal(p.data.credits, 14);
   assert.equal(calculateFlightReward(1e9, 1e9, 500).totalCoins, 500);
 });
-test("the real 0.4 profile keeps every field and 20 histories; transient skills are never saved", () => {
+test("the real 0.4 profile migrates ownership and refund while retaining 20 histories; transient skills are never saved", () => {
   const storage = store(fixture),
     p = new Progress(storage);
-  assert.deepEqual(p.snapshot(), fixture);
+  const migrated = {
+    ...fixture,
+    credits: fixture.credits + 140,
+    selectedShip: "pioneer",
+    unlocked: ["pioneer"],
+  };
+  assert.deepEqual(p.snapshot(), migrated);
   assert.equal(p.data.recentRuns.length, 20);
   const before = p.snapshot(),
     g = play();
@@ -329,7 +334,7 @@ test("the real 0.4 profile keeps every field and 20 histories; transient skills 
   const copy = store(null),
     restored = new Progress(copy);
   restored.restore(p.snapshot());
-  assert.deepEqual(restored.snapshot(), fixture);
+  assert.deepEqual(restored.snapshot(), migrated);
 });
 test("sound defaults migrate once for everyone and a subsequent OFF survives reload", () => {
   const storage = store({ best: 32000, last: 30000, sound: false }),
@@ -453,11 +458,11 @@ test("shield blocks consume the first bullet while same-frame bullets pass throu
   assert.equal(g.events.filter((e) => e.type === "damage").length, 0);
 });
 
-test("nine flight skills expose one shared category and palette for choices and the codex", () => {
+test("eight flight skills expose one shared category and palette for choices and the codex", () => {
   const { FLIGHT_CATEGORIES } = require("./engine.js");
   assert.deepEqual(
     FLIGHT_CATEGORIES.map((category) => category.name),
-    ["火力", "移動", "防御・回復"],
+    ["火力", "移動・収集", "防御・回復"],
   );
   const expected = {
     rapid: ["firepower", "#ff6f61"],
@@ -465,12 +470,11 @@ test("nine flight skills expose one shared category and palette for choices and 
     multi: ["firepower", "#ff5f7a"],
     speed: ["firepower", "#ffa25e"],
     sub: ["firepower", "#ff6f91"],
-    movement: ["movement", "#6bb8ff"],
     magnet: ["movement", "#6be0ff"],
     shield: ["defense", "#91d7ff"],
     repair: ["defense", "#a5ffba"],
   };
-  assert.equal(FLIGHT_UPGRADES.length, 9);
+  assert.equal(FLIGHT_UPGRADES.length, 8);
   for (const skill of FLIGHT_UPGRADES) {
     assert.deepEqual([skill.category, skill.color], expected[skill.id]);
     assert.ok(Object.isFrozen(skill));
@@ -484,7 +488,7 @@ test("nine flight skills expose one shared category and palette for choices and 
       FLIGHT_UPGRADES.find((skill) => skill.id === choice.id),
     );
   g.levels = { speed: 5, multi: 3, sub: 3 };
-  g.skills = { rapid: 3, damage: 3, dronePower: 2, movement: 3, magnet: 3 };
+  g.skills = { rapid: 3, damage: 3, dronePower: 2, magnet: 3 };
   g.shield = 1;
   g.offerUpgrades();
   assert.equal(g.choices[0].id, "coins");

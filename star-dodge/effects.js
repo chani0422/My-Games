@@ -39,6 +39,20 @@
     add(event, reduced = false) {
       if (reduced) return;
       const e = event;
+      if (e.type === "explosion") {
+        const ring = this.slot(this.rings, this.ringLimit);
+        if (ring)
+          Object.assign(ring, {
+            x: e.x,
+            y: e.y,
+            life: 0.3,
+            max: 0.3,
+            radius: e.radius / 2.5,
+            flash: false,
+            color: "#ffa25e",
+          });
+        return;
+      }
       if (
         !["hit", "destroy", "damage", "shield", "core", "choice"].includes(
           e.type,

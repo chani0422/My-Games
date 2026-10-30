@@ -52,7 +52,7 @@ test("player hitbox is radius 6; old near misses pass and the exact new boundary
   assert.ok(x < g.player.x);
 });
 test("shrinking the damage hitbox preserves item pickup reach for every ship", () => {
-  for (const ship of ["pioneer", "swift", "warden"]) {
+  for (const ship of ["pioneer", "lance", "nova", "seeker"]) {
     const g = playing();
     g.player.ship = ship;
     g.rockAt = 100;
@@ -218,5 +218,5 @@ test("sequential clear progression persists; failed, early, duplicate or skipped
   assert.equal(restored.selectMode("unknown"), false);
   const bad = sanitize({ selectedStage: 10, clearedStages: [1, 3, 10] });
   assert.deepEqual(bad.clearedStages, [1]);
-  assert.equal(bad.selectedStage, 1);
+  assert.equal(bad.selectedStage, 2);
 });

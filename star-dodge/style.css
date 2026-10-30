@@ -1864,3 +1864,9 @@ dialog::backdrop {
     font-size: 8px;
   }
 }
+
+.ship-card .ship-condition {
+  margin-top: 9px;
+  color: var(--cyan);
+  font-size: 11px;
+}
