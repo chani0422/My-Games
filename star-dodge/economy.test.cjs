@@ -78,7 +78,7 @@ test("payouts are finite, monotonic and capped; displayed breakdown always sums 
     assert.equal(reward(ms, kills).totalCoins, 0);
   assert.equal(reward(1e9, 1e9).totalCoins, 500);
 });
-test("existing balances, unlocks, skills and already-settled flights survive the change", () => {
+test("legacy ship purchases are refunded while skills and already-settled flights survive the change", () => {
   const raw = {
     version: 1,
     credits: 240,
@@ -102,17 +102,23 @@ test("existing balances, unlocks, skills and already-settled flights survive the
     },
   };
   const p = new Progress(storage);
-  for (const key of Object.keys(raw))
+  for (const key of Object.keys(raw).filter(
+    (key) => !["credits", "selectedShip", "unlocked"].includes(key),
+  ))
     assert.deepEqual(p.snapshot()[key], raw[key]);
+  assert.equal(p.data.credits, 360);
+  assert.equal(p.data.selectedShip, "pioneer");
+  assert.deepEqual(p.data.unlocked, ["pioneer"]);
   assert.equal(p.data.selectedSkin, "factory");
   assert.deepEqual(p.data.recentRuns, []);
   assert.equal(p.finish("old-flight", 30000, 12).credits, 0);
-  assert.equal(p.data.credits, 240);
-  assert.equal(p.selectShip("swift"), true);
-  assert.equal(p.data.credits, 240);
+  assert.equal(p.data.credits, 360);
+  assert.equal(p.selectShip("swift"), false);
+  assert.equal(p.selectShip("lance"), false);
+  assert.equal(p.data.credits, 360);
   assert.equal(p.purchaseUpgrade("speed"), true);
-  assert.equal(p.data.credits, 150);
+  assert.equal(p.data.credits, 270);
   p.restore(raw);
-  assert.equal(p.data.credits, 240);
+  assert.equal(p.data.credits, 360);
   assert.deepEqual(p.data.upgrades, raw.upgrades);
 });

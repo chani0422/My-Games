@@ -175,7 +175,7 @@
     }
     if (state === "result")
       $("panel").innerHTML =
-        `<span class="overline">${game.outcome === "cleared" ? (game.elimination ? "ELIMINATION COMPLETE" : "STAGE CLEAR") : "FLIGHT COMPLETE"}</span><h2>${game.outcome === "cleared" ? (game.stage.id === 10 ? "全10ステージ、制覇！" : `ステージ${game.stage.id} クリア！`) : "次は、もう1秒先へ。"}</h2><div class="result-time">${formatTime(game.time * 1000)}<small> SEC</small></div><span class="best-badge">${newBest ? "✦ NEW PERSONAL BEST" : "SURVIVAL RECORD"}</span><p>自己ベスト ${formatTime(records.data.best)} 秒</p><p class="flight-reward">+${runReward.totalCoins} コイン <small>フライト報酬</small></p><dl class="reward-breakdown" aria-label="コインの内訳"><div><dt>生存報酬</dt><dd>${runReward.survivalCoins} コイン</dd></div><div><dt>到達ボーナス</dt><dd>${runReward.milestoneCoins} コイン</dd></div><div><dt>破壊ボーナス</dt><dd>${runReward.destructionCoins} コイン</dd></div>${runReward.coreCoins ? `<div class="first-clear-reward"><dt>余剰コア</dt><dd>+${runReward.coreCoins} コイン</dd></div>` : ""}${runReward.firstClearCoins ? `<div class="first-clear-reward"><dt>初回クリア報酬</dt><dd>+${runReward.firstClearCoins} コイン</dd></div>` : ""}</dl><div class="result-grid">破壊した隕石 <strong>${game.destroyed}</strong> 個<br>SPEED <strong>Lv.${game.levels.speed}</strong>　MULTI <strong>${c.main.angles[game.levels.multi - 1].length}発</strong>　SUB <strong>Lv.${game.levels.sub}</strong><br><small>連射Lv.${game.skills.rapid} · 弾威力${1 + game.skills.damage} · 機動Lv.${game.skills.movement} · 吸引Lv.${game.skills.magnet}</small></div><button class="primary" data-action="${game.outcome === "cleared" && game.stage.id < 10 ? "next-stage" : "retry"}">${game.outcome === "cleared" && game.stage.id < 10 ? `ステージ${game.stage.id + 1}へ進む ↗` : game.stage ? "同じステージに挑戦 ↗" : "もう一度フライト ↗"}</button><div class="result-actions"><button class="secondary" data-action="title">ホームへ</button><button class="secondary" data-action="share">記録を共有 ↗</button></div><p id="share-status" class="share-status" role="status"></p><button class="secondary ad-placeholder" disabled>短い動画で追加報酬 · 準備中</button>`;
+        `<span class="overline">${game.outcome === "cleared" ? (game.elimination ? "ELIMINATION COMPLETE" : "STAGE CLEAR") : "FLIGHT COMPLETE"}</span><h2>${game.outcome === "cleared" ? (game.stage.id === 10 ? "全10ステージ、制覇！" : `ステージ${game.stage.id} クリア！`) : "次は、もう1秒先へ。"}</h2><div class="result-time">${formatTime(game.time * 1000)}<small> SEC</small></div><span class="best-badge">${newBest ? "✦ NEW PERSONAL BEST" : "SURVIVAL RECORD"}</span><p>自己ベスト ${formatTime(records.data.best)} 秒</p><p class="flight-reward">+${runReward.totalCoins} コイン <small>フライト報酬</small></p><dl class="reward-breakdown" aria-label="コインの内訳"><div><dt>生存報酬</dt><dd>${runReward.survivalCoins} コイン</dd></div><div><dt>到達ボーナス</dt><dd>${runReward.milestoneCoins} コイン</dd></div><div><dt>破壊ボーナス</dt><dd>${runReward.destructionCoins} コイン</dd></div>${runReward.coreCoins ? `<div class="first-clear-reward"><dt>余剰コア</dt><dd>+${runReward.coreCoins} コイン</dd></div>` : ""}${runReward.firstClearCoins ? `<div class="first-clear-reward"><dt>初回クリア報酬</dt><dd>+${runReward.firstClearCoins} コイン</dd></div>` : ""}</dl><div class="result-grid">破壊した隕石 <strong>${game.destroyed}</strong> 個<br>SPEED <strong>Lv.${game.levels.speed}</strong>　MULTI <strong>${c.main.angles[game.levels.multi - 1].length}発</strong>　SUB <strong>Lv.${game.levels.sub}</strong><br><small>連射Lv.${game.skills.rapid} · 弾威力${1 + game.skills.damage} · 吸引Lv.${game.skills.magnet}</small></div><button class="primary" data-action="${game.outcome === "cleared" && game.stage.id < 10 ? "next-stage" : "retry"}">${game.outcome === "cleared" && game.stage.id < 10 ? `ステージ${game.stage.id + 1}へ進む ↗` : game.stage ? "同じステージに挑戦 ↗" : "もう一度フライト ↗"}</button><div class="result-actions"><button class="secondary" data-action="title">ホームへ</button><button class="secondary" data-action="share">記録を共有 ↗</button></div><p id="share-status" class="share-status" role="status"></p><button class="secondary ad-placeholder" disabled>短い動画で追加報酬 · 準備中</button>`;
 
     if (state === "paused" || state === "result")
       document.querySelector("#panel .primary")?.focus({ preventScroll: true });
@@ -250,11 +250,13 @@
         toastUntil = game.time + 3;
       }
       sound(
-        e.type === "elimination"
-          ? "event"
-          : e.type === "gameover" && e.cleared
-            ? "clear"
-            : e.type,
+        e.type === "explosion"
+          ? "destroy"
+          : e.type === "elimination"
+            ? "event"
+            : e.type === "gameover" && e.cleared
+              ? "clear"
+              : e.type,
         e,
       );
       fx.add(e, reduced);
@@ -276,16 +278,16 @@
     ctx.fillStyle = drone ? "#71f3e0" : game.player.color || "#71f3e0";
     ctx.beginPath();
     const points =
-      !drone && game.player.ship === "swift"
+      !drone && game.player.ship === "lance"
         ? [
-            [0, -24],
-            [11, -1],
-            [15, 17],
+            [0, -28],
+            [8, -2],
+            [12, 17],
             [0, 10],
-            [-15, 17],
-            [-11, -1],
+            [-12, 17],
+            [-8, -2],
           ]
-        : !drone && game.player.ship === "warden"
+        : !drone && game.player.ship === "nova"
           ? [
               [0, -21],
               [9, -5],
@@ -298,14 +300,27 @@
               [-18, -1],
               [-9, -5],
             ]
-          : [
-              [0, -21],
-              [17, 14],
-              [7, 10],
-              [0, 16],
-              [-7, 10],
-              [-17, 14],
-            ];
+          : !drone && game.player.ship === "seeker"
+            ? [
+                [0, -22],
+                [8, -9],
+                [19, -5],
+                [11, 8],
+                [16, 16],
+                [0, 10],
+                [-16, 16],
+                [-11, 8],
+                [-19, -5],
+                [-8, -9],
+              ]
+            : [
+                [0, -21],
+                [17, 14],
+                [7, 10],
+                [0, 16],
+                [-7, 10],
+                [-17, 14],
+              ];
     points.forEach(([px, py], i) =>
       i ? ctx.lineTo(px, py) : ctx.moveTo(px, py),
     );
@@ -512,20 +527,29 @@
       ctx.stroke();
     }
     for (const b of game.bullets) {
+      const bulletColor = b.sub
+        ? "#c4a0ff"
+        : { piercing: "#ffd47d", explosive: "#ff7c99", homing: "#7abfff" }[
+            b.weapon
+          ] || "#9cfff0";
       if (game.player.trails && !reduced) {
-        ctx.strokeStyle = b.sub ? "#c4a0ff55" : "#71f3e055";
+        ctx.strokeStyle = `${bulletColor}55`;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(b.x, b.y);
         ctx.lineTo(b.x - b.vx * 0.04, b.y - b.vy * 0.04);
         ctx.stroke();
       }
-      ctx.fillStyle = b.sub ? "#c4a0ff" : "#9cfff0";
-      ctx.shadowColor = ctx.fillStyle;
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(Math.atan2(b.vx, -b.vy));
+      ctx.fillStyle = bulletColor;
+      ctx.shadowColor = bulletColor;
       ctx.shadowBlur = reduced ? 0 : 8;
       ctx.beginPath();
-      ctx.roundRect(b.x - 2, b.y - 7, 4, 13, 2);
+      ctx.roundRect(-2, -7, 4, 13, 2);
       ctx.fill();
+      ctx.restore();
     }
     ctx.shadowBlur = 0;
     for (const item of game.items) {
@@ -768,11 +792,12 @@
     );
   function shipSVG(shipId, color, visuals = progress.data.upgrades) {
     const path =
-      shipId === "swift"
-        ? "M80 8 123 92 139 157 80 133 21 157 37 92Z"
-        : shipId === "warden"
-          ? "M80 8 111 65 145 78 145 143 105 132 80 157 55 132 15 143 15 78 49 65Z"
-          : "M80 8 145 143 105 130 80 157 55 130 15 143Z";
+      {
+        lance: "M80 2 112 92 128 157 80 133 32 157 48 92Z",
+        nova: "M80 8 111 65 145 78 145 143 105 132 80 157 55 132 15 143 15 78 49 65Z",
+        seeker:
+          "M80 8 102 48 145 62 121 107 139 158 80 130 21 158 39 107 15 62 58 48Z",
+      }[shipId] || "M80 8 145 143 105 130 80 157 55 130 15 143Z";
     return `<svg viewBox="0 0 160 180" aria-hidden="true" style="color:${color}"><path d="${path}" fill="currentColor"/><path d="M80 35 97 113 63 113Z" fill="#e9fffa"/><path d="M73 87h14v45H73z" fill="#153747"/><path d="m67 151 13 27 13-27" fill="#66bfff"/>${visuals.hull ? `<path d="M40 104h17v31H40zm63 0h17v31h-17z" fill="${visuals.hull > 1 ? "#d4deed" : "#829cb5"}"/>` : ""}${visuals.speed ? '<path d="M59 161v15m42-15v15" stroke="#71f3e0" stroke-width="4"/>' : ""}${visuals.sub ? '<path d="m17 83 10 12-10 12L7 95zm126 0 10 12-10 12-10-12z" fill="#c4a0ff"/>' : ""}</svg>`;
   }
   const duration = (ms) =>
@@ -789,7 +814,7 @@
     $("home").innerHTML =
       `<div class="home-bar"><span class="eyebrow"><span class="live-dot"></span> PILOT HEADQUARTERS</span><span class="pilot-status">${account.user ? "アカウント接続中" : "ゲストパイロット"} <b>${progress.data.credits.toLocaleString()} <small>コイン</small></b></span></div>
     <div class="home-grid"><div class="home-hero"><span class="eyebrow">YOUR NEXT FLIGHT STARTS HERE</span><h1>STAR<br><span>DODGE</span><b>✦</b></h1><p class="intro">ひとつのフライトが、次の力になる。<br>育てた相棒で、${progress.data.flightMode === "endless" ? "まだ見ぬ記録へ。" : "10の宙域を突破しよう。"}</p><div class="hangar-art" style="--ship-color:${load.color}" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>${shipSVG(ship.id, load.color)}<span>${ship.tag} / ${escapeHTML(ship.name)}</span></div><div class="home-best"><span>PERSONAL BEST</span><strong>${formatTime(records.data.best)}<small> SEC</small></strong></div><button class="primary launch" data-action="start">フライト開始 ↗</button><p class="home-controls">WASD・矢印キー / スマホはドラッグ · 射撃は自動</p></div>
-    <div class="home-dashboard"><button class="stage-summary" data-hub="stages"><span class="eyebrow">${progress.data.flightMode === "endless" ? "ENDLESS FLIGHT" : `STAGE ${String(progress.data.selectedStage).padStart(2, "0")} / 10`}</span><strong>${progress.data.flightMode === "endless" ? "限界の、その先へ" : getStage(progress.data.selectedStage).name}</strong><span>${progress.data.flightMode === "endless" ? "制限時間なし" : `出現30秒＋殲滅 · ${progress.data.clearedStages.length} / 10 クリア`} <b>ステージを選ぶ ↗</b></span></button><div class="pilot-card"><div><span class="eyebrow">CURRENT LOADOUT</span><h2>${escapeHTML(ship.name)}</h2><p>HP ${load.hp} · SPEED Lv.${load.levels.speed} · ${c.main.angles[load.levels.multi - 1].length}発 · SUB Lv.${load.levels.sub}</p></div><span class="pilot-emblem" style="color:${load.color}">⟐</span></div><button class="license-summary" data-hub="license"><span>LICENSE <b>RANK ${license.rank}</b> · ${license.name}</span><span>詳細 ↗</span><progress aria-label="次のランクへの進捗" value="${license.progress}" max="1"></progress></button><nav class="home-nav" aria-label="パイロットメニュー"><button data-hub="hangar"><i>⟐</i><span>機体ハンガー<small>3種類の機体を解放・選択</small></span><b>↗</b></button><button data-hub="upgrades"><i>↑</i><span>初期スキル強化<small>フライトのスタートを強くする</small></span><b>↗</b></button><button data-hub="skills"><i>✦</i><span>スキル図鑑<small>フライトと初期強化を確認</small></span><b>↗</b></button><button data-hub="missions"><i>◎</i><span>チャレンジ<small>目標を達成して報酬を受け取る</small></span><b>↗</b></button><button data-hub="account"><i>☁</i><span>アカウント・保存<small>${account.user ? "クラウドに育成をバックアップ" : "ゲストのままでもプレイできます"}</small></span><b>↗</b></button><button data-hub="shop"><i>✦</i><span>ショップ<small>コインで機体をカラーリング</small></span><b>↗</b></button><button data-hub="license"><i>◇</i><span>ライセンス<small>累計フライトでランクアップ</small></span><b>↗</b></button><button data-hub="stats"><i>▥</i><span>フライト記録<small>最近20回の結果と成長を確認</small></span><b>↗</b></button><button data-hub="settings"><i>⚙</i><span>遊び方・設定<small>操作と演出をカスタマイズ</small></span><b>↗</b></button></nav>${mission ? `<div class="next-goal"><span class="eyebrow">NEXT CHALLENGE</span><h3>${mission.name}</h3><p>${mission.description} <b>+${mission.reward} コイン</b></p><progress value="${Math.min(progress.data[mission.field], mission.goal)}" max="${mission.goal}"></progress></div>` : '<div class="next-goal"><span class="eyebrow">ALL CHALLENGES COMPLETE</span><h3>次は、自己ベストのその先へ。</h3></div>'}<p class="earned-note">5秒ごとに1コイン＋30秒ごとの到達ボーナス。隕石の破壊で追加報酬（生存・到達報酬の20%まで）。育成は次の挑戦に引き継がれます。</p></div></div>`;
+    <div class="home-dashboard"><button class="stage-summary" data-hub="stages"><span class="eyebrow">${progress.data.flightMode === "endless" ? "ENDLESS FLIGHT" : `STAGE ${String(progress.data.selectedStage).padStart(2, "0")} / 10`}</span><strong>${progress.data.flightMode === "endless" ? "限界の、その先へ" : getStage(progress.data.selectedStage).name}</strong><span>${progress.data.flightMode === "endless" ? "制限時間なし" : `出現30秒＋殲滅 · ${progress.data.clearedStages.length} / 10 クリア`} <b>ステージを選ぶ ↗</b></span></button><div class="pilot-card"><div><span class="eyebrow">CURRENT LOADOUT</span><h2>${escapeHTML(ship.name)}</h2><p>HP ${load.hp} · SPEED Lv.${load.levels.speed} · ${c.main.angles[load.levels.multi - 1].length}発 · SUB Lv.${load.levels.sub}</p></div><span class="pilot-emblem" style="color:${load.color}">⟐</span></div><button class="license-summary" data-hub="license"><span>LICENSE <b>RANK ${license.rank}</b> · ${license.name}</span><span>詳細 ↗</span><progress aria-label="次のランクへの進捗" value="${license.progress}" max="1"></progress></button><nav class="home-nav" aria-label="パイロットメニュー"><button data-hub="hangar"><i>⟐</i><span>機体ハンガー<small>4種類の弾と機体を確認・選択</small></span><b>↗</b></button><button data-hub="upgrades"><i>↑</i><span>初期スキル強化<small>フライトのスタートを強くする</small></span><b>↗</b></button><button data-hub="skills"><i>✦</i><span>スキル図鑑<small>フライトと初期強化を確認</small></span><b>↗</b></button><button data-hub="missions"><i>◎</i><span>チャレンジ<small>目標を達成して報酬を受け取る</small></span><b>↗</b></button><button data-hub="account"><i>☁</i><span>アカウント・保存<small>${account.user ? "クラウドに育成をバックアップ" : "ゲストのままでもプレイできます"}</small></span><b>↗</b></button><button data-hub="shop"><i>✦</i><span>ショップ<small>コインで機体をカラーリング</small></span><b>↗</b></button><button data-hub="license"><i>◇</i><span>ライセンス<small>累計フライトでランクアップ</small></span><b>↗</b></button><button data-hub="stats"><i>▥</i><span>フライト記録<small>最近20回の結果と成長を確認</small></span><b>↗</b></button><button data-hub="settings"><i>⚙</i><span>遊び方・設定<small>操作と演出をカスタマイズ</small></span><b>↗</b></button></nav>${mission ? `<div class="next-goal"><span class="eyebrow">NEXT CHALLENGE</span><h3>${mission.name}</h3><p>${mission.description} <b>+${mission.reward} コイン</b></p><progress value="${Math.min(progress.data[mission.field], mission.goal)}" max="${mission.goal}"></progress></div>` : '<div class="next-goal"><span class="eyebrow">ALL CHALLENGES COMPLETE</span><h3>次は、自己ベストのその先へ。</h3></div>'}<p class="earned-note">5秒ごとに1コイン＋30秒ごとの到達ボーナス。隕石の破壊で追加報酬（生存・到達報酬の20%まで）。育成は次の挑戦に引き継がれます。</p></div></div>`;
     refreshRecords();
   }
   let hubPage = "",
@@ -841,11 +866,14 @@
     }
     if (hubPage === "hangar")
       $("hub-content").innerHTML =
-        balance +
+        '<p class="hub-intro">弾の種類で相棒を選ぼう。全機体の基本HPは3、移動速度は300。装甲などの初期強化は共通です。機体はステージクリアで解放され、コインは使いません。</p>' +
         StarProgress.SHIPS.map((ship) => {
-          const owned = progress.data.unlocked.includes(ship.id),
+          const owned = progress.isShipUnlocked(ship.id),
             selected = progress.data.selectedShip === ship.id;
-          return `<article class="upgrade-card"><span class="ship-mini hangar-preview">${shipSVG(ship.id, ship.color)}</span><div><span class="eyebrow">${ship.tag}</span><h3>${ship.name}</h3><p>${ship.description}</p><small>基本HP ${ship.hp} / 移動速度 ${ship.speed}</small></div><button class="secondary" data-ship="${ship.id}" ${selected || (!owned && progress.data.credits < ship.cost) ? "disabled" : ""}>${selected ? "選択中" : owned ? "この機体を選ぶ" : `${ship.cost} コインで解放`}</button></article>`;
+          const condition = ship.unlockStage
+            ? `ステージ${ship.unlockStage}クリアで解放`
+            : "最初から使用可能";
+          return `<article class="upgrade-card ship-card" data-hangar-ship="${ship.id}"><span class="ship-mini hangar-preview">${shipSVG(ship.id, ship.color)}</span><div><span class="eyebrow">${ship.tag}</span><h3>${ship.name}</h3><p>${ship.description}</p><small>基本HP ${ship.hp} / 移動速度 ${ship.speed}</small><p class="ship-condition">${owned && ship.unlockStage ? "解放済み · " : ""}${condition}</p></div><button class="secondary" data-ship="${ship.id}" ${selected || !owned ? "disabled" : ""}>${selected ? "選択中" : owned ? "この機体を選ぶ" : condition}</button></article>`;
         }).join("");
     if (hubPage === "upgrades")
       $("hub-content").innerHTML =
@@ -919,7 +947,7 @@
         (d.recentRuns.length
           ? d.recentRuns
               .map((r) => {
-                const ship = StarProgress.SHIPS.find((s) => s.id === r.ship),
+                const ship = StarProgress.shipDetails(r.ship),
                   skin = StarProgress.SKINS.find((s) => s.id === r.skin);
                 return `<article class="history-card"><span>${r.endedAt ? new Date(r.endedAt).toLocaleString("ja-JP") : "日時未記録"}</span><h3>${formatTime(r.ms)} <small>秒</small><b>+${r.coins} コイン</b></h3><p>${r.stage ? `STAGE ${r.stage} · ${r.cleared ? "CLEAR" : "未クリア"}` : "ENDLESS"} / ${ship.name} · ${skin.name} / 隕石 ${r.destroyed}個</p><p>開始 → 終了　SPEED ${r.initialLevels.speed} → ${r.endLevels.speed} · MULTI ${r.initialLevels.multi} → ${r.endLevels.multi} · SUB ${r.initialLevels.sub} → ${r.endLevels.sub}</p></article>`;
               })

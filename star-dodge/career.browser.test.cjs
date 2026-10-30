@@ -247,7 +247,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.equal(await page.locator(".history-card").count(), 1);
       assert.ok(
         (await page.locator(".history-card").innerText()).includes(
-          "サンバースト",
+          "ゴールド",
         ),
       );
       assert.ok(
