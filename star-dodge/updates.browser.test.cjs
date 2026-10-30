@@ -135,7 +135,7 @@ const server = http.createServer((req, res) => {
     });
     await page.waitForFunction(
       async () =>
-        (await caches.has("star-dodge-shell-v0-5-0-four-ships")) &&
+        (await caches.has("star-dodge-shell-v0-5-0-planets-40")) &&
         !(await caches.has("star-dodge-shell-v0-3-0")),
     );
     assert.equal(
@@ -149,7 +149,7 @@ const server = http.createServer((req, res) => {
       (await page.locator(".page-footer").innerText()).includes("0.5.0"),
     );
     assert.equal(await page.evaluate(() => StarDodge.CONFIG.player.radius), 6);
-    assert.equal(await page.evaluate(() => StarStages.STAGES.length), 10);
+    assert.equal(await page.evaluate(() => StarStages.STAGES.length), 40);
     assert.equal(
       await page.evaluate(
         () =>
@@ -176,7 +176,9 @@ const server = http.createServer((req, res) => {
       .click();
     await page.getByText(/確認できませんでした/).waitFor();
     await page.locator('[data-hub="stages"]').click();
-    assert.equal(await page.locator(".stage-card").count(), 10);
+    assert.equal(await page.locator(".planet-card").count(), 8);
+    await page.locator('[data-planet="1"]').click();
+    assert.equal(await page.locator(".stage-card").count(), 5);
     await page.getByRole("button", { name: "閉じる", exact: true }).click();
     await context.setOffline(false);
     phase = "next";

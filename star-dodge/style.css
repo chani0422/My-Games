@@ -1696,6 +1696,103 @@ dialog::backdrop {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+.planet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.planet-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  overflow: hidden;
+  min-height: 170px;
+  padding: 16px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--stage-color);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #19283d, #101c2c);
+}
+.planet-card.selected {
+  border-color: var(--stage-color);
+}
+.planet-card strong {
+  color: var(--stage-color);
+  font-size: 22px;
+  z-index: 1;
+}
+.planet-card > span:last-child {
+  color: var(--muted);
+  font-size: 10px;
+  z-index: 1;
+}
+.planet-number {
+  font:
+    9px ui-monospace,
+    monospace;
+  color: var(--stage-color);
+  z-index: 1;
+}
+.planet-orb {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin: 2px 0 3px;
+  background: radial-gradient(
+    circle at 30% 25%,
+    var(--stage-color),
+    #15243d 90%
+  );
+  box-shadow: inset -10px -4px 15px #050e2780;
+}
+.planet-orb-5,
+.planet-orb-6 {
+  background: repeating-linear-gradient(
+    12deg,
+    #273044 0 7px,
+    var(--stage-color) 9px 17px
+  );
+}
+.planet-orb-6::after {
+  content: "";
+  display: block;
+  width: 85px;
+  height: 20px;
+  margin: 21px -11px;
+  border: 3px solid var(--stage-color);
+  border-radius: 50%;
+  transform: rotate(-20deg);
+}
+.planet-back {
+  width: auto;
+  padding: 10px 16px;
+}
+.planet-heading {
+  color: var(--stage-color);
+  margin: 20px 0 16px;
+}
+.planet-heading small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  margin-top: 7px;
+}
+.result-panel .ship-unlock {
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  padding: 12px 8px;
+  color: var(--amber);
+  background: #142234ed;
+}
+.ship-unlock small {
+  display: block;
+  font-size: 10px;
+  margin-top: 6px;
+}
 .stage-card {
   border: 1px solid var(--line);
   border-top: 2px solid var(--stage-color);

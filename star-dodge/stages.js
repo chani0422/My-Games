@@ -5,36 +5,71 @@
   else root.StarStages = api;
 })(globalThis, () => {
   "use strict";
-  const STAGES = Object.freeze(
+  const STAGES_PER_PLANET = 5;
+  const PLANETS = Object.freeze(
     [
-      ["はじまりの宙域", 1.05, 65, 1, 1, "#71f3e0"],
-      ["流星の航路", 0.95, 75, 1, 1, "#8ce4ff"],
-      ["青い星雲", 0.85, 85, 1, 1, "#78b4ff"],
-      ["小惑星ベルト", 0.75, 95, 2, 1, "#b5a0ff"],
-      ["黄昏の境界", 0.68, 105, 2, 1, "#ffcf8a"],
-      ["双子の流星群", 0.6, 115, 2, 2, "#ffc09a"],
-      ["深紅の宙域", 0.52, 125, 3, 2, "#ff9fac"],
-      ["嵐の回廊", 0.45, 135, 3, 2, "#eea8ff"],
-      ["星の渦", 0.38, 145, 4, 2, "#a9b4ff"],
-      ["最後の星門", 0.32, 155, 4, 3, "#ffe6a0"],
-    ].map(([name, interval, speed, hardness, batch, color], i) =>
+      ["地球", "#71f3e0"],
+      ["水星", "#c3becd"],
+      ["金星", "#ffd182"],
+      ["火星", "#ff9fac"],
+      ["木星", "#edb78a"],
+      ["土星", "#d8c69c"],
+      ["天王星", "#8ee6ed"],
+      ["海王星", "#809fff"],
+    ].map(([name, color], i) =>
       Object.freeze({
         id: i + 1,
         name,
-        duration: 30,
-        firstClearCoins: 5 + i * 2,
-        interval,
-        speed,
-        hardness,
-        batch,
         color,
+        firstStage: i * STAGES_PER_PLANET + 1,
+        lastStage: (i + 1) * STAGES_PER_PLANET,
       }),
     ),
+  );
+  const STAGES = Object.freeze(
+    Array.from({ length: PLANETS.length * STAGES_PER_PLANET }, (_, i) => {
+      const p = Math.floor(i / STAGES_PER_PLANET),
+        local = i % STAGES_PER_PLANET,
+        // Small steps inside a planet, a larger step at its boundary and finale.
+        curve = (p * 5 + local * 0.7 + (local === 4 ? 0.35 : 0)) / 38.15,
+        hardness = 1 + p + (local === 4 ? 1 : 0);
+      return Object.freeze({
+        id: i + 1,
+        planetId: p + 1,
+        localNumber: local + 1,
+        name: `ステージ${local + 1}`,
+        duration: 30,
+        firstClearCoins: 5 + i * 2,
+        interval: Number((1.05 - 0.55 * curve).toFixed(3)),
+        speed: Number((65 + 95 * curve).toFixed(1)),
+        hardness,
+        batch: p >= 7 ? 3 : p >= 4 ? 2 : 1,
+        maxRocks: 12 + p * 5 + local,
+        // Stage-only HP and density keep the longer campaign's cleanup bounded.
+        hp: Object.freeze([hardness, hardness + 1, hardness + 3]),
+        eliteHp: hardness + 5,
+        color: PLANETS[p].color,
+      });
+    }),
   );
   function getStage(id) {
     return Number.isInteger(id)
       ? STAGES.find((stage) => stage.id === id) || null
       : null;
   }
-  return { STAGES, getStage };
+  function getPlanet(id) {
+    return Number.isInteger(id) ? PLANETS[id - 1] || null : null;
+  }
+  function stageLabel(id) {
+    const stage = getStage(id);
+    return stage ? `${getPlanet(stage.planetId).name} ${stage.name}` : "";
+  }
+  return {
+    PLANETS,
+    STAGES_PER_PLANET,
+    STAGES,
+    getStage,
+    getPlanet,
+    stageLabel,
+  };
 });

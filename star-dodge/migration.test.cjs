@@ -156,7 +156,7 @@ test("invalid selection clamps to the final unlocked stage and injected ship own
   assert.equal(
     sanitize({ ...fresh(), clearedStages: clears(10), selectedStage: 999 })
       .selectedStage,
-    10,
+    11,
   );
   assert.equal(
     sanitize({

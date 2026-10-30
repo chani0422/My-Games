@@ -86,7 +86,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       ]) {
         const button = page.locator(`[data-ship="${id}"]`);
         assert.equal(await button.isDisabled(), true);
-        assert.ok((await button.innerText()).includes(`ステージ${threshold}`));
+        assert.ok((await button.innerText()).includes(`通し番号${threshold}`));
         await button.evaluate((el) => el.click());
       }
       assert.equal((await saved()).selectedShip, "pioneer");

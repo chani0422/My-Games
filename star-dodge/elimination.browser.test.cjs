@@ -181,7 +181,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.equal(await page.evaluate(() => testGame.outcome), "cleared");
       assert.equal(await page.evaluate(() => testGame.enemyBullets.length), 1);
       await page
-        .getByRole("heading", { name: "ステージ1 クリア！", exact: true })
+        .getByRole("heading", { name: "地球 ステージ1 クリア！", exact: true })
         .waitFor();
       const data = await page.evaluate(() =>
           JSON.parse(localStorage.getItem("star-dodge-progress-v1")),
@@ -216,7 +216,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
         expected,
       );
       await page
-        .getByRole("button", { name: "ステージ2へ進む", exact: false })
+        .getByRole("button", { name: "地球 ステージ2へ進む", exact: false })
         .click();
       assert.equal(await page.evaluate(() => testGame.elimination), false);
       assert.ok(
