@@ -537,7 +537,8 @@
         batch = [];
       for (
         let i = 0;
-        i < (elite ? 1 : d.batch) && this.rocks.length < c.rocks.cap;
+        i < (elite ? 1 : d.batch) &&
+        this.rocks.length < (this.stage?.maxRocks ?? c.rocks.cap);
         i++
       ) {
         const roll = this.random();
@@ -572,7 +573,10 @@
           : rollPattern < pool.length * 0.12
             ? pool[Math.floor(rollPattern / 0.12)]
             : "meteor";
-        const hp = elite ? d.hardness * 2 + 6 : type.hp(d.hardness);
+        const hp = elite
+          ? (this.stage?.eliteHp ?? d.hardness * 2 + 6)
+          : (this.stage?.hp[c.rocks.types.indexOf(type)] ??
+            type.hp(d.hardness));
         const rock = {
           x,
           y: -radius - 1,

@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
+const { PLANETS, stageLabel } = require("./stages.js");
 const { chromium } = require("playwright");
 const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
 (async () => {
@@ -53,13 +54,46 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
         .click();
       await page.getByText("最新版です（0.5.0）", { exact: true }).waitFor();
       await page.locator('[data-hub="stages"]').click();
-      assert.equal(await page.locator(".stage-card").count(), 10);
+      assert.equal(await page.locator(".planet-card").count(), 8);
+      assert.equal(await page.locator(".stage-card").count(), 0);
+      assert.deepEqual(
+        await page.locator(".planet-card strong").allTextContents(),
+        PLANETS.map((p) => p.name),
+      );
+      assert.equal(
+        new Set(
+          await page
+            .locator(".planet-card")
+            .evaluateAll((nodes) =>
+              nodes.map((n) => n.style.getPropertyValue("--stage-color")),
+            ),
+        ).size,
+        8,
+      );
+      await page.locator('[data-planet="8"]').click();
+      assert.equal(await page.locator(".stage-card").count(), 5);
+      assert.equal(await page.locator("[data-stage]:disabled").count(), 5);
+      assert.ok(
+        (await page.locator(".planet-heading").innerText()).includes("海王星"),
+      );
+      await page.locator('[data-planet="0"]').click();
+      await page.locator('[data-planet="1"]').click();
+      assert.equal(await page.locator(".stage-card").count(), 5);
+      assert.equal(
+        await page.locator('[data-stage="1"]').innerText(),
+        "選択中",
+      );
+      assert.ok(
+        await page
+          .locator("#hub")
+          .evaluate((el) => el.scrollWidth <= el.clientWidth),
+      );
       assert.equal(await page.locator('[data-stage="2"]').isDisabled(), true);
-      await fs.mkdir("/workspace/artifacts/star-dodge-0.5-screens", {
+      await fs.mkdir("/workspace/artifacts/star-dodge-planets-40", {
         recursive: true,
       });
       await page.screenshot({
-        path: `/workspace/artifacts/star-dodge-0.5-screens/stages-${viewport.width}.png`,
+        path: `/workspace/artifacts/star-dodge-planets-40/stages-${viewport.width}.png`,
         fullPage: true,
       });
       await page.getByRole("button", { name: "閉じる", exact: true }).click();
@@ -79,7 +113,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       const hud = await page.locator(".instrument").boundingBox();
       assert.ok(hud.y >= 0);
       await page.screenshot({
-        path: `/workspace/artifacts/star-dodge-0.5-screens/hitbox-${viewport.width}.png`,
+        path: `/workspace/artifacts/star-dodge-planets-40/hitbox-${viewport.width}.png`,
         fullPage: true,
       });
       // Finish an ordinary simulated stage; keep damage immunity only in this fixture.
@@ -131,7 +165,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.equal(await page.evaluate(() => testGame.outcome), "cleared");
       assert.ok(await page.evaluate(() => testGame.time > 30));
       await page
-        .getByRole("heading", { name: "ステージ1 クリア！", exact: true })
+        .getByRole("heading", { name: "地球 ステージ1 クリア！", exact: true })
         .waitFor();
       const coins = await page.evaluate(
         () =>
@@ -158,7 +192,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
         coins,
       );
       await page
-        .getByRole("button", { name: "ステージ2へ進む", exact: false })
+        .getByRole("button", { name: "地球 ステージ2へ進む", exact: false })
         .click();
       assert.equal(await page.evaluate(() => testGame.stage.id), 2);
       assert.equal(await page.evaluate(() => testGame.time), 0);
@@ -166,9 +200,12 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       await page.reload();
       await page.clock.runFor(50);
       assert.ok(
-        (await page.locator(".stage-summary").innerText()).includes("STAGE 02"),
+        (await page.locator(".stage-summary").innerText()).includes(
+          "地球 ステージ2",
+        ),
       );
       await page.locator('[data-hub="stages"]').click();
+      await page.locator('[data-planet="1"]').click();
       assert.ok(
         (await page.locator(".stage-card").first().innerText()).includes(
           "CLEAR",
@@ -190,7 +227,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.deepEqual(errors, []);
       await context.close();
       console.log(
-        `PASS ${viewport.width}px: ten-stage selector, locked levels, radius-6 visible hitbox, 30s deadline and elimination clear, one reward, next level, reload, endless and coin labels`,
+        `PASS ${viewport.width}px: eight-planet/two-level selector, locked levels, radius-6 visible hitbox, 30s deadline and elimination clear, one reward, next level, reload, endless and coin labels`,
       );
     }
     const campaign = await browser.newContext({
@@ -220,7 +257,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
     await cp
       .getByRole("button", { name: "フライト開始", exact: false })
       .click();
-    for (let id = 1; id <= 10; id++) {
+    for (let id = 1; id <= 40; id++) {
       await cp.clock.runFor(3300);
       assert.equal(await cp.evaluate(() => testGame.stage.id), id);
       await cp.evaluate(() => {
@@ -266,16 +303,32 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       });
       await cp.clock.runFor(50);
       assert.equal(await cp.evaluate(() => testGame.outcome), "cleared");
-      if (id < 10)
+      const unlockedShip = { 5: "ランス", 15: "ノヴァ", 25: "シーカー" }[id];
+      assert.equal(
+        await cp.locator(".ship-unlock").count(),
+        unlockedShip ? 1 : 0,
+      );
+      if (unlockedShip) {
+        assert.ok(
+          (await cp.locator(".ship-unlock").innerText()).includes(
+            `新機体「${unlockedShip}」解放！`,
+          ),
+        );
+        await cp.screenshot({
+          path: `/workspace/artifacts/star-dodge-planets-40/unlock-${id}.png`,
+          fullPage: true,
+        });
+      }
+      if (id < 40)
         await cp
           .getByRole("button", {
-            name: `ステージ${id + 1}へ進む`,
+            name: `${stageLabel(id + 1)}へ進む`,
             exact: false,
           })
           .click();
     }
     await cp
-      .getByRole("heading", { name: "全10ステージ、制覇！", exact: true })
+      .getByRole("heading", { name: "全40ステージ、制覇！", exact: true })
       .waitFor();
     assert.equal(
       await cp.evaluate(
@@ -283,20 +336,42 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
           JSON.parse(localStorage.getItem("star-dodge-progress-v1"))
             .clearedStages.length,
       ),
-      10,
+      40,
     );
     await cp.screenshot({
-      path: "/workspace/artifacts/star-dodge-0.5-screens/all-clear.png",
+      path: "/workspace/artifacts/star-dodge-planets-40/all-clear.png",
       fullPage: true,
     });
+    await cp.getByRole("button", { name: "ホームへ", exact: true }).click();
+    await cp.locator('[data-hub="hangar"]').click();
+    for (const id of ["lance", "nova", "seeker"]) {
+      assert.equal(await cp.locator(`[data-ship="${id}"]`).isDisabled(), false);
+      await cp.locator(`[data-ship="${id}"]`).click();
+    }
+    await cp.getByRole("button", { name: "閉じる", exact: true }).click();
+    await cp
+      .getByRole("button", { name: "フライト開始", exact: false })
+      .click();
+    await cp.clock.runFor(3300);
+    // Re-clear the last stage with an empty deadline fixture; no first-clear or unlock repetition.
+    await cp.evaluate(() => {
+      testGame.ticks = 1799;
+      testGame.time = 1799 / 60;
+      testGame.rocks = [];
+      testGame.bullets = [];
+      testGame.advance(1 / 60);
+    });
+    await cp.clock.runFor(50);
+    assert.equal(await cp.locator(".ship-unlock").count(), 0);
+    assert.equal(await cp.locator(".first-clear-reward").count(), 0);
     await cp
       .getByRole("button", { name: "同じステージに挑戦", exact: false })
       .click();
-    assert.equal(await cp.evaluate(() => testGame.stage.id), 10);
+    assert.equal(await cp.evaluate(() => testGame.stage.id), 40);
     assert.equal(await cp.evaluate(() => testGame.outcome), null);
     await campaign.close();
     console.log(
-      "PASS: full campaign 1–10 through next-stage UI, final completion, saved clears and replay",
+      "PASS: full campaign 1–40 through next-stage UI, final completion, saved clears and replay",
     );
   } finally {
     await browser.close();

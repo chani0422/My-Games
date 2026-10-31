@@ -1,0 +1,503 @@
+{
+  "source": "PR #6 merged main fde97a3cc3ddbfac0caf50e644c8b187aeffbcbd",
+  "description": "Seed 127; 180s at 60Hz, invincible sinusoidal-input fixture, initial speed2/multi2/sub1, first offered core choice. SHA256 of every full game state plus readable checkpoints. No stage parameters or disabled spawns.",
+  "ships": {
+    "pioneer": {
+      "hash": "3aab2d0b6296e0e477e1ef0cf04beb8dc842800a3dcc9f2c98f314be6e8114e7",
+      "counts": {
+        "shot": 963,
+        "hit": 717,
+        "destroy": 241,
+        "core": 15,
+        "upgrade": 5,
+        "choice": 14,
+        "event": 3
+      },
+      "checkpoints": [
+        {
+          "seconds": 30,
+          "destroyed": 17,
+          "rocks": 7,
+          "bullets": 12,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 2,
+            "multi": 3,
+            "sub": 1
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 1,
+            "dronePower": 0,
+            "magnet": 0
+          }
+        },
+        {
+          "seconds": 60,
+          "destroyed": 46,
+          "rocks": 8,
+          "bullets": 8,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 2,
+            "multi": 3,
+            "sub": 1
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 1,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 90,
+          "destroyed": 73,
+          "rocks": 6,
+          "bullets": 3,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 3,
+            "multi": 3,
+            "sub": 2
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 2,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 120,
+          "destroyed": 123,
+          "rocks": 19,
+          "bullets": 6,
+          "enemyBullets": 1,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 2,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 150,
+          "destroyed": 174,
+          "rocks": 21,
+          "bullets": 2,
+          "enemyBullets": 2,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 1,
+            "damage": 2,
+            "dronePower": 1,
+            "magnet": 2
+          }
+        },
+        {
+          "seconds": 180,
+          "destroyed": 241,
+          "rocks": 43,
+          "bullets": 8,
+          "enemyBullets": 7,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 1,
+            "damage": 3,
+            "dronePower": 1,
+            "magnet": 3
+          }
+        }
+      ],
+      "state": "upgrade",
+      "seconds": 180
+    },
+    "lance": {
+      "hash": "d94d4ea59b14e76372ae03388e29243e91c74c24ade9e47a174ac8e5aecd9b54",
+      "counts": {
+        "shot": 963,
+        "hit": 940,
+        "destroy": 352,
+        "core": 15,
+        "upgrade": 5,
+        "choice": 14,
+        "event": 3
+      },
+      "checkpoints": [
+        {
+          "seconds": 30,
+          "destroyed": 20,
+          "rocks": 5,
+          "bullets": 15,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 2,
+            "multi": 3,
+            "sub": 1
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 1,
+            "dronePower": 0,
+            "magnet": 0
+          }
+        },
+        {
+          "seconds": 60,
+          "destroyed": 53,
+          "rocks": 6,
+          "bullets": 9,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 2,
+            "multi": 3,
+            "sub": 1
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 1,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 90,
+          "destroyed": 87,
+          "rocks": 5,
+          "bullets": 5,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 3,
+            "multi": 3,
+            "sub": 2
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 2,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 120,
+          "destroyed": 152,
+          "rocks": 17,
+          "bullets": 7,
+          "enemyBullets": 1,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 2,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 150,
+          "destroyed": 231,
+          "rocks": 17,
+          "bullets": 9,
+          "enemyBullets": 2,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 1,
+            "damage": 2,
+            "dronePower": 1,
+            "magnet": 2
+          }
+        },
+        {
+          "seconds": 180,
+          "destroyed": 352,
+          "rocks": 32,
+          "bullets": 11,
+          "enemyBullets": 2,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 1,
+            "damage": 3,
+            "dronePower": 1,
+            "magnet": 3
+          }
+        }
+      ],
+      "state": "upgrade",
+      "seconds": 180
+    },
+    "nova": {
+      "hash": "32822478010b9acb9e78fda22be40c3f9587435284ab9df3f590ef1051a67cb9",
+      "counts": {
+        "shot": 865,
+        "hit": 779,
+        "destroy": 229,
+        "explosion": 203,
+        "core": 15,
+        "upgrade": 5,
+        "choice": 14,
+        "event": 3
+      },
+      "checkpoints": [
+        {
+          "seconds": 30,
+          "destroyed": 20,
+          "rocks": 7,
+          "bullets": 11,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 2,
+            "multi": 3,
+            "sub": 1
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 1,
+            "dronePower": 0,
+            "magnet": 0
+          }
+        },
+        {
+          "seconds": 60,
+          "destroyed": 50,
+          "rocks": 7,
+          "bullets": 6,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 2,
+            "multi": 3,
+            "sub": 1
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 1,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 90,
+          "destroyed": 73,
+          "rocks": 8,
+          "bullets": 3,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 3,
+            "multi": 3,
+            "sub": 2
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 2,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 120,
+          "destroyed": 116,
+          "rocks": 19,
+          "bullets": 4,
+          "enemyBullets": 1,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 2,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 150,
+          "destroyed": 160,
+          "rocks": 24,
+          "bullets": 1,
+          "enemyBullets": 2,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 1,
+            "damage": 2,
+            "dronePower": 1,
+            "magnet": 2
+          }
+        },
+        {
+          "seconds": 180,
+          "destroyed": 229,
+          "rocks": 43,
+          "bullets": 8,
+          "enemyBullets": 7,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 1,
+            "damage": 3,
+            "dronePower": 1,
+            "magnet": 3
+          }
+        }
+      ],
+      "state": "upgrade",
+      "seconds": 180
+    },
+    "seeker": {
+      "hash": "d73e2cf253543c5f5c007c6c861ccdf609b701daaa028c54045666246139248d",
+      "counts": {
+        "shot": 963,
+        "hit": 996,
+        "destroy": 387,
+        "core": 15,
+        "upgrade": 5,
+        "choice": 14,
+        "event": 3
+      },
+      "checkpoints": [
+        {
+          "seconds": 30,
+          "destroyed": 31,
+          "rocks": 1,
+          "bullets": 17,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 2,
+            "multi": 3,
+            "sub": 1
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 1,
+            "dronePower": 0,
+            "magnet": 0
+          }
+        },
+        {
+          "seconds": 60,
+          "destroyed": 69,
+          "rocks": 0,
+          "bullets": 10,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 2,
+            "multi": 3,
+            "sub": 1
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 1,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 90,
+          "destroyed": 107,
+          "rocks": 3,
+          "bullets": 6,
+          "enemyBullets": 0,
+          "levels": {
+            "speed": 3,
+            "multi": 3,
+            "sub": 2
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 2,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 120,
+          "destroyed": 182,
+          "rocks": 18,
+          "bullets": 8,
+          "enemyBullets": 1,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 0,
+            "damage": 2,
+            "dronePower": 0,
+            "magnet": 1
+          }
+        },
+        {
+          "seconds": 150,
+          "destroyed": 271,
+          "rocks": 15,
+          "bullets": 7,
+          "enemyBullets": 3,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 1,
+            "damage": 2,
+            "dronePower": 1,
+            "magnet": 2
+          }
+        },
+        {
+          "seconds": 180,
+          "destroyed": 387,
+          "rocks": 26,
+          "bullets": 8,
+          "enemyBullets": 3,
+          "levels": {
+            "speed": 4,
+            "multi": 3,
+            "sub": 3
+          },
+          "skills": {
+            "rapid": 1,
+            "damage": 3,
+            "dronePower": 1,
+            "magnet": 3
+          }
+        }
+      ],
+      "state": "upgrade",
+      "seconds": 180
+    }
+  }
+}

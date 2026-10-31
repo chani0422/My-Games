@@ -64,9 +64,9 @@ test("shrinking the damage hitbox preserves item pickup reach for every ship", (
     assert.equal(g.player.radius, 6);
   }
 });
-test("ten finite stages increase speed/density/hardness and preserve the endless mode", () => {
-  assert.equal(STAGES.length, 10);
-  for (let i = 0; i < 10; i++) {
+test("forty finite stages increase speed/density/hardness and preserve the endless mode", () => {
+  assert.equal(STAGES.length, 40);
+  for (let i = 0; i < STAGES.length; i++) {
     const s = STAGES[i],
       g = playing(s.id);
     assert.equal(g.stage.id, i + 1);
@@ -80,7 +80,7 @@ test("ten finite stages increase speed/density/hardness and preserve the endless
     }
     assert.equal(g.itemCursor, i % 3);
   }
-  for (const id of [0, 11, "1", null, NaN]) assert.equal(getStage(id), null);
+  for (const id of [0, 41, "1", null, NaN]) assert.equal(getStage(id), null);
   const endless = playing();
   endless.player.invincible = 1000;
   for (let i = 0; i < 2000; i++) {
@@ -185,7 +185,7 @@ test("sequential clear progression persists; failed, early, duplicate or skipped
   assert.deepEqual(p.data.clearedStages, []);
   p.finish("skip", 30000, 0, { stage: 3, cleared: true });
   assert.deepEqual(p.data.clearedStages, []);
-  for (let id = 1; id <= 10; id++) {
+  for (let id = 1; id <= STAGES.length; id++) {
     const previous = p.data.credits,
       result = p.finish(`clear-${id}`, 30000, 10, { stage: id, cleared: true });
     assert.equal(result.credits, 12 + getStage(id).firstClearCoins);
@@ -195,7 +195,7 @@ test("sequential clear progression persists; failed, early, duplicate or skipped
       p.data.clearedStages,
       Array.from({ length: id }, (_, i) => i + 1),
     );
-    assert.equal(p.data.selectedStage, Math.min(10, id + 1));
+    assert.equal(p.data.selectedStage, Math.min(STAGES.length, id + 1));
     assert.equal(
       p.finish(`clear-${id}`, 30000, 10, { stage: id, cleared: true })
         .duplicate,
