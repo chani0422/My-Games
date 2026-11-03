@@ -165,7 +165,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.equal(await page.evaluate(() => testGame.outcome), "cleared");
       assert.ok(await page.evaluate(() => testGame.time > 30));
       await page
-        .getByRole("heading", { name: "地球 ステージ1 クリア！", exact: true })
+        .getByRole("heading", { name: "地球 Stage1 Clear！", exact: true })
         .waitFor();
       const coins = await page.evaluate(
         () =>
@@ -328,7 +328,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
           .click();
     }
     await cp
-      .getByRole("heading", { name: "全40ステージ、制覇！", exact: true })
+      .getByRole("heading", { name: "全40ステージ制覇！", exact: true })
       .waitFor();
     assert.equal(
       await cp.evaluate(

@@ -43,7 +43,7 @@ python3 -m http.server 8001 --bind 127.0.0.1
 
 次の更新では `version.json`、`sw.js` のVERSION/キャッシュ名、app.jsのAPP_VERSION、HTMLのCSS/JS参照とフッター、Android版のバージョンを合わせて更新してください。
 
-ノヴァ・音量調整のキャッシュ識別子は `star-dodge-shell-v0-5-0-nova-audio`。公開番号は0.5.0 / versionCode 5を維持します。既存の同版キャッシュにも更新が届くようワーカーのキャッシュだけ区別し、プレイ中の画面は強制再読み込みしません。
+表示テキスト更新のキャッシュ識別子は `star-dodge-shell-v0-5-0-display-texts`。公開番号は0.5.0 / versionCode 5を維持します。既存の同版キャッシュにも更新が届くようワーカーのキャッシュだけ区別し、プレイ中の画面は強制再読み込みしません。
 
 ステージの数値とクリア仕様は [40ステージの設計](docs/STAGES.md) を参照してください。
 

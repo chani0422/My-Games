@@ -95,7 +95,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.equal(await page.evaluate(() => testGame.enemyBullets.length), 0);
       assert.ok(
         (await page.locator("#toast").innerText()).includes(
-          "TIME UP — 残りの隕石を殲滅せよ",
+          "TIME UP — 残りの隕石をすべて壊せ",
         ),
       );
       assert.ok(
@@ -181,7 +181,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       assert.equal(await page.evaluate(() => testGame.outcome), "cleared");
       assert.equal(await page.evaluate(() => testGame.enemyBullets.length), 1);
       await page
-        .getByRole("heading", { name: "地球 ステージ1 クリア！", exact: true })
+        .getByRole("heading", { name: "地球 Stage1 Clear！", exact: true })
         .waitFor();
       const data = await page.evaluate(() =>
           JSON.parse(localStorage.getItem("star-dodge-progress-v1")),
