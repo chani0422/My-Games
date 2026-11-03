@@ -1,0 +1,552 @@
+{
+  "baselineRef": "84dea14fa5c09a3973f576bb63495bc86075a0e0",
+  "seeds": [
+    127,
+    158,
+    189,
+    220
+  ],
+  "profiles": {
+    "stock": {
+      "levels": {
+        "speed": 1,
+        "multi": 1,
+        "sub": 0
+      }
+    },
+    "standard": {
+      "levels": {
+        "speed": 3,
+        "multi": 2,
+        "sub": 1
+      }
+    },
+    "developed": {
+      "levels": {
+        "speed": 5,
+        "multi": 3,
+        "sub": 3
+      },
+      "damage": 2,
+      "rapid": 3
+    },
+    "weave": {
+      "levels": {
+        "speed": 2,
+        "multi": 2,
+        "sub": 1
+      },
+      "movement": "weave",
+      "choice": "first"
+    }
+  },
+  "method": "Invulnerable horizontal aiming with offensive core priorities, plus sinusoidal movement with the first core choice for weave. Normal damage only, no injected kills. Stage 30s + elimination; endless 180s. Developed profile is an artificial high-firepower stress case.",
+  "stages": [
+    {
+      "stage": 5,
+      "profile": "stock",
+      "pioneer": {
+        "seconds": [
+          32.63,
+          30.67,
+          32.23,
+          31.82
+        ],
+        "meanSeconds": 31.84,
+        "meanKills": 30,
+        "meanRocks": 2.7,
+        "meanExplosions": 0,
+        "allCleared": true
+      },
+      "previousNova": {
+        "seconds": [
+          33.97,
+          32.38,
+          30.82,
+          31.97
+        ],
+        "meanSeconds": 32.28,
+        "meanKills": 30,
+        "meanRocks": 2.88,
+        "meanExplosions": 28,
+        "allCleared": true
+      },
+      "nova": {
+        "seconds": [
+          32.82,
+          32.58,
+          30.82,
+          30
+        ],
+        "meanSeconds": 31.55,
+        "meanKills": 30,
+        "meanRocks": 2.65,
+        "meanExplosions": 28,
+        "allCleared": true
+      }
+    },
+    {
+      "stage": 15,
+      "profile": "stock",
+      "pioneer": {
+        "seconds": [
+          33.73,
+          32.8,
+          32.8,
+          36.43
+        ],
+        "meanSeconds": 33.94,
+        "meanKills": 30.75,
+        "meanRocks": 5.3,
+        "meanExplosions": 0,
+        "allCleared": true
+      },
+      "previousNova": {
+        "seconds": [
+          34.85,
+          33.02,
+          32.8,
+          37.95
+        ],
+        "meanSeconds": 34.65,
+        "meanKills": 29.5,
+        "meanRocks": 5.55,
+        "meanExplosions": 29,
+        "allCleared": true
+      },
+      "nova": {
+        "seconds": [
+          35.37,
+          32.48,
+          36.23,
+          36.13
+        ],
+        "meanSeconds": 35.05,
+        "meanKills": 29.75,
+        "meanRocks": 5.31,
+        "meanExplosions": 29.25,
+        "allCleared": true
+      }
+    },
+    {
+      "stage": 25,
+      "profile": "stock",
+      "pioneer": {
+        "seconds": [
+          39,
+          45.75,
+          44.88,
+          48.05
+        ],
+        "meanSeconds": 44.42,
+        "meanKills": 29.25,
+        "meanRocks": 13.68,
+        "meanExplosions": 0,
+        "allCleared": true
+      },
+      "previousNova": {
+        "seconds": [
+          42.5,
+          46.72,
+          44.42,
+          50.1
+        ],
+        "meanSeconds": 45.93,
+        "meanKills": 26.5,
+        "meanRocks": 13.8,
+        "meanExplosions": 25,
+        "allCleared": true
+      },
+      "nova": {
+        "seconds": [
+          38.53,
+          41.98,
+          42.2,
+          42.53
+        ],
+        "meanSeconds": 41.31,
+        "meanKills": 30,
+        "meanRocks": 14.11,
+        "meanExplosions": 28.25,
+        "allCleared": true
+      }
+    },
+    {
+      "stage": 40,
+      "profile": "stock",
+      "pioneer": {
+        "seconds": [
+          56.23,
+          61.73,
+          64.45,
+          57.73
+        ],
+        "meanSeconds": 60.04,
+        "meanKills": 30.25,
+        "meanRocks": 22.43,
+        "meanExplosions": 0,
+        "allCleared": true
+      },
+      "previousNova": {
+        "seconds": [
+          57.18,
+          60.05,
+          68.72,
+          66.33
+        ],
+        "meanSeconds": 63.07,
+        "meanKills": 30,
+        "meanRocks": 22.68,
+        "meanExplosions": 27.75,
+        "allCleared": true
+      },
+      "nova": {
+        "seconds": [
+          53.57,
+          49.12,
+          57.97,
+          49.57
+        ],
+        "meanSeconds": 52.55,
+        "meanKills": 30,
+        "meanRocks": 23.63,
+        "meanExplosions": 27.5,
+        "allCleared": true
+      }
+    },
+    {
+      "stage": 5,
+      "profile": "standard",
+      "pioneer": {
+        "seconds": [
+          30.83,
+          30.68,
+          30.52,
+          30.27
+        ],
+        "meanSeconds": 30.57,
+        "meanKills": 30,
+        "meanRocks": 2.77,
+        "meanExplosions": 0,
+        "allCleared": true
+      },
+      "previousNova": {
+        "seconds": [
+          30.72,
+          32.73,
+          30.7,
+          32.58
+        ],
+        "meanSeconds": 31.68,
+        "meanKills": 30,
+        "meanRocks": 2.88,
+        "meanExplosions": 26.5,
+        "allCleared": true
+      },
+      "nova": {
+        "seconds": [
+          30.72,
+          30,
+          30.1,
+          32.58
+        ],
+        "meanSeconds": 30.85,
+        "meanKills": 30,
+        "meanRocks": 2.63,
+        "meanExplosions": 26,
+        "allCleared": true
+      }
+    },
+    {
+      "stage": 15,
+      "profile": "standard",
+      "pioneer": {
+        "seconds": [
+          30.73,
+          30.87,
+          31.95,
+          34.62
+        ],
+        "meanSeconds": 32.04,
+        "meanKills": 34.75,
+        "meanRocks": 3.51,
+        "meanExplosions": 0,
+        "allCleared": true
+      },
+      "previousNova": {
+        "seconds": [
+          31.18,
+          32.22,
+          31.3,
+          34.52
+        ],
+        "meanSeconds": 32.3,
+        "meanKills": 34.75,
+        "meanRocks": 3.7,
+        "meanExplosions": 31.5,
+        "allCleared": true
+      },
+      "nova": {
+        "seconds": [
+          30.67,
+          32.83,
+          31.95,
+          34.52
+        ],
+        "meanSeconds": 32.49,
+        "meanKills": 34.75,
+        "meanRocks": 3.55,
+        "meanExplosions": 31.75,
+        "allCleared": true
+      }
+    },
+    {
+      "stage": 25,
+      "profile": "standard",
+      "pioneer": {
+        "seconds": [
+          37.07,
+          33.83,
+          35.98,
+          38.62
+        ],
+        "meanSeconds": 36.38,
+        "meanKills": 51.5,
+        "meanRocks": 12.19,
+        "meanExplosions": 0,
+        "allCleared": true
+      },
+      "previousNova": {
+        "seconds": [
+          39.42,
+          35,
+          38.27,
+          43.07
+        ],
+        "meanSeconds": 38.94,
+        "meanKills": 49.75,
+        "meanRocks": 12.22,
+        "meanExplosions": 45.25,
+        "allCleared": true
+      },
+      "nova": {
+        "seconds": [
+          35.38,
+          38.37,
+          31.78,
+          37.65
+        ],
+        "meanSeconds": 35.8,
+        "meanKills": 56,
+        "meanRocks": 11.91,
+        "meanExplosions": 50.75,
+        "allCleared": true
+      }
+    },
+    {
+      "stage": 40,
+      "profile": "standard",
+      "pioneer": {
+        "seconds": [
+          42,
+          43.87,
+          48.35,
+          45.67
+        ],
+        "meanSeconds": 44.97,
+        "meanKills": 40.75,
+        "meanRocks": 22.68,
+        "meanExplosions": 0,
+        "allCleared": true
+      },
+      "previousNova": {
+        "seconds": [
+          46.92,
+          49.87,
+          49.9,
+          44.65
+        ],
+        "meanSeconds": 47.83,
+        "meanKills": 38.25,
+        "meanRocks": 22.35,
+        "meanExplosions": 37.5,
+        "allCleared": true
+      },
+      "nova": {
+        "seconds": [
+          41.25,
+          37.3,
+          43.83,
+          40.18
+        ],
+        "meanSeconds": 40.64,
+        "meanKills": 43,
+        "meanRocks": 23.46,
+        "meanExplosions": 37.5,
+        "allCleared": true
+      }
+    }
+  ],
+  "endless": [
+    {
+      "stage": null,
+      "profile": "stock",
+      "pioneer": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 558.5,
+        "meanRocks": 5.5,
+        "meanExplosions": 0
+      },
+      "previousNova": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 558.75,
+        "meanRocks": 5.77,
+        "meanExplosions": 503.25
+      },
+      "nova": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 573.25,
+        "meanRocks": 3.72,
+        "meanExplosions": 496.5
+      }
+    },
+    {
+      "stage": null,
+      "profile": "standard",
+      "pioneer": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 558.5,
+        "meanRocks": 4.52,
+        "meanExplosions": 0
+      },
+      "previousNova": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 557,
+        "meanRocks": 4.97,
+        "meanExplosions": 489.25
+      },
+      "nova": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 571.25,
+        "meanRocks": 3.23,
+        "meanExplosions": 482.5
+      }
+    },
+    {
+      "stage": null,
+      "profile": "developed",
+      "pioneer": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 561,
+        "meanRocks": 3.74,
+        "meanExplosions": 0
+      },
+      "previousNova": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 557.75,
+        "meanRocks": 4.1,
+        "meanExplosions": 480.75
+      },
+      "nova": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 571,
+        "meanRocks": 2.5,
+        "meanExplosions": 484.75
+      }
+    },
+    {
+      "stage": null,
+      "profile": "weave",
+      "pioneer": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 224.25,
+        "meanRocks": 15.23,
+        "meanExplosions": 0
+      },
+      "previousNova": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 216.25,
+        "meanRocks": 15.54,
+        "meanExplosions": 192.5
+      },
+      "nova": {
+        "seconds": [
+          180,
+          180,
+          180,
+          180
+        ],
+        "meanSeconds": 180,
+        "meanKills": 292.5,
+        "meanRocks": 13.41,
+        "meanExplosions": 243.5
+      }
+    }
+  ]
+}

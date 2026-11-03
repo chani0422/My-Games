@@ -45,12 +45,31 @@
           Object.assign(ring, {
             x: e.x,
             y: e.y,
-            life: 0.3,
-            max: 0.3,
+            life: 0.6,
+            max: 0.6,
             radius: e.radius / 2.5,
+            width: 3.5,
             flash: false,
-            color: "#ffa25e",
+            color: "#ffb46b",
           });
+        for (let i = 0; i < 42; i++) {
+          const p = this.slot(this.particles, this.particleLimit);
+          if (!p) break;
+          const a = this.random() * Math.PI * 2,
+            v = 70 + this.random() * 190;
+          Object.assign(p, {
+            x: e.x,
+            y: e.y,
+            vx: Math.cos(a) * v,
+            vy: Math.sin(a) * v,
+            life: 0.65,
+            max: 0.65,
+            color: i % 3 ? "#ffb46b" : "#fff0c2",
+            spark: i % 2 === 0,
+          });
+        }
+        this.strength = this.shake > 0 ? Math.max(this.strength, 3) : 3;
+        this.shake = Math.max(this.shake, 0.18);
         return;
       }
       if (
@@ -100,6 +119,7 @@
             life: 0.3,
             max: 0.3,
             radius: e.radius || 15,
+            width: 2,
             flash: e.type === "destroy",
             color,
           });
@@ -163,7 +183,7 @@
           }
           ctx.globalAlpha = r.life / r.max;
           ctx.strokeStyle = r.color;
-          ctx.lineWidth = 2;
+          ctx.lineWidth = r.width || 2;
           ctx.beginPath();
           ctx.arc(
             r.x,

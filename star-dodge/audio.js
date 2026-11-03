@@ -5,6 +5,9 @@
   else root.StarAudio = api;
 })(globalThis, () => {
   "use strict";
+  // Preserve the existing mix ratios; lift each voice as well as the master.
+  // Post-compressor trim compensates its automatic makeup gain and leaves peak headroom.
+  const AUDIO_LEVELS = Object.freeze({ master: 1, voice: 2.5, output: 0.6 });
   class Synth {
     constructor({
       contextFactory = () =>
@@ -32,8 +35,18 @@
         if (!this.context) {
           this.context = this.contextFactory();
           this.master = this.context.createGain();
-          this.master.gain.value = 0.9 * this.volume;
-          this.master.connect(this.context.destination);
+          this.master.gain.value = AUDIO_LEVELS.master * this.volume;
+          this.compressor = this.context.createDynamicsCompressor();
+          this.compressor.threshold.value = -10;
+          this.compressor.knee.value = 6;
+          this.compressor.ratio.value = 12;
+          this.compressor.attack.value = 0.003;
+          this.compressor.release.value = 0.16;
+          this.master.connect(this.compressor);
+          this.output = this.context.createGain();
+          this.output.gain.value = AUDIO_LEVELS.output;
+          this.compressor.connect(this.output);
+          this.output.connect(this.context.destination);
         }
         const resume =
           this.context.state === "suspended"
@@ -48,7 +61,8 @@
       this.volume = Number.isFinite(value)
         ? Math.max(0, Math.min(1, value))
         : 1;
-      if (this.master) this.master.gain.value = 0.9 * this.volume;
+      if (this.master)
+        this.master.gain.value = AUDIO_LEVELS.master * this.volume;
     }
     setEnabled(value) {
       this.enabled = !!value;
@@ -113,9 +127,15 @@
           Math.max(20, to),
           at + duration,
         );
-        gain.gain.setValueAtTime(0.0001, at);
-        gain.gain.exponentialRampToValueAtTime(volume, at + 0.008);
-        gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
+        gain.gain.setValueAtTime(0.0001 * AUDIO_LEVELS.voice, at);
+        gain.gain.exponentialRampToValueAtTime(
+          volume * AUDIO_LEVELS.voice,
+          at + 0.008,
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001 * AUDIO_LEVELS.voice,
+          at + duration,
+        );
         oscillator.connect(gain);
         gain.connect(this.master);
         this.voices.add(voice);
@@ -192,7 +212,14 @@
       )
         return;
       const now = this.context.currentTime,
-        minGap = type === "shot" ? 0.14 : type === "hit" ? 0.045 : 0.02;
+        minGap =
+          type === "shot"
+            ? 0.14
+            : type === "hit"
+              ? 0.045
+              : type === "explosion"
+                ? 0.1
+                : 0.02;
       if (now - (this.lastFX[type] ?? -Infinity) < minGap) return;
       this.lastFX[type] = now;
       const pitch = Math.pow(
@@ -218,9 +245,12 @@
         clear: [660, 1320, 0.3, 0.05, "sine"],
         event: [220, 440, 0.25, 0.035, "triangle"],
         ui: [450, 620, 0.04, 0.025, "sine"],
+        explosion: [125, 30, 0.36, 0.11, "triangle"],
       };
       const [from, to, len, volume, wave] = tones[type] || tones.ui;
       this.tone(from, len, volume, wave, now, to);
+      if (type === "explosion")
+        this.tone(700, 0.09, 0.038, "sawtooth", now, 140);
       if (type === "clear") {
         this.tone(830, 0.24, 0.03, "sine", now + 0.08);
         this.tone(990, 0.3, 0.03, "sine", now + 0.15);
@@ -243,15 +273,22 @@
     get stats() {
       return {
         voices: this.voices.size,
-        nodes: this.voices.size * 2 + (this.master ? 1 : 0),
+        nodes:
+          this.voices.size * 2 +
+          (this.master ? 1 : 0) +
+          (this.compressor ? 1 : 0) +
+          (this.output ? 1 : 0),
         bgmPlaying: this.timer !== null,
         scheduledTicks: this.scheduledTicks,
       };
     }
     dispose() {
       this.stop();
+      this.master?.disconnect();
+      this.compressor?.disconnect();
+      this.output?.disconnect();
       this.context?.close?.();
     }
   }
-  return { Synth };
+  return { Synth, AUDIO_LEVELS };
 });

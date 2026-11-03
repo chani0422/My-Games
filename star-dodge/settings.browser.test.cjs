@@ -98,7 +98,7 @@ const rgb = (hex) =>
           page.evaluate(
             () => JSON.parse(localStorage.getItem("star-dodge-v1")).volume,
           );
-      assert.ok(Math.abs((await gain()) - 0.9) < 1e-6);
+      assert.ok(Math.abs((await gain()) - 1) < 1e-6);
       const uiBefore = await page.evaluate(() => testSynth.uiCalls);
       // Input updates immediately; committing a drag produces one preview.
       for (const value of [65, 45, 40])
@@ -107,7 +107,7 @@ const rgb = (hex) =>
           input.dispatchEvent(new Event("input", { bubbles: true }));
         }, value);
       assert.equal(await volume(), 0.4);
-      assert.ok(Math.abs((await gain()) - 0.36) < 1e-6);
+      assert.ok(Math.abs((await gain()) - 0.4) < 1e-6);
       assert.equal(await slider.getAttribute("aria-valuetext"), "40%");
       assert.equal(await page.locator("#volume-value").innerText(), "40%");
       assert.equal(await page.evaluate(() => testSynth.uiCalls), uiBefore);
@@ -144,7 +144,7 @@ const rgb = (hex) =>
       assert.equal(await volume(), 0.27);
       assert.equal(await page.evaluate(() => testSynth.enabled), false);
       assert.equal(await page.evaluate(() => testSynth.stats.voices), 0);
-      assert.ok(Math.abs((await gain()) - 0.243) < 1e-6);
+      assert.ok(Math.abs((await gain()) - 0.27) < 1e-6);
       await page.reload();
       await page.clock.runFor(50);
       assert.equal(
@@ -158,7 +158,7 @@ const rgb = (hex) =>
       await close();
       await page.locator("#sound").click();
       await page.waitForFunction(() => testSynth.context?.state === "running");
-      assert.ok(Math.abs((await gain()) - 0.243) < 1e-6);
+      assert.ok(Math.abs((await gain()) - 0.27) < 1e-6);
       assert.equal(
         await page.evaluate(
           () => JSON.parse(localStorage.getItem("star-dodge-v1")).best,

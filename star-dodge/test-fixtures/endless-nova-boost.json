@@ -1,0 +1,126 @@
+{
+  "description": "Boosted Nova: radius120, damage capped3, depth1; same seed/input as the preserved PR-A fixture.",
+  "hash": "20b8048981eadd875cf461c68cc86cb6f7610a03c8259b442d5c35a0778170f1",
+  "counts": {
+    "shot": 865,
+    "hit": 932,
+    "destroy": 327,
+    "explosion": 267,
+    "core": 15,
+    "upgrade": 5,
+    "choice": 14,
+    "event": 3
+  },
+  "checkpoints": [
+    {
+      "seconds": 30,
+      "destroyed": 21,
+      "rocks": 6,
+      "bullets": 11,
+      "enemyBullets": 0,
+      "levels": {
+        "speed": 2,
+        "multi": 3,
+        "sub": 1
+      },
+      "skills": {
+        "rapid": 0,
+        "damage": 1,
+        "dronePower": 0,
+        "magnet": 0
+      }
+    },
+    {
+      "seconds": 60,
+      "destroyed": 52,
+      "rocks": 7,
+      "bullets": 6,
+      "enemyBullets": 0,
+      "levels": {
+        "speed": 2,
+        "multi": 3,
+        "sub": 1
+      },
+      "skills": {
+        "rapid": 0,
+        "damage": 1,
+        "dronePower": 0,
+        "magnet": 1
+      }
+    },
+    {
+      "seconds": 90,
+      "destroyed": 83,
+      "rocks": 7,
+      "bullets": 3,
+      "enemyBullets": 0,
+      "levels": {
+        "speed": 3,
+        "multi": 3,
+        "sub": 2
+      },
+      "skills": {
+        "rapid": 0,
+        "damage": 2,
+        "dronePower": 0,
+        "magnet": 1
+      }
+    },
+    {
+      "seconds": 120,
+      "destroyed": 145,
+      "rocks": 17,
+      "bullets": 4,
+      "enemyBullets": 1,
+      "levels": {
+        "speed": 4,
+        "multi": 3,
+        "sub": 3
+      },
+      "skills": {
+        "rapid": 0,
+        "damage": 2,
+        "dronePower": 0,
+        "magnet": 1
+      }
+    },
+    {
+      "seconds": 150,
+      "destroyed": 215,
+      "rocks": 19,
+      "bullets": 2,
+      "enemyBullets": 2,
+      "levels": {
+        "speed": 4,
+        "multi": 3,
+        "sub": 3
+      },
+      "skills": {
+        "rapid": 1,
+        "damage": 2,
+        "dronePower": 1,
+        "magnet": 2
+      }
+    },
+    {
+      "seconds": 180,
+      "destroyed": 327,
+      "rocks": 30,
+      "bullets": 8,
+      "enemyBullets": 5,
+      "levels": {
+        "speed": 4,
+        "multi": 3,
+        "sub": 3
+      },
+      "skills": {
+        "rapid": 1,
+        "damage": 3,
+        "dronePower": 1,
+        "magnet": 3
+      }
+    }
+  ],
+  "state": "upgrade",
+  "seconds": 180
+}

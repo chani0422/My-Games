@@ -106,27 +106,111 @@ test("one piercing projectile cannot repeatedly hit an overlapping or recycled t
   assert.equal(target.hp, 9);
   assert.equal(b.hitRocks.size, 1);
 });
-test("nova direct kills explode once with fixed one damage at radius70 and no secondary chain", () => {
+test("nova direct kills blast to radius120 and allow exactly one secondary generation", () => {
   const g = play("nova"),
     direct = rock(200, 400, 1),
-    secondary = rock(260, 400, 1),
-    chainOnly = rock(320, 400),
-    edge = rock(200, 470),
-    outside = rock(200, 470.001);
-  g.rocks = [direct, secondary, chainOnly, edge, outside];
+    secondary = rock(200, 300, 1),
+    chainOnly = rock(200, 200, 1),
+    beyond = rock(200, 100),
+    edge = rock(320, 400),
+    outside = rock(320.001, 400);
+  g.rocks = [direct, secondary, chainOnly, beyond, edge, outside];
   shot(g);
   g.advance(CONFIG.step);
   assert.deepEqual(
-    [direct.hp, secondary.hp, chainOnly.hp, edge.hp, outside.hp],
-    [0, 0, 3, 2, 3],
+    [direct.hp, secondary.hp, chainOnly.hp, beyond.hp, edge.hp, outside.hp],
+    [0, 0, 0, 3, 2, 3],
   );
-  assert.equal(g.destroyed, 2);
-  assert.equal(g.events.filter((e) => e.type === "destroy").length, 2);
+  assert.equal(g.destroyed, 3);
+  assert.equal(g.events.filter((e) => e.type === "destroy").length, 3);
   assert.deepEqual(
     g.events.filter((e) => e.type === "explosion"),
-    [{ type: "explosion", x: 200, y: 400, radius: 70 }],
+    [
+      { type: "explosion", x: 200, y: 400, radius: 120, damage: 1, depth: 0 },
+      { type: "explosion", x: 200, y: 300, radius: 120, damage: 1, depth: 1 },
+    ],
   );
   assert.equal(g.bullets.length, 0);
+});
+test("nova splash inherits each killing bullet's damage and caps at three", () => {
+  for (const skill of [0, 1, 2, 7]) {
+    const g = play("nova"),
+      direct = rock(200, 400, 1),
+      neighbor = rock(300, 400, 10);
+    g.skills.damage = skill;
+    g.rocks = [direct, neighbor];
+    const bullet = shot(g),
+      damage = Math.min(3, bullet.damage);
+    g.skills.damage = 0; // Changing a later skill must not change a flying projectile.
+    g.advance(CONFIG.step);
+    assert.equal(neighbor.hp, 10 - damage);
+    assert.equal(g.events.find((e) => e.type === "explosion").damage, damage);
+    assert.equal(g.destroyed, 1);
+  }
+  const g = play("nova"),
+    overlap = rock(260, 350, 10);
+  g.skills.damage = 2;
+  g.rocks = [rock(200, 400, 3), rock(200, 300, 3), overlap];
+  shot(g);
+  g.advance(CONFIG.step);
+  assert.equal(
+    overlap.hp,
+    4,
+    "overlapping primary and secondary blasts each deal the capped three damage",
+  );
+  assert.deepEqual(
+    g.events.filter((e) => e.type === "explosion").map((e) => e.damage),
+    [3, 3],
+  );
+});
+test("primary blast victims each explode once, but victims of the second generation never do", () => {
+  for (const reverse of [false, true]) {
+    const g = play("nova"),
+      rocks = [
+        rock(200, 400, 1),
+        rock(260, 400, 1),
+        rock(140, 400, 1),
+        rock(370, 400, 1),
+        rock(480, 400, 4),
+      ];
+    g.rocks = reverse ? [...rocks].reverse() : rocks;
+    shot(g);
+    g.advance(CONFIG.step);
+    assert.deepEqual(
+      rocks.map((r) => r.hp),
+      [0, 0, 0, 0, 4],
+    );
+    const blasts = g.events.filter((e) => e.type === "explosion");
+    assert.equal(blasts.length, 3);
+    assert.equal(blasts.filter((e) => e.depth === 0).length, 1);
+    assert.equal(blasts.filter((e) => e.depth === 1).length, 2);
+    assert.equal(new Set(blasts.map((e) => `${e.x},${e.y}`)).size, 3);
+    assert.equal(g.destroyed, 4);
+  }
+});
+test("a chain's final kill clears elimination once and a same-frame fatal enemy bullet still wins", () => {
+  for (const fatal of [false, true]) {
+    const g = play("nova", 1);
+    g.ticks = 1800;
+    g.time = 30;
+    g.elimination = true;
+    g.rocks = [rock(200, 400, 1), rock(200, 300, 1), rock(200, 200, 1)];
+    g.player.hp = 1;
+    if (fatal)
+      g.enemyBullets = [
+        { x: g.player.x, y: g.player.y, vx: 0, vy: 0, radius: 4 },
+      ];
+    shot(g);
+    g.advance(CONFIG.step);
+    assert.equal(g.remainingRocks, 0);
+    assert.equal(g.destroyed, 3);
+    assert.equal(g.outcome, fatal ? "destroyed" : "cleared");
+    const results = g.events.filter((e) => e.type === "gameover");
+    assert.equal(results.length, 1);
+    assert.equal(results[0].cleared === true, !fatal);
+    g.advance(2);
+    assert.equal(g.events.filter((e) => e.type === "gameover").length, 1);
+  }
 });
 test("nova nonlethal hits and all drone kills retain ordinary collision without blast or penetration", () => {
   const nova = play("nova"),
