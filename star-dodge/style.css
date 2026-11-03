@@ -601,7 +601,7 @@ canvas {
   .page-footer {
     font-size: 7px;
   }
-  .page-footer > span:last-child {
+  .page-footer > span + span {
     display: none;
   }
   .viewport {

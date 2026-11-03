@@ -183,6 +183,7 @@ fs.mkdirSync(output, { recursive: true });
       // Exercise real hit processing -> result -> persistence -> retry through the live UI.
       await page.evaluate(() => {
         testGame.player.invincible = 0;
+        testGame.shield = 0;
         testGame.player.hp = 1;
         testGame.bullets = [];
         testGame.mainAt = testGame.time + 10;
