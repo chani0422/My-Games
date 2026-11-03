@@ -143,7 +143,7 @@ const server = http.createServer((req, res) => {
     });
     await page.waitForFunction(
       async () =>
-        (await caches.has("star-dodge-shell-v0-5-0-planets-40")) &&
+        (await caches.has("star-dodge-shell-v0-5-0-nova-audio")) &&
         !(await caches.has("star-dodge-shell-v0-5-0-four-ships")),
     );
     assert.equal(navigations, 0);

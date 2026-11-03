@@ -222,7 +222,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
         );
         if (id === "nova") {
           await page.evaluate(() =>
-            testGame.emit("explosion", { x: 200, y: 200, radius: 70 }),
+            testGame.emit("explosion", { x: 200, y: 200, radius: 120 }),
           );
           await page.clock.runFor(34);
           assert.ok(await page.evaluate(() => testFX.stats.rings > 0));

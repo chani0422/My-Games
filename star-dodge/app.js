@@ -257,13 +257,11 @@
         toastUntil = game.time + 3;
       }
       sound(
-        e.type === "explosion"
-          ? "destroy"
-          : e.type === "elimination"
-            ? "event"
-            : e.type === "gameover" && e.cleared
-              ? "clear"
-              : e.type,
+        e.type === "elimination"
+          ? "event"
+          : e.type === "gameover" && e.cleared
+            ? "clear"
+            : e.type,
         e,
       );
       fx.add(e, reduced);

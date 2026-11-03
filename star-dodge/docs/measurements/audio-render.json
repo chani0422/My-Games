@@ -1,0 +1,86 @@
+{
+  "baselineRef": "84dea14fa5c09a3973f576bb63495bc86075a0e0",
+  "method": "Chromium OfflineAudioContext, 48kHz mono, 4s; isolated BGM/SFX RMS, mixed cues and artificial coherent 16-voice stress. Sample peaks, not physical speaker SPL.",
+  "previous": {
+    "music": {
+      "peak": 0.0656052678823471,
+      "rms": 0.006096702028888237,
+      "clipped": 0,
+      "maxVoices": 2
+    },
+    "intense": {
+      "peak": 0.07684852182865143,
+      "rms": 0.006646377947815359,
+      "clipped": 0,
+      "maxVoices": 3
+    },
+    "sfx": {
+      "peak": 0.04753769561648369,
+      "rms": 0.00465350799609247,
+      "clipped": 0,
+      "maxVoices": 3
+    },
+    "mix": {
+      "peak": 0.15277770161628723,
+      "rms": 0.03301976869324995,
+      "clipped": 0,
+      "maxVoices": 18
+    },
+    "coherent": {
+      "peak": 1.4541879892349243,
+      "rms": 0.14486469257317178,
+      "clipped": 552,
+      "maxVoices": 16
+    }
+  },
+  "current": {
+    "music": {
+      "peak": 0.1800670325756073,
+      "rms": 0.01624584485749687,
+      "clipped": 0,
+      "maxVoices": 2
+    },
+    "intense": {
+      "peak": 0.21092642843723297,
+      "rms": 0.017750501377179494,
+      "clipped": 0,
+      "maxVoices": 3
+    },
+    "sfx": {
+      "peak": 0.13047689199447632,
+      "rms": 0.012758005463416582,
+      "clipped": 0,
+      "maxVoices": 3
+    },
+    "mix": {
+      "peak": 0.4051743447780609,
+      "rms": 0.09583263460210585,
+      "clipped": 0,
+      "maxVoices": 18
+    },
+    "coherent": {
+      "peak": 0.6541086435317993,
+      "rms": 0.08285090748432483,
+      "clipped": 0,
+      "maxVoices": 16
+    },
+    "zero": {
+      "peak": 0,
+      "rms": 0,
+      "clipped": 0,
+      "maxVoices": 18
+    },
+    "off": {
+      "peak": 0,
+      "rms": 0,
+      "clipped": 0,
+      "maxVoices": 0
+    },
+    "partial": {
+      "peak": 0.0720268115401268,
+      "rms": 0.00649833805632614,
+      "clipped": 0,
+      "maxVoices": 2
+    }
+  }
+}

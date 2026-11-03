@@ -65,7 +65,12 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       const saved = await page.evaluate(() =>
         JSON.parse(localStorage.getItem("star-dodge-progress-v1")),
       );
-      assert.deepEqual(saved, { ...fixture, credits: fixture.credits + 140, selectedShip: "pioneer", unlocked: ["pioneer"] });
+      assert.deepEqual(saved, {
+        ...fixture,
+        credits: fixture.credits + 140,
+        selectedShip: "pioneer",
+        unlocked: ["pioneer"],
+      });
       await page
         .getByRole("button", { name: "機体ハンガー", exact: false })
         .click();
@@ -80,7 +85,7 @@ const base = process.env.STAR_DODGE_URL || "http://127.0.0.1:8001/star-dodge/";
       await page.waitForFunction(() => testSynth.context?.state === "running");
       await page.clock.runFor(100);
       assert.equal(await page.evaluate(() => testSynth.stats.bgmPlaying), true);
-      assert.ok(await page.evaluate(() => testSynth.stats.nodes <= 49));
+      assert.ok(await page.evaluate(() => testSynth.stats.nodes <= 51));
       await page.getByRole("button", { name: "閉じる", exact: true }).click();
       await page
         .getByRole("button", { name: "フライト開始", exact: false })

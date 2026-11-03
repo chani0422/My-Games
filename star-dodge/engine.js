@@ -74,7 +74,7 @@
   });
   // Provisional tuning values: fixed-step steering, center-to-center blast range.
   const HOMING_TURN_RATE = 2.4;
-  const EXPLOSION_RADIUS = 70;
+  const EXPLOSION_RADIUS = 120;
   const FLIGHT_CATEGORIES = Object.freeze(
     [
       { id: "firepower", name: "火力" },
@@ -458,19 +458,28 @@
       });
       return true;
     }
-    explodeRock(source) {
+    explodeRock(source, damage, depth = 0) {
+      const blastDamage = Math.min(3, damage),
+        secondary = [];
       this.emit("explosion", {
         x: source.x,
         y: source.y,
         radius: EXPLOSION_RADIUS,
+        damage: blastDamage,
+        depth,
       });
       for (const rock of this.rocks) {
         if (
           rock.hp > 0 &&
           Math.hypot(rock.x - source.x, rock.y - source.y) <= EXPLOSION_RADIUS
-        )
-          this.damageRock(rock, 1);
+        ) {
+          const killed = this.damageRock(rock, blastDamage);
+          if (killed && depth === 0) secondary.push(rock);
+        }
       }
+      // Finish the primary blast before its children, so array order cannot
+      // turn a secondary kill into a new primary chain. Depth 1 never recurses.
+      for (const rock of secondary) this.explodeRock(rock, blastDamage, 1);
     }
     get stageTimeUp() {
       return !!this.stage && this.time + 1e-8 >= this.stage.duration;
@@ -883,7 +892,7 @@
           } else b.dead = true;
           const killed = this.damageRock(rock, b.damage);
           if (killed && !b.sub && b.weapon === "explosive")
-            this.explodeRock(rock);
+            this.explodeRock(rock, b.damage);
         }
       }
       for (const r of this.rocks) {
